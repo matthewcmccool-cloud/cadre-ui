@@ -134,7 +134,7 @@ export async function getJobs(filters?: {
       'Apply URL',
       'Salary',
       'Investors',
-      'Company Industry',
+      'Company Industry (Loopup)',
     ],
   });
 
@@ -166,7 +166,7 @@ export async function getJobs(filters?: {
       : '';
 
     const investors = record.fields['Investors'] || [];
-    const industries = record.fields['Company Industry'] || [];
+    const industries = record.fields['Company Industry (Loopup)'] || [];
 
     return {
       id: record.id,
