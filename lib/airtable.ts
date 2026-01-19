@@ -60,7 +60,7 @@ async function fetchAirtable(
       Authorization: `Bearer ${AIRTABLE_API_KEY}`,
       'Content-Type': 'application/json',
     },
-    next: { revalidate: 300 },
+    next: { revalidate: 0 },
   });
 
   if (!response.ok) {
