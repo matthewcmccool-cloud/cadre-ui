@@ -3,7 +3,7 @@ import JobTable from '@/components/JobTable';
 import Filters from '@/components/Filters';
 import Header from '@/components/Header';
 
-export const revalidate = 300;
+export const revalidate = 0;
 
 interface PageProps {
   searchParams: {
