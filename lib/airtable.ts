@@ -114,7 +114,7 @@ export async function getJobs(filters?: {
 
   if (filters?.location) {
     const loc = filters.location.replace(/'/g, "\\'");
-    formulaParts.push('FIND(\'' + loc + '\', {Country})');
+    formulaParts.push('FIND(\'' + loc + '\', {Location})');
   }
   
   const filterByFormula = formulaParts.length > 0 
@@ -130,7 +130,7 @@ export async function getJobs(filters?: {
       'Title',
       'Company',
       'Function',
-      'Country',
+      'Location',
       'Remote First',
       'Date Posted',
       'Job URL',
@@ -157,6 +157,14 @@ export async function getJobs(filters?: {
     companyMap.set(r.id, r.fields['Company'] || '');
   });
 
+    const investorRecords = await fetchAirtable(TABLES.investors, {
+    fields: ['Company'],
+  });
+  const investorMap = new Map<string, string>();
+  investorRecords.forEach(r => {
+    investorMap.set(r.id, r.fields['Company'] || '');
+  });
+
   return records.map(record => {
     const companyIds = record.fields['Company'] || [];
     const companyName = companyIds.length > 0 
@@ -176,8 +184,9 @@ export async function getJobs(filters?: {
       jobId: record.fields['Job ID'] || '',
       title: record.fields['Title'] || '',
       company: companyName,
-      investors: Array.isArray(investors) ? investors : [],
-      location: record.fields['Country'] || '',
+      investors:Array.isArray(investors) ? investors.map(id => investorMap.get(id) || '').filter(Boolean) : [],
+        
+      location: record.fields['Location'] || '',
       remoteFirst: record.fields['Remote First'] || false,
       functionName: funcName,
       industry: Array.isArray(industries) ? industries[0] || '' : '',
@@ -212,13 +221,13 @@ export async function getFilterOptions(): Promise<FilterOptions> {
     .sort();
 
   const jobRecords = await fetchAirtable(TABLES.jobs, {
-    fields: ['Country'],
+    fields: ['Location'],
     maxRecords: 500,
   });
   
   const locationSet = new Set<string>();
   jobRecords.forEach(r => {
-    const country = r.fields['Country'];
+    const country = r.fields['Location'];
     if (country) locationSet.add(country);
   });
   const locations = Array.from(locationSet).sort();
