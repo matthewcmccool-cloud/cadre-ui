@@ -50,7 +50,8 @@ export default function Filters({ options, currentFilters }: FiltersProps) {
           ))}
         </select>
 
-        <select
+{/* Location filter - temporarily disabled until location data is fixed
+                  <select
           value={currentFilters.location || ''}
           onChange={(e) => updateFilter('location', e.target.value)}
           className={selectClasses}
@@ -60,6 +61,7 @@ export default function Filters({ options, currentFilters }: FiltersProps) {
             <option key={loc} value={loc}>{loc}</option>
           ))}
         </select>
+          */}
 
         <select
           value={currentFilters.industry || ''}
