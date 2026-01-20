@@ -136,7 +136,8 @@ export async function getJobs(filters?: {
   // if (filters?.location) {
   //   const loc = filters.location.replace(/'/g, "\\'");
   //   formulaParts.push(`FIND('${loc}', {Location})`);
-  // }    filterByFormula,
+    // }
+    filterByFormula,
     sort: [{ field: 'Date Posted', direction: 'desc' }],
     maxRecords: 500,
     fields: [
