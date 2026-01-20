@@ -1,168 +1,115 @@
-import { NextResponse } from 'next/server';
-
-// Prevent static generation - run at request time only
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
-const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
-
-interface FunctionRecord {
-  id: string;
-  functionName: string;
-  keywords: string[];
-}
-
-interface JobRecord {
-  id: string;
-  title: string;
-  currentFunction: string[] | null;
-}
-
-async function fetchAllRecords(table: string, fields: string[]): Promise<any[]> {
-  const allRecords: any[] = [];
-  let offset: string | undefined;
-
-  do {
-    const params = new URLSearchParams();
-    fields.forEach(f => params.append('fields[]', f));
-    if (offset) params.append('offset', offset);
-
-    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(table)}?${params}`;
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Airtable error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    allRecords.push(...data.records);
-    offset = data.offset;
-  } while (offset);
-
-  return allRecords;
-}
-
-async function updateJobFunction(jobId: string, functionId: string): Promise<boolean> {
-  const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent('Job Listings')}/${jobId}`;
-  
-  const response = await fetch(url, {
-    method: 'PATCH',
-    headers: {
-      Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      fields: {
-        Function: [functionId],
-      },
-    }),
-  });
-
-  return response.ok;
-}
-
-function matchTitleToFunction(title: string, functions: FunctionRecord[]): FunctionRecord | null {
-  const lowerTitle = title.toLowerCase();
-  
-  for (const func of functions) {
-    for (const keyword of func.keywords) {
-      if (lowerTitle.includes(keyword.toLowerCase())) {
-        return func;
-      }
-    }
-  }
-  
-  return null;
-}
-
 export async function GET() {
-  try {
-    if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
-      return NextResponse.json({ error: 'Missing Airtable credentials' }, { status: 500 });
-    }
+  const apiKey = process.env.AIRTABLE_API_KEY;
+  const baseId = process.env.AIRTABLE_BASE_ID;
+  const perplexityKey = process.env.PERPLEXITY_API_KEY;
 
-    // Fetch all functions with their keywords
-    const functionRecords = await fetchAllRecords('tbl94EXkSIEmhqyYy', ['Function', 'Title Keywords']);
+  if (!perplexityKey) {
+    return Response.json({ error: 'PERPLEXITY_API_KEY not set' });
+  }
+
+  // 1. Fetch all Functions
+  const functionsRes = await fetch(
+    `https://api.airtable.com/v0/${baseId}/tbl94EXkSIEmhqyYy?fields[]=Function`,
+    { headers: { Authorization: `Bearer ${apiKey}` }, cache: 'no-store' }
+  );
+  const functionsData = await functionsRes.json();
+  
+  const functionRecords = functionsData.records || [];
+  const functionNames = functionRecords
+    .map((r: any) => r.fields.Function)
+    .filter(Boolean)
+    .join(', ');
+
+  // 2. Fetch jobs without Function (limit 10)
+  const jobsRes = await fetch(
+    `https://api.airtable.com/v0/${baseId}/Job%20Listings?maxRecords=10&fields[]=Title&fields[]=Function&filterByFormula=IF({Function}='',TRUE(),FALSE())`,
+    { headers: { Authorization: `Bearer ${apiKey}` }, cache: 'no-store' }
+  );
+  const jobsData = await jobsRes.json();
+  
+  const jobsToProcess = (jobsData.records || []).filter((r: any) => !r.fields.Function);
+
+  if (jobsToProcess.length === 0) {
+    return Response.json({ message: 'No jobs need backfill', processed: 0 });
+  }
+
+  const results: any[] = [];
+
+  // 3. Process each job with AI
+  for (const job of jobsToProcess) {
+    const title = job.fields.Title || '';
     
-    const functions: FunctionRecord[] = functionRecords.map(r => ({
-      id: r.id,
-      functionName: r.fields['Function'] || '',
-      keywords: (r.fields['Title Keywords'] || '').split(';').map((k: string) => k.trim()).filter(Boolean),
-    }));
+    const prompt = `Given this job title: "${title}"
 
-    // Fetch all jobs
-    const jobRecords = await fetchAllRecords('Job Listings', ['Title', 'Function']);
-    
-    const jobs: JobRecord[] = jobRecords.map(r => ({
-      id: r.id,
-      title: r.fields['Title'] || '',
-      currentFunction: r.fields['Function'] || null,
-    }));
+Classify it into exactly ONE of these categories: ${functionNames}
 
-    // Filter jobs that don't have a function assigned
-    const jobsWithoutFunction = jobs.filter(j => !j.currentFunction || j.currentFunction.length === 0);
+Respond with ONLY the category name, nothing else. Match the spelling exactly.`;
 
-    const results = {
-      totalJobs: jobs.length,
-      jobsWithoutFunction: jobsWithoutFunction.length,
-      matched: 0,
-      updated: 0,
-      failed: 0,
-      details: [] as { jobId: string; title: string; matchedFunction: string; success: boolean }[],
-    };
-
-    // Process each job without a function (limit to first 20 for safety)
-    const jobsToProcess = jobsWithoutFunction.slice(0, 20);
-    
-    for (const job of jobsToProcess) {
-      const matchedFunc = matchTitleToFunction(job.title, functions);
+    try {
+      const aiRes = await fetch('https://api.perplexity.ai/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${perplexityKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'sonar',
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: 50,
+        }),
+      });
       
-      if (matchedFunc) {
-        results.matched++;
-        const success = await updateJobFunction(job.id, matchedFunc.id);
-        
-        if (success) {
-          results.updated++;
-        } else {
-          results.failed++;
-        }
-        
-        results.details.push({
-          jobId: job.id,
-          title: job.title,
-          matchedFunction: matchedFunc.functionName,
-          success,
+      const aiData = await aiRes.json();
+      const functionGuess = aiData.choices?.[0]?.message?.content?.trim();
+      
+      // Find matching function
+      const matchedFunction = functionRecords.find(
+        (r: any) => r.fields.Function?.toLowerCase() === functionGuess?.toLowerCase()
+      );
+      
+      if (matchedFunction) {
+        // Update Airtable
+        await fetch(`https://api.airtable.com/v0/${baseId}/Job%20Listings/${job.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            fields: { Function: [matchedFunction.id] }
+          }),
         });
         
-        // Rate limiting - wait 200ms between updates
-        await new Promise(resolve => setTimeout(resolve, 200));
+        results.push({ 
+          id: job.id, 
+          title, 
+          classified: functionGuess, 
+          matched: matchedFunction.fields.Function,
+          status: 'updated' 
+        });
+      } else {
+        results.push({ 
+          id: job.id, 
+          title, 
+          classified: functionGuess, 
+          status: 'no match' 
+        });
       }
+      
+      // Rate limit: 2 second delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+    } catch (error) {
+      results.push({ id: job.id, title, status: 'error', error: String(error) });
     }
-
-    return NextResponse.json({
-      success: true,
-      summary: {
-        totalJobs: results.totalJobs,
-        jobsWithoutFunction: results.jobsWithoutFunction,
-        processedInThisBatch: jobsToProcess.length,
-        matched: results.matched,
-        updated: results.updated,
-        failed: results.failed,
-      },
-      functions: functions.map(f => ({ name: f.functionName, keywordCount: f.keywords.length })),
-      details: results.details,
-    });
-  } catch (error) {
-    console.error('Backfill error:', error);
-    return NextResponse.json(
-      { error: 'Backfill failed', details: String(error) },
-      { status: 500 }
-    );
   }
+
+  return Response.json({
+    processed: results.length,
+    updated: results.filter(r => r.status === 'updated').length,
+    results,
+  });
 }
