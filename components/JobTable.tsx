@@ -53,9 +53,9 @@ export default function JobTable({ jobs }: JobTableProps) {
           <tr className="border-b-2 border-[#3A3A3A]">
             <th className="text-left py-3 px-4 text-xs font-semibold text-[#A0A0A0] uppercase tracking-wide">DATE</th>
             <th className="text-left py-3 px-4 text-xs font-semibold text-[#A0A0A0] uppercase tracking-wide">JOB TITLE</th>
-            <th className="text-left py-3 px-4 text-xs font-semibold text-[#A0A0A0] uppercase tracking-wide">FUNCTION</th>
             <th className="text-left py-3 px-4 text-xs font-semibold text-[#A0A0A0] uppercase tracking-wide">COMPANY</th>
             <th className="text-left py-3 px-4 text-xs font-semibold text-[#A0A0A0] uppercase tracking-wide">INDUSTRY</th>
+            <th className="text-left py-3 px-4 text-xs font-semibold text-[#A0A0A0] uppercase tracking-wide">FUNCTION</th>
             <th className="text-left py-3 px-4 text-xs font-semibold text-[#A0A0A0] uppercase tracking-wide">INVESTORS</th>
             <th className="text-left py-3 px-4 text-xs font-semibold text-[#A0A0A0] uppercase tracking-wide">LOCATION</th>
           </tr>
@@ -77,15 +77,6 @@ export default function JobTable({ jobs }: JobTableProps) {
                 </Link>
               </td>
               <td className="py-4 px-4">
-                {job.functionName ? (
-                  <span className="inline-flex px-2 py-1 rounded-md text-xs font-medium bg-[#4A2D3D] text-[#F9A8D4]">
-                    {job.functionName}
-                  </span>
-                ) : (
-                  <span className="text-[#6B6B6B]">-</span>
-                )}
-              </td>
-              <td className="py-4 px-4">
                 <button
                   onClick={() => handleCompanyClick(job.company)}
                   className="inline-flex px-2 py-1 rounded-md text-xs font-medium bg-[#2D4A3E] text-[#6EE7B7] hover:opacity-80 cursor-pointer transition-opacity"
@@ -102,6 +93,16 @@ export default function JobTable({ jobs }: JobTableProps) {
                   <span className="text-[#6B6B6B]">-</span>
                 )}
               </td>
+              <td className="py-4 px-4">
+                {job.functionName ? (
+                  <span className="inline-flex px-2 py-1 rounded-md text-xs font-medium bg-[#4A2D3D] text-[#F9A8D4]">
+                    {job.functionName}
+                  </span>
+                ) : (
+                  <span className="text-[#6B6B6B]">-</span>
+                )}
+              </td>
+              
               <td className="py-4 px-4">
                 {job.investors.length > 0 ? (
                   <div className="flex flex-wrap gap-1">
