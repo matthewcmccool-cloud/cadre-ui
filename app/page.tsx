@@ -9,6 +9,7 @@ export const revalidate = 0;
 interface PageProps {
   searchParams: {
     functionName?: string;
+    industry?: string;
     location?: string;
     remote?: string;
     search?: string;
@@ -20,10 +21,11 @@ interface PageProps {
 
 export default async function Home({ searchParams }: PageProps) {
   const currentPage = parseInt(searchParams.page || '1', 10);
-  
+
   const [jobsResult, filterOptions] = await Promise.all([
     getJobs({
       functionName: searchParams.functionName,
+      industry: searchParams.industry,
       location: searchParams.location,
       remoteOnly: searchParams.remote === 'true',
       search: searchParams.search,
@@ -49,31 +51,18 @@ export default async function Home({ searchParams }: PageProps) {
         />
 
         <div className="mt-8 mb-4 flex justify-between items-center">
-          <p className="text-sm text-gray-400">
-            {jobsResult.totalCount} {jobsResult.totalCount === 1 ? 'job' : 'jobs'} found
+          <p className="text-sm text-gray-600">
+            {jobsResult.totalCount} jobs found
           </p>
-          {jobsResult.totalPages > 1 && (
-            <p className="text-sm text-gray-400">
-              Page {jobsResult.page} of {jobsResult.totalPages}
-            </p>
-          )}
         </div>
 
         <JobTable jobs={jobsResult.jobs} />
 
-        {jobsResult.totalPages > 1 && (
-          <Pagination
-            currentPage={jobsResult.page}
-            totalPages={jobsResult.totalPages}
-            searchParams={searchParams}
-          />
-        )}
-
-        <footer className="mt-16 pt-8 border-t border-gray-100">
-          <p className="text-sm text-gray-400">
-            Updated daily. Data sourced from company career pages.
-          </p>
-        </footer>
+        <Pagination
+          currentPage={jobsResult.page}
+          totalPages={jobsResult.totalPages}
+          totalCount={jobsResult.totalCount}
+        />
       </div>
     </main>
   );
