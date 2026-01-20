@@ -21,11 +21,11 @@ export default function Header() {
   };
 
   return (
-    <header className="border-b border-gray-100">
+    <header className="border-b border-[#3A3A3A]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <Link href="/" className="flex items-center">
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+            <h1 className="text-2xl font-bold text-[#F9F9F9] tracking-tight">
               cadre
             </h1>
           </Link>
@@ -36,16 +36,16 @@ export default function Header() {
               placeholder="Search jobs, companies..."
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400"
+              className="w-full px-4 py-2 bg-[#333333] border border-[#3A3A3A] rounded-md text-[#F9F9F9] placeholder-[#6B6B6B] focus:outline-none focus:border-[#525252] transition-colors"
             />
           </form>
 
           <nav className="hidden sm:flex items-center gap-6">
-            <Link href="/" className="text-sm text-gray-600 hover:text-gray-900">
+            <Link href="/" className="text-sm text-[#A0A0A0] hover:text-[#F9F9F9] transition-colors">
               Jobs
             </Link>
-            <span className="text-sm text-gray-300">Companies</span>
-            <span className="text-sm text-gray-300">Investors</span>
+            <span className="text-sm text-[#6B6B6B]">Companies</span>
+            <span className="text-sm text-[#6B6B6B]">Investors</span>
           </nav>
         </div>
       </div>
