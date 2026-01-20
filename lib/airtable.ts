@@ -128,12 +128,12 @@ export async function getJobs(filters?: {
   }
 
   if (filters?.search) {
-    const s = filters.search.replace(/'/g, "\\\\'" );
+    const s = filters.search.replace(/'/g, "\\\\'");
     formulaParts.push('OR(FIND(LOWER(\\'' + s + '\\'), LOWER({Title})), FIND(LOWER(\\'' + s + '\\'), LOWER(ARRAYJOIN({Company}))))');
   }
 
   if (filters?.location) {
-    const loc = filters.location.replace(/'/g, "\\\\'" );
+    const loc = filters.location.replace(/'/g, "\\\\'");
     formulaParts.push('FIND(\\'' + loc + '\\', {Location})');
   }
 
