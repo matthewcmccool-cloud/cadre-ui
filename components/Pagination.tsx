@@ -61,7 +61,7 @@ export default function Pagination({ currentPage, totalPages, searchParams }: Pa
       <button
         onClick={() => goToPage(currentPage - 1)}
         disabled={currentPage === 1}
-        className="px-4 py-2 text-sm border border-gray-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+        className="px-4 py-2 text-sm border border-[#3A3A3A] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#404040]"
       >
         Previous
       </button>
@@ -74,14 +74,14 @@ export default function Pagination({ currentPage, totalPages, searchParams }: Pa
               onClick={() => goToPage(page)}
               className={`w-10 h-10 text-sm rounded-lg ${
                 page === currentPage
-                  ? 'bg-gray-900 text-white'
-                  : 'border border-gray-200 hover:bg-gray-50'
+                  ? 'bg-[#F9F9F9] text-[#262626]'
+                  : 'border border-[#3A3A3A] hover:bg-[#404040]'
               }`}
             >
               {page}
             </button>
           ) : (
-            <span key={index} className="px-2 text-gray-400">
+            <span key={index} className="px-2 text-[#6B6B6B]">
               {page}
             </span>
           )
@@ -91,7 +91,7 @@ export default function Pagination({ currentPage, totalPages, searchParams }: Pa
       <button
         onClick={() => goToPage(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className="px-4 py-2 text-sm border border-gray-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+        className="px-4 py-2 text-sm border border-[#3A3A3A] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#404040]"
       >
         Next
       </button>
