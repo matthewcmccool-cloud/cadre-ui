@@ -224,8 +224,15 @@ export async function getJobs(filters?: {
       }
     }
 
+    // If no location found from Raw JSON, show 'Remote' if remote-first job, otherwise try Location field
     if (!location) {
-      location = record.fields['Location'] || '';
+      const airtableLocation = record.fields['Location'] as string || '';
+      // Only use Airtable Location field if it's a real city (not Remote/Hybrid)
+      if (airtableLocation && !['remote', 'hybrid', 'on-site', 'onsite'].includes(airtableLocation.toLowerCase())) {
+        location = airtableLocation;
+      } else if (remoteFirst) {
+        location = 'Remote';
+      }
     }
 
     return {
