@@ -3,7 +3,7 @@ const TABLES = {
   jobs: 'Job Listings',
   companies: 'Companies',
   investors: 'Investors',
-  functions: 'Function',
+  functions: 'tbl94EXkSIEmhqyYy',
   industries: 'Industry',
 };
 
