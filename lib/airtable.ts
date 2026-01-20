@@ -110,16 +110,17 @@ export interface JobsResult {
 
 export async function getJobs(filters?: {
   functionName?: string;
+  industry?: string;
+  investor?: string;
   location?: string;
   remoteOnly?: boolean;
   search?: string;
   company?: string;
-  investor?: string;
   page?: number;
 }): Promise<JobsResult> {
   const pageSize = 25;
   const page = filters?.page || 1;
-  
+
   const formulaParts: string[] = [];
 
   if (filters?.remoteOnly) {
@@ -127,12 +128,12 @@ export async function getJobs(filters?: {
   }
 
   if (filters?.search) {
-    const s = filters.search.replace(/'/g, "\\\'" );
+    const s = filters.search.replace(/'/g, "\\'" );
     formulaParts.push('OR(FIND(LOWER(\'' + s + '\'), LOWER({Title})), FIND(LOWER(\'' + s + '\'), LOWER(ARRAYJOIN({Company}))))');
   }
 
   if (filters?.location) {
-    const loc = filters.location.replace(/'/g, "\\\'" );
+    const loc = filters.location.replace(/'/g, "\\'" );
     formulaParts.push('FIND(\'' + loc + '\', {Location})');
   }
 
@@ -200,20 +201,16 @@ export async function getJobs(filters?: {
   // Map all records to jobs
   let jobs = allRecords.map(record => {
     const companyIds = record.fields['Company'] || [];
-    const companyName = companyIds.length > 0
-      ? companyMap.get(companyIds[0]) || 'Unknown'
-      : 'Unknown';
+    const companyName = companyIds.length > 0 ? companyMap.get(companyIds[0]) || 'Unknown' : 'Unknown';
 
     const functionIds = record.fields['Function'] || [];
-    const funcName = functionIds.length > 0
-      ? functionMap.get(functionIds[0]) || ''
-      : '';
+    const funcName = functionIds.length > 0 ? functionMap.get(functionIds[0]) || '' : '';
 
     const investorIds = record.fields['Investors'] || [];
-    const investorNames = Array.isArray(investorIds) 
-      ? investorIds.map(id => investorMap.get(id) || '').filter(Boolean) 
+    const investorNames = Array.isArray(investorIds)
+      ? investorIds.map(id => investorMap.get(id) || '').filter(Boolean)
       : [];
-    
+
     const industryIds = record.fields['Company Industry (Loopup)'] || [];
     const industryName = Array.isArray(industryIds) && industryIds.length > 0
       ? industryMap.get(industryIds[0]) || ''
@@ -222,7 +219,7 @@ export async function getJobs(filters?: {
     // Parse location from Raw JSON - look for city/country info
     let location = '';
     const remoteFirst = record.fields['Remote First'] || false;
-    
+
     if (record.fields['Raw JSON']) {
       try {
         const rawData = JSON.parse(record.fields['Raw JSON'] as string);
@@ -243,7 +240,7 @@ export async function getJobs(filters?: {
         // Ignore parse errors
       }
     }
-    
+
     // Fallback to Location field if Raw JSON didn't have location
     if (!location) {
       location = record.fields['Location'] || '';
@@ -266,23 +263,42 @@ export async function getJobs(filters?: {
     };
   });
 
-  // Filter by investor if specified (after mapping to get investor names)
+  // Multi-select filter: functionName (OR logic within, comma-separated)
+  if (filters?.functionName) {
+    const selectedFunctions = filters.functionName.split(',').map(f => f.trim().toLowerCase());
+    jobs = jobs.filter(job =>
+      selectedFunctions.some(fn => job.functionName.toLowerCase() === fn)
+    );
+  }
+
+  // Multi-select filter: industry (OR logic within, comma-separated)
+  if (filters?.industry) {
+    const selectedIndustries = filters.industry.split(',').map(i => i.trim().toLowerCase());
+    jobs = jobs.filter(job =>
+      selectedIndustries.some(ind => job.industry.toLowerCase() === ind)
+    );
+  }
+
+  // Multi-select filter: investor (OR logic within, comma-separated)
   if (filters?.investor) {
-    jobs = jobs.filter(job => 
-      job.investors.some(inv => inv.toLowerCase().includes(filters.investor!.toLowerCase()))
+    const selectedInvestors = filters.investor.split(',').map(inv => inv.trim().toLowerCase());
+    jobs = jobs.filter(job =>
+      job.investors.some(inv =>
+        selectedInvestors.some(selected => inv.toLowerCase().includes(selected))
+      )
     );
   }
 
   // Filter by company if specified (after mapping to get company names)
   if (filters?.company) {
-    jobs = jobs.filter(job => 
+    jobs = jobs.filter(job =>
       job.company.toLowerCase().includes(filters.company!.toLowerCase())
     );
   }
 
   const totalCount = jobs.length;
   const totalPages = Math.ceil(totalCount / pageSize);
-  
+
   // Paginate
   const startIndex = (page - 1) * pageSize;
   const paginatedJobs = jobs.slice(startIndex, startIndex + pageSize);
