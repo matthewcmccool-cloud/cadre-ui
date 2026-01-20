@@ -56,7 +56,7 @@ Respond with ONLY the category name, nothing else. Match the spelling exactly.`;
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama-3.1-sonar-small-128k-online',
+          model: 'sonar',
           messages: [{ role: 'user', content: prompt }],
           max_tokens: 50,
         }),
