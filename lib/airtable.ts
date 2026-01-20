@@ -138,6 +138,7 @@ export async function getJobs(filters?: {
       'Salary',
       'Investors',
       'Company Industry (Loopup)',
+            'Raw JSON',
     ],
   });
 
@@ -183,11 +184,21 @@ export async function getJobs(filters?: {
       id: record.id,
       jobId: record.fields['Job ID'] || '',
       title: record.fields['Title'] || '',
+          // Parse location from Raw JSON
+    let location = record.fields['Location'] || '';
+    if (!location && record.fields['Raw JSON']) {
+      try {
+        const rawData = JSON.parse(record.fields['Raw JSON'] as string);
+        location = rawData?.location?.name || '';
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
+
       company: companyName,
       investors:Array.isArray(investors) ? investors.map(id => investorMap.get(id) || '').filter(Boolean) : [],
         
-      location: record.fields['Location'] || '',
-      remoteFirst: record.fields['Remote First'] || false,
+      location,      remoteFirst: record.fields['Remote First'] || false,
       functionName: funcName,
       industry: Array.isArray(industries) ? industries[0] || '' : '',
       datePosted: record.fields['Date Posted'] || '',
