@@ -127,6 +127,8 @@ export async function getJobs(filters?: {
     formulaParts.push('{Remote First} = 1');
   }
 
+    const filterByFormula = formulaParts.length > 0 ? `AND(${formulaParts.join(',')})` : undefined;
+
     const allRecordsResult = await fetchAirtable(TABLES.jobs, { 
           filterByFormula,
     sort: [{ field: 'Date Posted', direction: 'desc' }],
