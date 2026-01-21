@@ -1,24 +1,37 @@
 import { NextResponse } from 'next/server';
-import Airtable from 'airtable';
 
-// Force Node.js runtime to fix AbortSignal compatibility
+// Force Node.js runtime
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID!);
+const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
+const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
+const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
 
 const FUNCTION_TABLE_ID = 'tbl94EXkSIEmhqyYy';
 const JOB_LISTINGS_TABLE_ID = 'tbl4HJr9bYCMOn2Ry';
 
+const BATCH_SIZE = 15;
+const RATE_LIMIT_DELAY = 1000;
+
 // Delay helper to avoid rate limits
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Valid function categories
+const VALID_FUNCTIONS = [
+  'Sales', 'BD & Partnerships', 'Marketing', 'Customer Success',
+  'Solutions Engineering', 'Revenue Operations', 'Developer Relations',
+  'Product Management', 'Product Design / UX', 'Engineering',
+  'AI & Research', 'Business Operations', 'People',
+  'Finance & Accounting', 'Legal', 'Other'
+];
 
 async function classifyJobFunction(title: string): Promise<string | null> {
   try {
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+        'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -26,9 +39,7 @@ async function classifyJobFunction(title: string): Promise<string | null> {
         messages: [
           {
             role: 'system',
-            content: `You are a job classifier. Given a job title, respond with ONLY the function category name, nothing else. No asterisks, no punctuation, no explanation. Just the category name.
-
-Valid categories: Accounting & Finance, Administrative, Business Development, Consulting, Customer Success, Data & Analytics, Design, Engineering, Executive, Facilities, Healthcare, Human Resources, Infrastructure, Legal, Marketing, Operations, People, Product, Quality Assurance, Research, Sales, Security, Supply Chain`
+            content: 'You are a job classifier. Given a job title, respond with ONLY the function category name, nothing else. No asterisks, no punctuation, no explanation. Just the category name. Valid categories: Sales, BD & Partnerships, Marketing, Customer Success, Solutions Engineering, Revenue Operations, Developer Relations, Product Management, Product Design / UX, Engineering, AI & Research, Business Operations, People, Finance & Accounting, Legal, Other'
           },
           {
             role: 'user',
@@ -36,7 +47,7 @@ Valid categories: Accounting & Finance, Administrative, Business Development, Co
           }
         ],
         max_tokens: 20,
-        temperature: 0.1
+        temperature: 0.1,
       }),
     });
 
@@ -48,12 +59,12 @@ Valid categories: Accounting & Finance, Administrative, Business Development, Co
 
     const data = await response.json();
     let classification = data.choices?.[0]?.message?.content?.trim();
-    
+
     // Strip asterisks and extra whitespace
     if (classification) {
       classification = classification.replace(/\*+/g, '').trim();
     }
-    
+
     return classification || null;
   } catch (error) {
     console.error('Classification error:', error);
@@ -61,16 +72,41 @@ Valid categories: Accounting & Finance, Administrative, Business Development, Co
   }
 }
 
+function mapToValidFunction(classification: string | null): string {
+  if (!classification) return 'Other';
+  
+  const normalized = classification.toLowerCase().trim();
+  
+  for (const func of VALID_FUNCTIONS) {
+    if (normalized === func.toLowerCase() || normalized.includes(func.toLowerCase())) {
+      return func;
+    }
+  }
+  
+  return 'Other';
+}
+
 async function getFunctionRecordId(functionName: string): Promise<string | null> {
   try {
-    const records = await base(FUNCTION_TABLE_ID)
-      .select({
-        filterByFormula: `LOWER({Function}) = LOWER("${functionName}")`,
-        maxRecords: 1
-      })
-      .firstPage();
-    
-    return records.length > 0 ? records[0].id : null;
+    const params = new URLSearchParams();
+    params.append('filterByFormula', `LOWER({Function}) = LOWER("${functionName}")`);
+    params.append('maxRecords', '1');
+
+    const response = await fetch(
+      `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${FUNCTION_TABLE_ID}?${params.toString()}`,
+      {
+        headers: {
+          Authorization: `Bearer ${AIRTABLE_API_KEY}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Airtable API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.records?.length > 0 ? data.records[0].id : null;
   } catch (error) {
     console.error('Error finding function:', error);
     return null;
@@ -80,8 +116,7 @@ async function getFunctionRecordId(functionName: string): Promise<string | null>
 export async function GET() {
   const startTime = Date.now();
   const maxRuntime = 55000; // 55 seconds
-  const delayBetweenCalls = 600; // 600ms delay between API calls
-  
+
   const results: any[] = [];
   let processed = 0;
   let updated = 0;
@@ -90,13 +125,27 @@ export async function GET() {
 
   try {
     // Get jobs without Function field, skip empty titles
-    const records = await base(JOB_LISTINGS_TABLE_ID)
-      .select({
-        filterByFormula: `AND({Function} = '', {Title} != '')`,
-        maxRecords: 100,
-        fields: ['Title', 'Function']
-      })
-      .firstPage();
+    const params = new URLSearchParams();
+    params.append('filterByFormula', `AND({Function} = '', {Title} != '')`);
+    params.append('maxRecords', String(BATCH_SIZE));
+    params.append('fields[]', 'Title');
+    params.append('fields[]', 'Function');
+
+    const response = await fetch(
+      `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${JOB_LISTINGS_TABLE_ID}?${params.toString()}`,
+      {
+        headers: {
+          Authorization: `Bearer ${AIRTABLE_API_KEY}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Airtable API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const records = data.records || [];
 
     console.log(`Found ${records.length} jobs to process`);
 
@@ -107,44 +156,71 @@ export async function GET() {
         break;
       }
 
-      const title = record.get('Title') as string;
-      
-      // Double-check for empty titles
-      if (!title || title.trim() === '') {
+      const title = record.fields?.Title;
+      if (!title) {
         skipped++;
-        results.push({ id: record.id, title: '(empty)', status: 'skipped' });
         continue;
       }
 
       processed++;
 
-      // Add delay before API call to avoid rate limits
-      await delay(delayBetweenCalls);
-
+      // Classify the job title
       const classification = await classifyJobFunction(title);
-      
-      if (!classification) {
-        rateLimited++;
-        results.push({ id: record.id, title, status: 'api_error' });
-        continue;
-      }
+      const mappedFunction = mapToValidFunction(classification);
 
-      const functionId = await getFunctionRecordId(classification);
-      
-      if (functionId) {
-        try {
-          await base(JOB_LISTINGS_TABLE_ID).update(record.id, {
-            'Function': [functionId]
-          });
+      // Get the function record ID
+      const functionRecordId = await getFunctionRecordId(mappedFunction);
+
+      if (functionRecordId) {
+        // Update the job record with the function
+        const updateResponse = await fetch(
+          `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${JOB_LISTINGS_TABLE_ID}/${record.id}`,
+          {
+            method: 'PATCH',
+            headers: {
+              Authorization: `Bearer ${AIRTABLE_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              fields: {
+                Function: [functionRecordId]
+              }
+            }),
+          }
+        );
+
+        if (updateResponse.ok) {
           updated++;
-          results.push({ id: record.id, title, classification, status: 'updated' });
-        } catch (updateError) {
-          console.error('Update error:', updateError);
-          results.push({ id: record.id, title, classification, status: 'update_failed' });
+          results.push({
+            title,
+            classification,
+            mappedFunction,
+            status: 'updated'
+          });
+        } else {
+          const errorText = await updateResponse.text();
+          console.error(`Failed to update job ${record.id}:`, errorText);
+          results.push({
+            title,
+            classification,
+            mappedFunction,
+            status: 'error',
+            error: errorText
+          });
         }
       } else {
-        results.push({ id: record.id, title, classification, status: 'no_match' });
+        skipped++;
+        results.push({
+          title,
+          classification,
+          mappedFunction,
+          status: 'skipped',
+          reason: 'Function record not found'
+        });
       }
+
+      // Rate limiting delay
+      await delay(RATE_LIMIT_DELAY);
     }
 
     return NextResponse.json({
@@ -161,13 +237,13 @@ export async function GET() {
     console.error('Backfill error:', error);
     return NextResponse.json({
       success: false,
-      error: String(error),
+      error: error instanceof Error ? error.message : 'Unknown error',
       processed,
       updated,
       skipped,
       rateLimited,
       runtime: Date.now() - startTime,
       results
-    }, { status: 500 });
+    });
   }
 }
