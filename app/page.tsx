@@ -42,7 +42,7 @@ export default async function Home({ searchParams }: PageProps) {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <p className="text-[#A0A0A0] text-lg mb-8">
-          The career graph for tech talent. Find jobs at 250+ venture-backed companies.
+          The career graph for VC-backed tech talent.
         </p>
 
         <QueryBuilder
