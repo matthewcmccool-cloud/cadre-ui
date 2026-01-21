@@ -15,6 +15,7 @@ interface Investor {
     Company?: string;
     'Portfolio URL'?: string;
     'Portfolio Companies'?: string[];
+    'Last Scraped'?: string;
   };
 }
 
@@ -48,7 +49,7 @@ async function fetchInvestors(): Promise<Investor[]> {
   do {
     const params = new URLSearchParams();
     if (offset) params.append('offset', offset);
-      params.append('filterByFormula', "NOT({Portfolio URL} = '')");
+      params.append('filterByFormula', "AND(NOT({Portfolio URL} = ''), {Last Scraped} = '')");
     const response = await fetch(`${url}?${params.toString()}`, {
       headers: {
         Authorization: `Bearer ${AIRTABLE_API_KEY}`,
@@ -241,6 +242,20 @@ export async function GET(request: NextRequest) {
         });
 
         processed++;
+
+                // Update Last Scraped timestamp for this investor
+        await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${INVESTORS_TABLE}/${investor.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${AIRTABLE_API_KEY}`,
+          },
+          body: JSON.stringify({
+            fields: {
+              'Last Scraped': new Date().toISOString(),
+            },
+          }),
+        });
       } catch (error) {
         errors.push({
           investor: investorName,
