@@ -14,8 +14,7 @@ interface PageProps {
     remote?: string;
     search?: string;
     company?: string;
-    investor?: string;
-    industry?: string;
+    investor?: string;   
     page?: string;
   };
 }
@@ -31,8 +30,7 @@ export default async function Home({ searchParams }: PageProps) {
       remoteOnly: searchParams.remote === 'true',
       search: searchParams.search,
       company: searchParams.company,
-      investor: searchParams.investor,
-      industry: searchParams.industry,
+      investor: searchParams.investor,     
       page: currentPage,
     }),
     getFilterOptions(),
