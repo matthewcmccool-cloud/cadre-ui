@@ -11,7 +11,7 @@ const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
 const FUNCTION_TABLE_ID = 'tbl94EXkSIEmhqyYy';
 const JOB_LISTINGS_TABLE_ID = 'tbl4HJr9bYCMOn2Ry';
 
-const BATCH_SIZE = 15;
+const BATCH_SIZE = 50;
 const RATE_LIMIT_DELAY = 1000;
 
 // Delay helper to avoid rate limits
@@ -59,11 +59,14 @@ async function classifyJobFunction(title: string): Promise<string | null> {
 
     const data = await response.json();
     let classification = data.choices?.[0]?.message?.content?.trim();
-
+    
     // Strip asterisks and extra whitespace
     if (classification) {
       classification = classification.replace(/\*+/g, '').trim();
     }
+
+    // Log the classification for debugging
+    console.log(`Title: "${title}" -> Perplexity: "${classification}" -> Mapped: "${mapToValidFunction(classification)}"`);
 
     return classification || null;
   } catch (error) {
@@ -77,9 +80,75 @@ function mapToValidFunction(classification: string | null): string {
   
   const normalized = classification.toLowerCase().trim();
   
+  // Exact match first
   for (const func of VALID_FUNCTIONS) {
-    if (normalized === func.toLowerCase() || normalized.includes(func.toLowerCase())) {
+    if (normalized === func.toLowerCase()) {
       return func;
+    }
+  }
+  
+  // Fuzzy matching for common variations
+  const fuzzyMap: Record<string, string> = {
+    'sales': 'Sales',
+    'account executive': 'Sales',
+    'account manager': 'Sales',
+    'business development': 'BD & Partnerships',
+    'partnerships': 'BD & Partnerships',
+    'marketing': 'Marketing',
+    'growth': 'Marketing',
+    'customer success': 'Customer Success',
+    'customer support': 'Customer Success',
+    'support': 'Customer Success',
+    'solutions engineer': 'Solutions Engineering',
+    'solutions engineering': 'Solutions Engineering',
+    'sales engineer': 'Solutions Engineering',
+    'revenue operations': 'Revenue Operations',
+    'revops': 'Revenue Operations',
+    'developer relations': 'Developer Relations',
+    'devrel': 'Developer Relations',
+    'developer advocate': 'Developer Relations',
+    'product manager': 'Product Management',
+    'product management': 'Product Management',
+    'product': 'Product Management',
+    'design': 'Product Design / UX',
+    'ux': 'Product Design / UX',
+    'ui': 'Product Design / UX',
+    'product design': 'Product Design / UX',
+    'engineering': 'Engineering',
+    'software engineer': 'Engineering',
+    'developer': 'Engineering',
+    'frontend': 'Engineering',
+    'backend': 'Engineering',
+    'fullstack': 'Engineering',
+    'full stack': 'Engineering',
+    'devops': 'Engineering',
+    'sre': 'Engineering',
+    'ai': 'AI & Research',
+    'machine learning': 'AI & Research',
+    'ml': 'AI & Research',
+    'research': 'AI & Research',
+    'data scientist': 'AI & Research',
+    'operations': 'Business Operations',
+    'business operations': 'Business Operations',
+    'strategy': 'Business Operations',
+    'people': 'People',
+    'hr': 'People',
+    'human resources': 'People',
+    'recruiting': 'People',
+    'recruiter': 'People',
+    'talent': 'People',
+    'finance': 'Finance & Accounting',
+    'accounting': 'Finance & Accounting',
+    'controller': 'Finance & Accounting',
+    'legal': 'Legal',
+    'counsel': 'Legal',
+    'compliance': 'Legal',
+  };
+  
+  // Check fuzzy map
+  for (const [key, value] of Object.entries(fuzzyMap)) {
+    if (normalized.includes(key)) {
+      return value;
     }
   }
   
@@ -126,7 +195,7 @@ export async function GET() {
   try {
     // Get jobs without Function field, skip empty titles
     const params = new URLSearchParams();
-    params.append('filterByFormula', `AND({Function} = '', {Title} != '')`);
+    params.append('filterByFormula', `AND({Function} = BLANK(), {Title} != '')`);
     params.append('maxRecords', String(BATCH_SIZE));
     params.append('fields[]', 'Title');
     params.append('fields[]', 'Function');
