@@ -119,10 +119,22 @@ export default function QueryBuilder({ options, currentFilters }: QueryBuilderPr
   const dropdownRef = useRef<HTMLDivElement>(null);
 
     // Sync conditions when URL params change (e.g., after Clear all)
-    useEffect(() => {
-          setConditions(parseUrlToConditions(currentFilters));
-        }, [JSON.stringify(currentFilters)]);
-
+  // Sync conditions when URL params change (e.g., after Clear all)
+  useEffect(() => {
+    const urlConditions = parseUrlToConditions(currentFilters);
+    if (urlConditions.length === 0) {
+      // Preserve the default filter row instead of clearing
+      setConditions([{
+        id: generateId(),
+        connector: 'and',
+        field: 'function',
+        operator: 'is',
+        value: [],
+      }]);
+    } else {
+      setConditions(urlConditions);
+    }
+  }, [JSON.stringify(currentFilters)]);
   // Click outside handler
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
