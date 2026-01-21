@@ -2,8 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'cadre | The career graph for tech talent',
-  description: 'Discover jobs at 250+ venture-backed tech companies.',
+  title: 'Portco.Jobs | Jobs at VC-Backed Companies',  description: 'Discover jobs at venture-backed startups. Filter by investor, funding stage, function, and more.',
 };
 
 export default function RootLayout({
