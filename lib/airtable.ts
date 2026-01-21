@@ -173,10 +173,8 @@ export async function getJobs(filters?: {
   });
 
   const companyRecords = await fetchAirtable(TABLES.companies, {
-    fields: ['Company Name'], });  const companyMap = new Map<string, string>();
-  companyRecords.records.forEach(r => {
-    companyMap.set(r.id, r.fields['Company Name'] || '');  });
-
+  }); const companyMap = new Map<string, string>();  companyRecords.records.forEach(r => {
+    companyMap.set(r.id, (Object.values(r.fields)[0] as string) || ''); });
   const investorRecords = await fetchAirtable(TABLES.investors, {
     fields: ['Company'],
   });
