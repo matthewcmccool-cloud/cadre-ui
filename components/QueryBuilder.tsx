@@ -131,7 +131,7 @@ export default function QueryBuilder({ options, currentFilters }: QueryBuilderPr
     const params = new URLSearchParams();
     
     newConditions.forEach(cond => {
-      if (cond.operator === 'is_empty' || cond.operator === 'is_not_empty') return;
+      
       if (cond.value.length === 0) return;
       
       const paramMap: Record<FieldType, string> = {
