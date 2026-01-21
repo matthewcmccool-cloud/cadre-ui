@@ -11,8 +11,6 @@ interface FiltersProps {
     industry?: string;
     investor?: string;
     remote?: string;
-    industry?: string;
-    investor?: string;
   };
 }
 
