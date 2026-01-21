@@ -82,6 +82,7 @@ export interface Job {
   jobId: string;
   title: string;
   company: string;
+    companyUrl?: string;
   investors: string[];
   location: string;
   remoteFirst: boolean;
@@ -107,7 +108,6 @@ export interface JobsResult {
   pageSize: number;
   totalPages: number;
 }
-
 export async function getJobs(filters?: {
   functionName?: string;
   industry?: string;
@@ -174,14 +174,16 @@ export async function getJobs(filters?: {
 
   // Fetch all company records with pagination
     const companyMap = new Map<string, string>();
+      const companyUrlMap = new Map<string, string>();
     let companyOffset: string | undefined;
     do {
       const companyRecords = await fetchAirtable(TABLES.companies, {
-        fields: ['Company'],
+        fields: ['Company', 'URL'],
         offset: companyOffset,
       });
       companyRecords.records.forEach(r => {
         companyMap.set(r.id, (r.fields['Company'] as string) || '');
+              companyUrlMap.set(r.id, (r.fields['URL'] as string) || '');
       });
       companyOffset = companyRecords.offset;
     } while (companyOffset);  const investorRecords = await fetchAirtable(TABLES.investors, {
@@ -203,6 +205,7 @@ export async function getJobs(filters?: {
   let jobs = allRecords.map(record => {
     const companyIds = record.fields['Company'] || [];
     const companyName = companyIds.length > 0 ? companyMap.get(companyIds[0]) || 'Unknown' : 'Unknown';
+          const companyUrl = companyIds.length > 0 ? companyUrlMap.get(companyIds[0]) || '' : '';
 
     const functionIds = record.fields['Function'] || [];
     const funcName = functionIds.length > 0 ? functionMap.get(functionIds[0]) || '' : '';
@@ -256,6 +259,7 @@ export async function getJobs(filters?: {
       jobId: record.fields['Job ID'] || '',
       title: record.fields['Title'] || '',
       company: companyName,
+              companyUrl,
       investors: investorNames,
       location,
       remoteFirst,

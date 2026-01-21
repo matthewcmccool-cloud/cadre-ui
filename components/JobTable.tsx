@@ -26,6 +26,15 @@ function formatDate(dateString: string): string {
   });
 }
 
+const getDomain = (url: string | null | undefined) => {
+  if (!url) return null;
+  try {
+    return new URL(url).hostname.replace('www.', '');
+  } catch {
+    return null;
+  }
+};
+
 export default function JobTable({ jobs }: JobTableProps) {
   const router = useRouter();
 
@@ -80,6 +89,17 @@ export default function JobTable({ jobs }: JobTableProps) {
                   onClick={() => handleCompanyClick(job.company)}
                   className="inline-flex px-2 py-1 rounded-md text-xs font-medium bg-[#2D4A3E] text-[#6EE7B7] hover:opacity-80 cursor-pointer transition-opacity"
                 >
+                {job.companyUrl && getDomain(job.companyUrl) && (
+                  <img 
+                    src={`https://logo.clearbit.com/${getDomain(job.companyUrl)}`}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                    }}
+                    className="w-5 h-5 rounded mr-2"
+                    alt=""
+                  />
+                )}
                   {job.company}
                 </button>
               </td>
