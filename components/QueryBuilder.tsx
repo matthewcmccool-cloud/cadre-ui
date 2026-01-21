@@ -109,6 +109,11 @@ export default function QueryBuilder({ options, currentFilters }: QueryBuilderPr
   const [searchQuery, setSearchQuery] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+    // Sync conditions when URL params change (e.g., after Clear all)
+    useEffect(() => {
+          setConditions(parseUrlToConditions(currentFilters));
+        }, [JSON.stringify(currentFilters)]);
+
   // Click outside handler
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
