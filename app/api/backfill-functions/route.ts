@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import Airtable from 'airtable';
 
+// Force Node.js runtime to fix AbortSignal compatibility
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID!);
 
 const FUNCTION_TABLE_ID = 'tbl94EXkSIEmhqyYy';
