@@ -10,7 +10,6 @@ interface JobTableProps {
 
 function formatDate(dateString: string): string {
   if (!dateString) return '';
-
   const date = new Date(dateString);
   const now = new Date();
   const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
@@ -34,6 +33,25 @@ const getDomain = (url: string | null | undefined) => {
     return null;
   }
 };
+
+const INDUSTRY_COLORS: Record<string, { bg: string; text: string }> = {
+  'Enterprise Software': { bg: '#3D2D4A', text: '#C4B5FD' },
+  'Healthcare': { bg: '#4A2D2D', text: '#FCA5A5' },
+  'Fintech': { bg: '#2D4A4A', text: '#5EEAD4' },
+  'Consumer': { bg: '#4A4A2D', text: '#FDE047' },
+  'AI/ML': { bg: '#2D2D4A', text: '#A5B4FC' },
+  'Developer Tools': { bg: '#4A3D2D', text: '#FDBA74' },
+  'Security': { bg: '#3D4A2D', text: '#BEF264' },
+  'E-commerce': { bg: '#4A2D4A', text: '#F0ABFC' },
+  'Climate/Energy': { bg: '#2D4A3D', text: '#86EFAC' },
+  'Education': { bg: '#3D3D4A', text: '#CBD5E1' },
+  'Logistics': { bg: '#4A3A2D', text: '#FCD34D' },
+  'Media/Entertainment': { bg: '#4A2D3A', text: '#FDA4AF' },
+  'Real Estate': { bg: '#2D3A3A', text: '#99F6E4' },
+  'Biotech': { bg: '#3A2D4A', text: '#D8B4FE' },
+  'Hardware': { bg: '#3A3A2D', text: '#D9F99D' },
+};
+const DEFAULT_INDUSTRY_COLOR = { bg: '#3D2D4A', text: '#C4B5FD' };
 
 export default function JobTable({ jobs }: JobTableProps) {
   const router = useRouter();
@@ -87,43 +105,49 @@ export default function JobTable({ jobs }: JobTableProps) {
                   onClick={() => handleCompanyClick(job.company)}
                   className="inline-flex px-2 py-1 rounded-md text-xs font-medium bg-[#2D4A3E] text-[#6EE7B7] hover:opacity-80 cursor-pointer transition-opacity"
                 >
-                {job.companyUrl && getDomain(job.companyUrl) && (
-                  <img 
-                    src={`https://www.google.com/s2/favicons?domain=${getDomain(job.companyUrl)}&sz=128`}
-                    onError={(e) => {                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                    }}
-                    className="w-5 h-5 rounded mr-2"
-                    alt=""
-                  />
-                )}
+                  {job.companyUrl && getDomain(job.companyUrl) && (
+                    <img
+                      src={`https://www.google.com/s2/favicons?domain=${getDomain(job.companyUrl)}&sz=128`}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                      }}
+                      className="w-5 h-5 rounded mr-2"
+                      alt=""
+                    />
+                  )}
                   {job.company}
                 </button>
               </td>
               <td className="py-4 px-4">
                 {job.industry ? (
-                  <span className="inline-flex px-2 py-1 rounded-md text-xs font-medium bg-[#3D2D4A] text-[#C4B5FD]">
+                  <span
+                    className="inline-flex px-2 py-1 rounded-md text-xs font-medium"
+                    style={{
+                      backgroundColor: INDUSTRY_COLORS[job.industry]?.bg || DEFAULT_INDUSTRY_COLOR.bg,
+                      color: INDUSTRY_COLORS[job.industry]?.text || DEFAULT_INDUSTRY_COLOR.text,
+                    }}
+                  >
                     {job.industry}
                   </span>
                 ) : (
                   <span className="text-[#6B6B6B]">-</span>
                 )}
               </td>
-              
               <td className="py-4 px-4">
                 {job.investors.length > 0 ? (
                   <div className="flex flex-wrap gap-1">
-                    {job.investors.slice(0, 2).map((inv, i) => (
+                    {job.investors.slice(0, 4).map((inv, i) => (
                       <button
                         key={i}
                         onClick={() => handleInvestorClick(inv)}
-                        className="inline-flex px-2 py-1 rounded-md text-xs font-medium bg-[#4A3D2D] text-[#FCD34D] hover:opacity-80 cursor-pointer transition-opacity"
+                        className="inline-flex px-2 py-1 rounded-md text-xs font-medium bg-[#2D3A4A] text-[#7DD3FC] hover:opacity-80 cursor-pointer transition-opacity"
                       >
                         {inv}
                       </button>
                     ))}
-                    {job.investors.length > 2 && (
-                      <span className="inline-flex px-2 py-1 text-xs text-[#A0A0A0]">+{job.investors.length - 2}</span>
+                    {job.investors.length > 4 && (
+                      <span className="inline-flex px-2 py-1 text-xs text-[#A0A0A0]">+{job.investors.length - 4}</span>
                     )}
                   </div>
                 ) : (
@@ -132,12 +156,12 @@ export default function JobTable({ jobs }: JobTableProps) {
               </td>
               <td className="py-4 px-4">
                 {job.location ? (
-                  <span className="inline-flex px-2 py-1 rounded-md text-xs font-medium bg-[#2D3A4A] text-[#7DD3FC]">
+                  <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] rounded-md text-xs">
                     {job.remoteFirst ? `${job.location} (Remote)` : job.location}
                   </span>
                 ) : (
                   job.remoteFirst ? (
-                    <span className="inline-flex px-2 py-1 rounded-md text-xs font-medium bg-[#2D3A4A] text-[#7DD3FC]">
+                    <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] rounded-md text-xs">
                       Remote
                     </span>
                   ) : (
