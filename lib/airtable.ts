@@ -297,13 +297,6 @@ export async function getJobs(filters?: {
     );
   }
 
-  // Filter by industry if specified
-  if (filters?.industry) {
-    jobs = jobs.filter(job =>
-      job.industry.toLowerCase().includes(filters.industry!.toLowerCase())
-    );
-  }
-
   const totalCount = jobs.length;
   const totalPages = Math.ceil(totalCount / pageSize);
 
