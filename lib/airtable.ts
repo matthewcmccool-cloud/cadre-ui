@@ -172,9 +172,19 @@ export async function getJobs(filters?: {
     functionMap.set(r.id, r.fields['Function'] || '');
   });
 
-  const companyRecords = await fetchAirtable(TABLES.companies, {
-    fields: ['Company'] }); const companyMap = new Map<string, string>(); companyRecords.records.forEach(r => {    companyMap.set(r.id, (r.fields['Company'] as string) || ''); });
-  const investorRecords = await fetchAirtable(TABLES.investors, {
+  // Fetch all company records with pagination
+    const companyMap = new Map<string, string>();
+    let companyOffset: string | undefined;
+    do {
+      const companyRecords = await fetchAirtable(TABLES.companies, {
+        fields: ['Company'],
+        offset: companyOffset,
+      });
+      companyRecords.records.forEach(r => {
+        companyMap.set(r.id, (r.fields['Company'] as string) || '');
+      });
+      companyOffset = companyRecords.offset;
+    } while (companyOffset);  const investorRecords = await fetchAirtable(TABLES.investors, {
     fields: ['Company'],
   });
   const investorMap = new Map<string, string>();
