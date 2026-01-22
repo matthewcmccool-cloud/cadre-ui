@@ -4,8 +4,7 @@ import QueryBuilder from '@/components/QueryBuilder';
 import Header from '@/components/Header';
 import Pagination from '@/components/Pagination';
 
-export const revalidate = 0;
-
+export const dynamic = 'force-dynamic';
 interface PageProps {
   searchParams: {
     functionName?: string;
