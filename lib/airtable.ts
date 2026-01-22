@@ -152,7 +152,7 @@ export async function getJobs(filters?: {
       'Apply URL',
       'Salary',
       'Investors',
-      'Company Industry (Loopup)',
+      'Company Industry (Lookup)',
       'Raw JSON',
     ],
   });
@@ -219,7 +219,7 @@ export async function getJobs(filters?: {
       ? investorIds.map(id => investorMap.get(id) || '').filter(Boolean)
       : [];
 
-    const industryIds = record.fields['Company Industry (Loopup)'] || [];
+    const industryIds = record.fields['Company Industry (Lookup)'] || [];
     const industryName = Array.isArray(industryIds) && industryIds.length > 0
       ? industryMap.get(industryIds[0]) || ''
       : '';
@@ -418,10 +418,15 @@ export async function getJobById(id: string): Promise<Job & { description: strin
   });
 
   // Map the record to a Job object
-  const companyIds = record.fields['Company'] || [];
-  const companyName = companyIds.length > 0 ? companyMap.get(companyIds[0]) || 'Unknown' : 'Unknown';
-  const companyUrl = companyIds.length > 0 ? companyUrlMap.get(companyIds[0]) || '' : '';
-
+  const companyField = record.fields['Company'];
+  let companyName = 'Unknown';
+  let companyUrl = '';
+  if (typeof companyField === 'string') {
+    companyName = companyField;
+  } else if (Array.isArray(companyField) && companyField.length > 0) {
+    companyName = companyMap.get(companyField[0]) || 'Unknown';
+    companyUrl = companyUrlMap.get(companyField[0]) || '';
+  }
   const functionIds = record.fields['Function'] || [];
   const funcName = functionIds.length > 0 ? functionMap.get(functionIds[0]) || '' : '';
 
@@ -430,7 +435,7 @@ export async function getJobById(id: string): Promise<Job & { description: strin
     ? investorIds.map(invId => investorMap.get(invId) || '').filter(Boolean)
     : [];
 
-  const industryIds = record.fields['Company Industry (Loopup)'] || [];
+  const industryIds = record.fields['Company Industry (Lookup)'] || [];
   const industryName = Array.isArray(industryIds) && industryIds.length > 0
     ? industryMap.get(industryIds[0]) || ''
     : '';
@@ -477,6 +482,11 @@ export async function getJobById(id: string): Promise<Job & { description: strin
     }
   }
 
+
+    // If no description from Raw JSON, try direct Job Description field
+  if (!description) {
+    description = (record.fields['Job Description'] as string) || '';
+  }
   return {
     id: record.id,
     jobId: record.fields['Job ID'] || '',
