@@ -113,7 +113,7 @@ export default function JobTable({ jobs }: JobTableProps) {
               <td className="py-4 px-4">
                 {job.investors.length > 0 ? (
                   <div className="flex flex-wrap gap-1">
-                    {job.investors.slice(0, 2).map((inv, i) => (
+                    {job.investors.slice(0, 5).map((inv, i) => (
                       <button
                         key={i}
                         onClick={() => handleInvestorClick(inv)}
@@ -122,8 +122,8 @@ export default function JobTable({ jobs }: JobTableProps) {
                         {inv}
                       </button>
                     ))}
-                    {job.investors.length > 2 && (
-                      <span className="inline-flex px-2 py-1 text-xs text-[#A0A0A0]">+{job.investors.length - 2}</span>
+                    {job.investors.length > 5 && (
+                      <span className="inline-flex px-2 py-1 text-xs text-[#A0A0A0]">+{job.investors.length - 5}</span>
                     )}
                   </div>
                 ) : (
