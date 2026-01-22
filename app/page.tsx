@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import Pagination from '@/components/Pagination';
 
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 interface PageProps {
   searchParams: {
     functionName?: string;
