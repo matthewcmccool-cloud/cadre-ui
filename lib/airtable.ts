@@ -58,7 +58,7 @@ async function fetchAirtable(
     : `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${table}`;
 
   const response = await fetch(url, 
-                                 cache: 'no-store',{
+                                 {     cache: 'no-store',
     headers: {
       Authorization: `Bearer ${AIRTABLE_API_KEY}`,
     },
