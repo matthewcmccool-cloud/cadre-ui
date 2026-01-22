@@ -365,7 +365,7 @@ export async function getFilterOptions(): Promise<FilterOptions> {
 }
 
 // Fetch a single job by its Airtable record ID
-export async function getJobById(id: string): Promise<Job | null> {
+export async function getJobById(id: string): Promise<(Job & { description: string }) | null> {
   const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
   const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
 
