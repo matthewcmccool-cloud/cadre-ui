@@ -64,6 +64,8 @@ async function fetchAirtable(
     headers: {
       Authorization: `Bearer ${AIRTABLE_API_KEY}`,
       'Content-Type': 'application/json',
+        },
+  next: { revalidate: 0 }
   }
   });  if (!response.ok) {
     console.error('Airtable error:', response.status, 'table:', table);
