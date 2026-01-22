@@ -18,6 +18,9 @@ interface AirtableResponse {
 }
 
 async function fetchAirtable(table: string, params?: URLSearchParams): Promise<{ records: AirtableRecord[]; offset?: string }> {
+    const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
+  const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
+
   const url = params 
     ? `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${table}?${params.toString()}`
     : `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${table}`;
