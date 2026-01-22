@@ -87,6 +87,7 @@ export interface Job {
   jobUrl: string;
   applyUrl: string;
   salary: string;
+    description?: string;
 }
 
 export interface FilterOptions {
@@ -364,7 +365,7 @@ export async function getFilterOptions(): Promise<FilterOptions> {
 }
 
 // Fetch a single job by its Airtable record ID
-export async function getJobById(id: string): Promise<Job & { description: string }> {
+export async function getJobById(id: string): Promise<Job | null> {
   const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
   const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
 
@@ -386,6 +387,11 @@ export async function getJobById(id: string): Promise<Job & { description: strin
   }
 
   const record = await response.json();
+
+    // Check if record exists and has fields
+  if (!record || !record.fields) {
+    return null;
+  }
 
   // Fetch related data (companies, investors, industries, functions)
   const [companyRecords, investorRecords, industryRecords, functionRecords] = await Promise.all([
