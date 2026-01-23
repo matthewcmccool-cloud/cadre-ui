@@ -57,16 +57,18 @@ async function fetchAirtable(
     ? `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${table}?${queryString}`
     : `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${table}`;
 
-  const response = await fetch(url, 
-                                 {     cache: 'no-store',
+  const response = await fetch(url, {
+    cache: 'no-store',
     headers: {
       Authorization: `Bearer ${AIRTABLE_API_KEY}`,
     },
   });
+
   if (!response.ok) {
     let errorText = '';
     try { errorText = await response.text(); } catch (e) {}
-    throw new Error(`Airtable error: ${response.status} for table ${table}${errorText ? ': ' + errorText : ''}`);  }
+    throw new Error(`Airtable error: ${response.status} for table ${table}${errorText ? ': ' + errorText : ''}`);
+  }
 
   const data = await response.json();
   return { records: data.records, offset: data.offset };
@@ -77,7 +79,7 @@ export interface Job {
   jobId: string;
   title: string;
   company: string;
-    companyUrl?: string;
+  companyUrl?: string;
   investors: string[];
   location: string;
   remoteFirst: boolean;
@@ -87,7 +89,7 @@ export interface Job {
   jobUrl: string;
   applyUrl: string;
   salary: string;
-    description?: string;
+  description?: string;
 }
 
 export interface FilterOptions {
@@ -104,6 +106,7 @@ export interface JobsResult {
   pageSize: number;
   totalPages: number;
 }
+
 export async function getJobs(filters?: {
   functionName?: string;
   industry?: string;
@@ -124,12 +127,12 @@ export async function getJobs(filters?: {
   }
 
   if (filters?.search) {
-    const s = filters.search.replace(/'/g, "\\'" );
+    const s = filters.search.replace(/'/g, "\\'");
     formulaParts.push('OR(FIND(LOWER(\'' + s + '\'), LOWER({Title})), FIND(LOWER(\'' + s + '\'), LOWER(ARRAYJOIN({Companies}))))');
   }
 
   if (filters?.location) {
-    const loc = filters.location.replace(/'/g, "\\'" );
+    const loc = filters.location.replace(/'/g, "\\'");
     formulaParts.push('FIND(\'' + loc + '\', {Location})');
   }
 
@@ -137,8 +140,8 @@ export async function getJobs(filters?: {
     ? 'AND(' + formulaParts.join(', ') + ')'
     : '';
 
-    const allRecordsResult = await fetchAirtable(TABLES.jobs, { 
-          filterByFormula,
+  const allRecordsResult = await fetchAirtable(TABLES.jobs, { 
+    filterByFormula,
     sort: [{ field: 'Date Posted', direction: 'desc' }],
     maxRecords: 100,
     fields: [
@@ -169,20 +172,22 @@ export async function getJobs(filters?: {
   });
 
   // Fetch all company records with pagination
-    const companyMap = new Map<string, string>();
-      const companyUrlMap = new Map<string, string>();
-    let companyOffset: string | undefined;
-    do {
-      const companyRecords = await fetchAirtable(TABLES.companies, {
-        fields: ['Company', 'URL'],
-        offset: companyOffset,
-      });
-      companyRecords.records.forEach(r => {
-        companyMap.set(r.id, (r.fields['Company'] as string) || '');
-              companyUrlMap.set(r.id, (r.fields['URL'] as string) || '');
-      });
-      companyOffset = companyRecords.offset;
-    } while (companyOffset);  const investorRecords = await fetchAirtable(TABLES.investors, {
+  const companyMap = new Map<string, string>();
+  const companyUrlMap = new Map<string, string>();
+  let companyOffset: string | undefined;
+  do {
+    const companyRecords = await fetchAirtable(TABLES.companies, {
+      fields: ['Company', 'URL'],
+      offset: companyOffset,
+    });
+    companyRecords.records.forEach(r => {
+      companyMap.set(r.id, (r.fields['Company'] as string) || '');
+      companyUrlMap.set(r.id, (r.fields['URL'] as string) || '');
+    });
+    companyOffset = companyRecords.offset;
+  } while (companyOffset);
+
+  const investorRecords = await fetchAirtable(TABLES.investors, {
     fields: ['Company'],
   });
   const investorMap = new Map<string, string>();
@@ -211,10 +216,10 @@ export async function getJobs(filters?: {
       companyName = companyMap.get(companyField[0]) || 'Unknown';
       companyUrl = companyUrlMap.get(companyField[0]) || '';
     }
+
     const functionIds = record.fields['Function'] || [];
     const funcName = functionIds.length > 0 ? functionMap.get(functionIds[0]) || '' : '';
 
-          // DEBUG: Log company URL data
     const investorIds = record.fields['Investors'] || [];
     const investorNames = Array.isArray(investorIds)
       ? investorIds.map(id => investorMap.get(id) || '').filter(Boolean)
@@ -264,7 +269,7 @@ export async function getJobs(filters?: {
       jobId: record.fields['Job ID'] || '',
       title: record.fields['Title'] || '',
       company: companyName,
-              companyUrl,
+      companyUrl,
       investors: investorNames,
       location,
       remoteFirst,
@@ -293,7 +298,7 @@ export async function getJobs(filters?: {
     );
   }
 
-  // 285 (OR logic within, comma-separated)
+  // Multi-select filter: investor (OR logic within, comma-separated)
   if (filters?.investor) {
     const selectedInvestors = filters.investor.split(',').map(inv => inv.trim().toLowerCase());
     jobs = jobs.filter(job =>
@@ -380,15 +385,16 @@ export async function getJobById(id: string): Promise<(Job & { description: stri
       Authorization: `Bearer ${AIRTABLE_API_KEY}`,
       'Content-Type': 'application/json',
     },
-      cache: 'no-store',
-})
+    cache: 'no-store',
+  });
+
   if (!response.ok) {
     throw new Error(`Failed to fetch job: ${response.status}`);
   }
 
   const record = await response.json();
 
-    // Check if record exists and has fields
+  // Check if record exists and has fields
   if (!record || !record.fields) {
     return null;
   }
@@ -433,6 +439,7 @@ export async function getJobById(id: string): Promise<(Job & { description: stri
     companyName = companyMap.get(companyField[0]) || 'Unknown';
     companyUrl = companyUrlMap.get(companyField[0]) || '';
   }
+
   const functionIds = record.fields['Function'] || [];
   const funcName = functionIds.length > 0 ? functionMap.get(functionIds[0]) || '' : '';
 
@@ -488,11 +495,11 @@ export async function getJobById(id: string): Promise<(Job & { description: stri
     }
   }
 
-
-    // If no description from Raw JSON, try direct Job Description field
+  // If no description from Raw JSON, try direct Job Description field
   if (!description) {
     description = (record.fields['Job Description'] as string) || '';
   }
+
   return {
     id: record.id,
     jobId: record.fields['Job ID'] || '',
