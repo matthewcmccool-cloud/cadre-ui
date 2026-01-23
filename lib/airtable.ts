@@ -677,3 +677,80 @@ export async function getInvestorBySlug(slug: string): Promise<Investor | null> 
     jobCount,
   };
 }
+
+// Industry interface
+export interface Industry {
+  id: string;
+  name: string;
+  slug: string;
+  jobCount: number;
+  companies: Array<{ id: string; name: string; slug: string }>;
+}
+
+// Fetch a single industry by slug
+export async function getIndustryBySlug(slug: string): Promise<Industry | null> {
+  // Fetch all industries
+  const industryRecords = await fetchAirtable(TABLES.industries, {
+    fields: ['Industry Name'],
+  });
+
+  const industry = industryRecords.records.find(r => {
+    const name = r.fields['Industry Name'] as string || '';
+    const industrySlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    return industrySlug === slug;
+  });
+
+  if (!industry) {
+    return null;
+  }
+
+  const industryName = industry.fields['Industry Name'] as string || '';
+  const industryId = industry.id;
+
+  // Fetch jobs to find companies in this industry and count jobs
+  const jobRecords = await fetchAirtable(TABLES.jobs, {
+    fields: ['Companies', 'Company Industry (Lookup)'],
+  });
+
+  // Fetch company records for name lookup
+  const companyRecords = await fetchAirtable(TABLES.companies, {
+    fields: ['Company'],
+  });
+
+  const companyMap = new Map<string, string>();
+  companyRecords.records.forEach(r => {
+    companyMap.set(r.id, r.fields['Company'] as string || '');
+  });
+
+  // Find companies in this industry
+  const companySet = new Map<string, { id: string; name: string; slug: string }>();
+  let jobCount = 0;
+
+  jobRecords.records.forEach(job => {
+    const industryIds = job.fields['Company Industry (Lookup)'] || [];
+    if (Array.isArray(industryIds) && industryIds.includes(industryId)) {
+      jobCount++;
+      const companyIds = job.fields['Companies'] || [];
+      if (Array.isArray(companyIds)) {
+        companyIds.forEach(companyId => {
+          const companyName = companyMap.get(companyId) || '';
+          if (companyName && !companySet.has(companyId)) {
+            companySet.set(companyId, {
+              id: companyId,
+              name: companyName,
+              slug: companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+            });
+          }
+        });
+      }
+    }
+  });
+
+  return {
+    id: industryId,
+    name: industryName,
+    slug: industryName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+    jobCount,
+    companies: Array.from(companySet.values()),
+  };
+}
