@@ -58,19 +58,19 @@ async function fetchAirtable(
     : `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${table}`;
 
   const response = await fetch(url, {
-    next: { revalidate: 0 },
     headers: {
       Authorization: `Bearer ${AIRTABLE_API_KEY}`,
     },
   });
 
+  // Read body only once to avoid Response.clone error
+  const text = await response.text();
+  
   if (!response.ok) {
-    let errorText = '';
-    try { errorText = await response.text(); } catch (e) {}
-    throw new Error(`Airtable error: ${response.status} for table ${table}${errorText ? ': ' + errorText : ''}`);
+    throw new Error(`Airtable error: ${response.status} for table ${table}${text ? ': ' + text : ''}`);
   }
 
-  const data = await response.json();
+  const data = JSON.parse(text);
   return { records: data.records, offset: data.offset };
 }
 
