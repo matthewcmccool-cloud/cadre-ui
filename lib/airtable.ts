@@ -754,3 +754,242 @@ export async function getIndustryBySlug(slug: string): Promise<Industry | null> 
     companies: Array.from(companySet.values()),
   };
 }
+
+// Get featured jobs (jobs marked as featured in Airtable)
+export async function getFeaturedJobs(): Promise<Job[]> {
+  const allRecordsResult = await fetchAirtable(TABLES.jobs, {
+    filterByFormula: '{Featured} = 1',
+    sort: [{ field: 'Date Posted', direction: 'desc' }],
+    maxRecords: 10,
+    fields: [
+      'Job ID', 'Title', 'Companies', 'Function', 'Location', 'Remote First',
+      'Date Posted', 'Job URL', 'Apply URL', 'Salary', 'Investors',
+      'Company Industry (Lookup)', 'Raw JSON',
+    ],
+  });
+
+  const [functionRecords, investorRecords, industryRecords] = await Promise.all([
+    fetchAirtable(TABLES.functions, { fields: ['Function'] }),
+    fetchAirtable(TABLES.investors, { fields: ['Company'] }),
+    fetchAirtable(TABLES.industries, { fields: ['Industry Name'] }),
+  ]);
+
+  // Build company map with pagination
+  const companyMap = new Map<string, string>();
+  const companyUrlMap = new Map<string, string>();
+  let companyOffset: string | undefined;
+  do {
+    const companyRecords = await fetchAirtable(TABLES.companies, {
+      fields: ['Company', 'URL'],
+      offset: companyOffset,
+    });
+    companyRecords.records.forEach(r => {
+      companyMap.set(r.id, (r.fields['Company'] as string) || '');
+      companyUrlMap.set(r.id, (r.fields['URL'] as string) || '');
+    });
+    companyOffset = companyRecords.offset;
+  } while (companyOffset);
+
+  const functionMap = new Map<string, string>();
+  functionRecords.records.forEach(r => functionMap.set(r.id, r.fields['Function'] || ''));
+
+  const investorMap = new Map<string, string>();
+  investorRecords.records.forEach(r => investorMap.set(r.id, r.fields['Company'] || ''));
+
+  const industryMap = new Map<string, string>();
+  industryRecords.records.forEach(r => industryMap.set(r.id, r.fields['Industry Name'] || ''));
+
+  return allRecordsResult.records.map(record => {
+    const companyField = record.fields['Companies'];
+    let companyName = 'Unknown';
+    let companyUrl = '';
+    if (typeof companyField === 'string') {
+      companyName = companyField;
+    } else if (Array.isArray(companyField) && companyField.length > 0) {
+      companyName = companyMap.get(companyField[0]) || 'Unknown';
+      companyUrl = companyUrlMap.get(companyField[0]) || '';
+    }
+
+    const functionIds = record.fields['Function'] || [];
+    const funcName = functionIds.length > 0 ? functionMap.get(functionIds[0]) || '' : '';
+
+    const investorIds = record.fields['Investors'] || [];
+    const investorNames = Array.isArray(investorIds)
+      ? investorIds.map(id => investorMap.get(id) || '').filter(Boolean)
+      : [];
+
+    const industryIds = record.fields['Company Industry (Lookup)'] || [];
+    const industryName = Array.isArray(industryIds) && industryIds.length > 0
+      ? industryMap.get(industryIds[0]) || ''
+      : '';
+
+    let location = '';
+    const remoteFirst = record.fields['Remote First'] || false;
+    if (record.fields['Raw JSON']) {
+      try {
+        const rawData = JSON.parse(record.fields['Raw JSON'] as string);
+        if (rawData?.offices && rawData.offices.length > 0) {
+          const office = rawData.offices[0];
+          location = office?.location || office?.name || '';
+        } else if (rawData?.location) {
+          if (typeof rawData.location === 'string') {
+            location = rawData.location;
+          } else if (rawData.location.name) {
+            location = rawData.location.name;
+          }
+        }
+      } catch (e) {}
+    }
+    if (!location) {
+      const airtableLocation = record.fields['Location'] as string || '';
+      if (airtableLocation && !['remote', 'hybrid', 'on-site', 'onsite'].includes(airtableLocation.toLowerCase())) {
+        location = airtableLocation;
+      } else if (remoteFirst) {
+        location = 'Remote';
+      }
+    }
+
+    return {
+      id: record.id,
+      jobId: record.fields['Job ID'] || '',
+      title: record.fields['Title'] || '',
+      company: companyName,
+      companyUrl,
+      investors: investorNames,
+      location,
+      remoteFirst,
+      functionName: funcName,
+      industry: industryName,
+      datePosted: record.fields['Date Posted'] || '',
+      jobUrl: record.fields['Job URL'] || '',
+      applyUrl: record.fields['Apply URL'] || record.fields['Job URL'] || '',
+      salary: record.fields['Salary'] || '',
+    };
+  });
+}
+
+// Get organic jobs sorted by ai_score
+export async function getOrganicJobs(page: number = 1, pageSize: number = 25): Promise<JobsResult> {
+  const allRecordsResult = await fetchAirtable(TABLES.jobs, {
+    filterByFormula: 'OR({Featured} != 1, {Featured} = BLANK())',
+    sort: [{ field: 'Date Posted', direction: 'desc' }],
+    maxRecords: 100,
+    fields: [
+      'Job ID', 'Title', 'Companies', 'Function', 'Location', 'Remote First',
+      'Date Posted', 'Job URL', 'Apply URL', 'Salary', 'Investors',
+      'Company Industry (Lookup)', 'Raw JSON',
+    ],
+  });
+
+  const [functionRecords, investorRecords, industryRecords] = await Promise.all([
+    fetchAirtable(TABLES.functions, { fields: ['Function'] }),
+    fetchAirtable(TABLES.investors, { fields: ['Company'] }),
+    fetchAirtable(TABLES.industries, { fields: ['Industry Name'] }),
+  ]);
+
+  // Build company map with pagination
+  const companyMap = new Map<string, string>();
+  const companyUrlMap = new Map<string, string>();
+  let companyOffset: string | undefined;
+  do {
+    const companyRecords = await fetchAirtable(TABLES.companies, {
+      fields: ['Company', 'URL'],
+      offset: companyOffset,
+    });
+    companyRecords.records.forEach(r => {
+      companyMap.set(r.id, (r.fields['Company'] as string) || '');
+      companyUrlMap.set(r.id, (r.fields['URL'] as string) || '');
+    });
+    companyOffset = companyRecords.offset;
+  } while (companyOffset);
+
+  const functionMap = new Map<string, string>();
+  functionRecords.records.forEach(r => functionMap.set(r.id, r.fields['Function'] || ''));
+
+  const investorMap = new Map<string, string>();
+  investorRecords.records.forEach(r => investorMap.set(r.id, r.fields['Company'] || ''));
+
+  const industryMap = new Map<string, string>();
+  industryRecords.records.forEach(r => industryMap.set(r.id, r.fields['Industry Name'] || ''));
+
+  const jobs = allRecordsResult.records.map(record => {
+    const companyField = record.fields['Companies'];
+    let companyName = 'Unknown';
+    let companyUrl = '';
+    if (typeof companyField === 'string') {
+      companyName = companyField;
+    } else if (Array.isArray(companyField) && companyField.length > 0) {
+      companyName = companyMap.get(companyField[0]) || 'Unknown';
+      companyUrl = companyUrlMap.get(companyField[0]) || '';
+    }
+
+    const functionIds = record.fields['Function'] || [];
+    const funcName = functionIds.length > 0 ? functionMap.get(functionIds[0]) || '' : '';
+
+    const investorIds = record.fields['Investors'] || [];
+    const investorNames = Array.isArray(investorIds)
+      ? investorIds.map(id => investorMap.get(id) || '').filter(Boolean)
+      : [];
+
+    const industryIds = record.fields['Company Industry (Lookup)'] || [];
+    const industryName = Array.isArray(industryIds) && industryIds.length > 0
+      ? industryMap.get(industryIds[0]) || ''
+      : '';
+
+    let location = '';
+    const remoteFirst = record.fields['Remote First'] || false;
+    if (record.fields['Raw JSON']) {
+      try {
+        const rawData = JSON.parse(record.fields['Raw JSON'] as string);
+        if (rawData?.offices && rawData.offices.length > 0) {
+          const office = rawData.offices[0];
+          location = office?.location || office?.name || '';
+        } else if (rawData?.location) {
+          if (typeof rawData.location === 'string') {
+            location = rawData.location;
+          } else if (rawData.location.name) {
+            location = rawData.location.name;
+          }
+        }
+      } catch (e) {}
+    }
+    if (!location) {
+      const airtableLocation = record.fields['Location'] as string || '';
+      if (airtableLocation && !['remote', 'hybrid', 'on-site', 'onsite'].includes(airtableLocation.toLowerCase())) {
+        location = airtableLocation;
+      } else if (remoteFirst) {
+        location = 'Remote';
+      }
+    }
+
+    return {
+      id: record.id,
+      jobId: record.fields['Job ID'] || '',
+      title: record.fields['Title'] || '',
+      company: companyName,
+      companyUrl,
+      investors: investorNames,
+      location,
+      remoteFirst,
+      functionName: funcName,
+      industry: industryName,
+      datePosted: record.fields['Date Posted'] || '',
+      jobUrl: record.fields['Job URL'] || '',
+      applyUrl: record.fields['Apply URL'] || record.fields['Job URL'] || '',
+      salary: record.fields['Salary'] || '',
+    };
+  });
+
+  const totalCount = jobs.length;
+  const totalPages = Math.ceil(totalCount / pageSize);
+  const startIndex = (page - 1) * pageSize;
+  const paginatedJobs = jobs.slice(startIndex, startIndex + pageSize);
+
+  return {
+    jobs: paginatedJobs,
+    totalCount,
+    page,
+    pageSize,
+    totalPages,
+  };
+}
