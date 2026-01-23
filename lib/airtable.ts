@@ -570,10 +570,12 @@ export async function getCompanyBySlug(slug: string): Promise<Company | null> {
     fields: ['Companies', 'Investors'],
   });
 
+    const investorSet = new Set<string>();
   jobRecords.records.forEach(job => {
     const invIds = job.fields['Investors'] || [];
     if (Array.isArray(invIds)) {
       invIds.forEach(id => {
+        
         const name = investorMap.get(id);
         if (name) investorSet.add(name);
       });
