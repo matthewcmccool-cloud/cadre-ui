@@ -543,7 +543,7 @@ export async function getCompanyBySlug(slug: string): Promise<Company | null> {
 
   // Fetch all companies and find by slug (company name lowercased and hyphenated)
   const companyRecords = await fetchAirtable(TABLES.companies, {
-        fields: ['Company', 'URL'],
+        fields: ['Company', 'URL', 'VCs'],
   });
 
   const company = companyRecords.records.find(r => {
@@ -579,17 +579,15 @@ export async function getCompanyBySlug(slug: string): Promise<Company | null> {
     return Array.isArray(companyIds) && companyIds.includes(companyId);
   });
 
-    const investorSet = new Set<string>();
-  jobsForCompany.forEach(job => {
-    const invIds = job.fields['Investors'] || [];
-    if (Array.isArray(invIds)) {
-      invIds.forEach(id => {
-        
-        const name = investorMap.get(id);
-        if (name) investorSet.add(name);
-      });
-    }
-  });
+  // Get investors directly from company's VCs field
+  const vcIds = company.fields['VCs'] || [];
+  const investorSet = new Set<string>();
+  if (Array.isArray(vcIds)) {
+    vcIds.forEach(vcId => {
+      const name = investorMap.get(vcId);
+      if (name) investorSet.add(name);
+    });
+  }
   return {
     id: company.id,
     name: companyName,
