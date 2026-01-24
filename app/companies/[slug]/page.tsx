@@ -3,9 +3,11 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import CompanyLogo from '@/components/CompanyLogo';
 import JobsList from '@/components/JobsList';
+import Pagination from '@/components/Pagination';
 
 interface CompanyPageProps {
   params: { slug: string };
+    searchParams: { page?: string };
 }
 
 function getDomain(url: string | undefined): string | null {
@@ -17,7 +19,7 @@ function getDomain(url: string | undefined): string | null {
   }
 }
 
-export default async function CompanyPage({ params }: CompanyPageProps) {
+export default async function CompanyPage({ params, searchParams }: CompanyPageProps) {
   const company = await getCompanyBySlug(params.slug);
 
   if (!company) {
@@ -26,6 +28,12 @@ export default async function CompanyPage({ params }: CompanyPageProps) {
 
   const jobs = await getJobsByCompany(company.name);
   const companyDomain = getDomain(company.url);
+
+    // Pagination
+  const pageSize = 25;
+  const currentPage = parseInt(searchParams.page || '1', 10);
+  const totalPages = Math.max(1, Math.ceil(jobs.length / pageSize));
+  const paginatedJobs = jobs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <div className="min-h-screen bg-[#0b0a0a]">
@@ -83,7 +91,19 @@ export default async function CompanyPage({ params }: CompanyPageProps) {
 
         <div>
           <h2 className="text-xl font-semibold text-[#F9F9F9] mb-4">Open Positions</h2>
-          <JobsList jobs={jobs} />
+          <JobsList jobs={paginatedJobs} />
+
+                    {/* Pagination */}
+          <div className="mt-6 flex flex-col items-center gap-4">
+            <p className="text-sm text-[#A0A0A0]">
+              Page {currentPage} of {totalPages}
+            </p>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              searchParams={{}} 
+            />
+          </div>
         </div>
       </div>
     </div>
