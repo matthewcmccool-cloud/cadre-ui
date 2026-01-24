@@ -543,8 +543,7 @@ export async function getCompanyBySlug(slug: string): Promise<Company | null> {
 
   // Fetch all companies and find by slug (company name lowercased and hyphenated)
   const companyRecords = await fetchAirtable(TABLES.companies, {
-        fields: ['Company', 'URL'],
-  });
+    fields: ['Company', 'URL', 'VCs'],  });
 
   const company = companyRecords.records.find(r => {
     const name = r.fields['Company'] as string || '';
