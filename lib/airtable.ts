@@ -868,8 +868,8 @@ export async function getFeaturedJobs(): Promise<Job[]> {
   });
 }
 
-  // Get organic jobs sorted by Date Poste
-dexport async function getOrganicJobs(page: number = 1, pageSize: number = 25): Promise<JobsResult> {
+  // Get organic jobs sorted by Date Posted
+export async function getOrganicJobs(page: number = 1, pageSize: number = 25): Promise<JobsResult> {
   const allRecordsResult = await fetchAirtable(TABLES.jobs, {
     sort: [{ field: 'Date Posted', direction: 'desc' }],
     maxRecords: 100,
