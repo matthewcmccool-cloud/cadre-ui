@@ -44,7 +44,7 @@ export default function JobTable({ jobs }: JobTableProps) {
 
   const handleInvestorClick = (investor: string) => {
     router.push('/?investor=' + encodeURIComponent(investor));
-  };
+  }; 
 
   if (jobs.length === 0) {
     return (
