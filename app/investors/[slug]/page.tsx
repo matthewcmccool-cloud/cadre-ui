@@ -45,7 +45,7 @@ export default async function InvestorPage({ params }: InvestorPageProps) {
           <h2 className="text-xl font-semibold mb-4">Portfolio Companies</h2>
           {investor.companies.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {investor.companies.map((company) => (
+              {investor.companies.map((company: { id: string; name: string; slug: string }) => (
                 <Link
                   key={company.id}
                   href={`/companies/${company.slug}`}

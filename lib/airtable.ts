@@ -392,8 +392,8 @@ export async function getJobById(id: string): Promise<(Job & { description: stri
     throw new Error(`Failed to fetch job: ${response.status}`);
   }
 
-  const record = await response.json();
-
+  const text = await response.text();
+  const record = JSON.parse(text);
   // Check if record exists and has fields
   if (!record || !record.fields) {
     return null;
@@ -556,6 +556,9 @@ export async function getCompanyBySlug(slug: string): Promise<Company | null> {
     return null;
   }
 
+    const companyId = company.id;
+  const companyName = (company.fields['Company'] as string) || '';
+
   // Fetch investors linked to this company
   const investorRecords = await fetchAirtable(TABLES.investors, {
     fields: ['Company'],
@@ -570,8 +573,14 @@ export async function getCompanyBySlug(slug: string): Promise<Company | null> {
     fields: ['Companies', 'Investors'],
   });
 
+    // Filter jobs to only those linked to this company
+  const jobsForCompany = jobRecords.records.filter(job => {
+    const companyIds = job.fields['Companies'] || [];
+    return Array.isArray(companyIds) && companyIds.includes(companyId);
+  });
+
     const investorSet = new Set<string>();
-  jobRecords.records.forEach(job => {
+  jobsForCompany.forEach(job => {
     const invIds = job.fields['Investors'] || [];
     if (Array.isArray(invIds)) {
       invIds.forEach(id => {
@@ -581,9 +590,6 @@ export async function getCompanyBySlug(slug: string): Promise<Company | null> {
       });
     }
   });
-
-  const companyName = company.fields['Company'] as string || '';
-
   return {
     id: company.id,
     name: companyName,
@@ -591,14 +597,34 @@ export async function getCompanyBySlug(slug: string): Promise<Company | null> {
     url: company.fields['URL'] as string || undefined,
     description: company.fields['Description'] as string || undefined,
     investors: Array.from(investorSet),
-    jobCount: jobRecords.records.length,
+    jobCount: jobsForCompany.length,
   };
 }
 
-// Get jobs by company name
+// Get jobs by company name - fetches all jobs and dedupes by title+location
 export async function getJobsByCompany(companyName: string): Promise<Job[]> {
-  const result = await getJobs({ company: companyName });
-  return result.jobs;
+  // Fetch all jobs for this company (not paginated)
+  const allJobs: Job[] = [];
+  let page = 1;
+  let hasMore = true;
+  
+  while (hasMore) {
+    const result = await getJobs({ company: companyName, page });
+    allJobs.push(...result.jobs);
+    hasMore = page < result.totalPages;
+    page++;
+  }
+  
+  // Dedupe by title + location
+  const seen = new Set<string>();
+  const uniqueJobs = allJobs.filter(job => {
+    const key = `${job.title}|${job.location}`.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  
+  return uniqueJobs;
 }
 
 // Investor interface
@@ -613,7 +639,8 @@ export interface Investor {
 // Fetch a single investor by slug
 export async function getInvestorBySlug(slug: string): Promise<Investor | null> {
   // Fetch all investors
-  const investorRecords = await fetchAirtable(TABLES.investors, {
+ 
+    const investorRecords = await fetchAirtable(TABLES.investors, {
     fields: ['Company'],
   });
 

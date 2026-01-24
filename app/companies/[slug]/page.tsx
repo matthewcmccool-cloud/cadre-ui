@@ -2,6 +2,7 @@ import { getCompanyBySlug, getJobsByCompany } from '@/lib/airtable';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import CompanyLogo from '@/components/CompanyLogo';
+import JobsList from '@/components/JobsList';
 
 interface CompanyPageProps {
   params: { slug: string };
@@ -65,7 +66,7 @@ export default async function CompanyPage({ params }: CompanyPageProps) {
 
           <div className="flex flex-wrap gap-3 mb-6">
             <span className="inline-flex px-3 py-1 rounded-md text-sm font-medium bg-[#3A3A3A] text-[#A0A0A0]">
-              {company.jobCount} open position{company.jobCount !== 1 ? 's' : ''}
+              {jobs.length} open position{jobs.length !== 1 ? 's' : ''}
             </span>
             {company.investors.length > 0 && (
               <span className="inline-flex px-3 py-1 rounded-md text-sm font-medium bg-[#3A3A3A] text-[#A0A0A0]">
@@ -82,29 +83,7 @@ export default async function CompanyPage({ params }: CompanyPageProps) {
 
         <div>
           <h2 className="text-xl font-semibold text-[#F9F9F9] mb-4">Open Positions</h2>
-          {jobs.length === 0 ? (
-            <p className="text-[#A0A0A0]">No open positions at this time.</p>
-          ) : (
-            <div className="space-y-4">
-              {jobs.map((job) => (
-                <Link
-                  key={job.id}
-                  href={`/jobs/${job.id}`}
-                  className="block p-4 bg-[#1A1A1A] rounded-lg hover:bg-[#252525] transition-colors"
-                >
-                  <h3 className="text-lg font-medium text-[#F9F9F9] mb-2">{job.title}</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {job.location && (
-                      <span className="text-sm text-[#A0A0A0]">{job.location}</span>
-                    )}
-                    {job.salary && (
-                      <span className="text-sm text-[#A0A0A0]">| {job.salary}</span>
-                    )}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
+          <JobsList jobs={jobs} />
         </div>
       </div>
     </div>
