@@ -101,8 +101,7 @@ export default function JobTable({ jobs }: JobTableProps) {
                 </button>
               </td>
               <td className="py-4 px-4">
-                {job.industry ? (
-                  <Link href={`/industry/${job.industry.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and')}`}>
+              {job.industry ? (                  <Link href={`/industry/${job.industry.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and')}`}>
                     <span className="inline-flex px-2 py-1 rounded-md text-xs font-medium bg-[#3D2D4A] text-[#C4B5FD] hover:opacity-80 cursor-pointer">
                     {job.industry}
                   </span>
