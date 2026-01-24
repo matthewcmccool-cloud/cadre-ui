@@ -1,10 +1,11 @@
-import { getJobs, getFilterOptions } from '@/lib/airtable';
+import { getOrganicJobs, getFilterOptions } from '@/lib/airtable';
 import JobTable from '@/components/JobTable';
 import QueryBuilder from '@/components/QueryBuilder';
 import Header from '@/components/Header';
 import Pagination from '@/components/Pagination';
 
 export const dynamic = 'force-dynamic';
+
 interface PageProps {
   searchParams: {
     functionName?: string;
@@ -13,7 +14,7 @@ interface PageProps {
     remote?: string;
     search?: string;
     company?: string;
-    investor?: string;   
+    investor?: string;
     page?: string;
   };
 }
@@ -21,17 +22,9 @@ interface PageProps {
 export default async function Home({ searchParams }: PageProps) {
   const currentPage = parseInt(searchParams.page || '1', 10);
 
+  // Fetch organic jobs sorted by Posted Date desc and filter options
   const [jobsResult, filterOptions] = await Promise.all([
-    getJobs({
-      functionName: searchParams.functionName,
-      industry: searchParams.industry,
-      location: searchParams.location,
-      remoteOnly: searchParams.remote === 'true',
-      search: searchParams.search,
-      company: searchParams.company,
-      investor: searchParams.investor,     
-      page: currentPage,
-    }),
+    getOrganicJobs(currentPage, 25),
     getFilterOptions(),
   ]);
 
@@ -47,6 +40,7 @@ export default async function Home({ searchParams }: PageProps) {
         <QueryBuilder
           options={filterOptions}
           currentFilters={searchParams}
+          defaultOpen={true}
         />
 
         <div className="mt-8 mb-4 flex justify-between items-center">
