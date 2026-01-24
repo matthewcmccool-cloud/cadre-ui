@@ -178,6 +178,7 @@ export async function getJobs(filters?: {
   do {
     const companyRecords = await fetchAirtable(TABLES.companies, {
       fields: ['Company', 'URL'],
+            filterByFormula: 'OR({Rank}=1,{Rank}=2)',
       offset: companyOffset,
     });
     companyRecords.records.forEach(r => {
@@ -543,7 +544,8 @@ export async function getCompanyBySlug(slug: string): Promise<Company | null> {
 
   // Fetch all companies and find by slug (company name lowercased and hyphenated)
   const companyRecords = await fetchAirtable(TABLES.companies, {
-    fields: ['Company', 'URL', 'VCs'],  });
+    fields: ['Company', 'URL', 'VCs'], 
+        filterByFormula: 'OR({Rank}=1,{Rank}=2)',});
 
   const company = companyRecords.records.find(r => {
     const name = r.fields['Company'] as string || '';
