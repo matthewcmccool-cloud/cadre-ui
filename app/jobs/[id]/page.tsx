@@ -68,6 +68,13 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
                 {job.salary}
               </span>
             )}
+                          {job.industry && (
+                <Link href={`/industry/${job.industry.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and')}`}>
+                  <span className="inline-flex px-3 py-1 rounded-md text-sm font-medium bg-[#3D2D4A] text-[#C4B5FD] hover:opacity-80 cursor-pointer">
+                    {job.industry}
+                  </span>
+                </Link>
+              )}
           </div>
         </div>
 
