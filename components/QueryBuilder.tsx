@@ -19,6 +19,7 @@ interface FilterCondition {
 
 interface QueryBuilderProps {
   options: FilterOptions;
+    defaultOpen?: boolean;
   currentFilters: {
     functionName?: string;
     industry?: string;
@@ -99,7 +100,7 @@ const parseUrlToConditions = (filters: QueryBuilderProps['currentFilters']): Fil
   return conditions;
 };
 
-export default function QueryBuilder({ options, currentFilters }: QueryBuilderProps) {
+export default function QueryBuilder({ options, defaultOpen, currentFilters }: QueryBuilderProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [conditions, setConditions] = useState<FilterCondition[]>(() => 
