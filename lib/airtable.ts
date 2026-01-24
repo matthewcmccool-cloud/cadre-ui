@@ -758,8 +758,8 @@ export async function getIndustryBySlug(slug: string): Promise<Industry | null> 
 // Get featured jobs (jobs marked as featured in Airtable)
 export async function getFeaturedJobs(): Promise<Job[]> {
   const allRecordsResult = await fetchAirtable(TABLES.jobs, {
-    filterByFormula: '{Featured} = 1',
-    sort: [{ field: 'Date Posted', direction: 'desc' }],
+    filterByFormula: 'AND({is_featured} = TRUE(), {featured_status} = "approved", {featured_end} > TODAY())',
+      sort: [{ field: 'featured_start', direction: 'desc' }],
     maxRecords: 10,
     fields: [
       'Job ID', 'Title', 'Companies', 'Function', 'Location', 'Remote First',
@@ -868,10 +868,9 @@ export async function getFeaturedJobs(): Promise<Job[]> {
   });
 }
 
-// Get organic jobs sorted by ai_score
-export async function getOrganicJobs(page: number = 1, pageSize: number = 25): Promise<JobsResult> {
+  // Get organic jobs sorted by Date Poste
+dexport async function getOrganicJobs(page: number = 1, pageSize: number = 25): Promise<JobsResult> {
   const allRecordsResult = await fetchAirtable(TABLES.jobs, {
-    filterByFormula: 'OR({Featured} != 1, {Featured} = BLANK())',
     sort: [{ field: 'Date Posted', direction: 'desc' }],
     maxRecords: 100,
     fields: [
