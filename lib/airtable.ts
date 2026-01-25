@@ -132,10 +132,6 @@ export async function getJobs(filters?: {
     formulaParts.push('OR(FIND(LOWER(\'' + s + '\'), LOWER({Title})), FIND(LOWER(\'' + s + '\'), LOWER(ARRAYJOIN({Companies}))))');
   }
 
-  if (filters?.location) {
-    const loc = filters.location.replace(/'/g, "\\'");
-    formulaParts.push('FIND(\'' + loc + '\', {Location})');
-  }
 
   const filterByFormula = formulaParts.length > 0
     ? 'AND(' + formulaParts.join(', ') + ')'
@@ -314,6 +310,13 @@ export async function getJobs(filters?: {
   if (filters?.company) {
     jobs = jobs.filter(job =>
       job.company.toLowerCase().includes(filters.company!.toLowerCase())
+    );
+  }
+
+    // Filter by location if specified
+  if (filters?.location) {
+    jobs = jobs.filter(job =>
+      job.location.toLowerCase().includes(filters.location!.toLowerCase())
     );
   }
 
