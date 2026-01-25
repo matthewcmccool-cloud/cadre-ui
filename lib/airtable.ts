@@ -61,6 +61,7 @@ async function fetchAirtable(
     headers: {
       Authorization: `Bearer ${AIRTABLE_API_KEY}`,
     },
+        cache: 'no-store',
   });
 
   // Read body only once to avoid Response.clone error
