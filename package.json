@@ -17,7 +17,7 @@
     "@clerk/nextjs": "^6.36.10",
     "@supabase/supabase-js": "^2.45.4",
     "@supabase/ssr": "^0.5.1",
-    "svix": "^1.24.0",,
+    "svix": "^1.24.0",
     "isomorphic-dompurify": "^2.16.0",
   },
   "devDependencies": {
