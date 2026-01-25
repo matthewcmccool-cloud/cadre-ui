@@ -107,7 +107,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
           <div className="prose prose-invert max-w-none">
             <h2 className="text-xl font-semibold text-[#F9F9F9] mb-4">About the Role</h2>
 <div
-                      className="text-[#A0A0A0] leading-relaxed [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mb-2"
+                      className="text-[#A0A0A0] leading-relaxed [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mb-2 [&_strong]:text-[#F9F9F9] [&_b]:text-[#F9F9F9]"
                       dangerouslySetInnerHTML={{ __html: decodeHtml(job.description || "") }}
                     />
           </div>
