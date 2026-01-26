@@ -40,7 +40,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
   const companyDomain = getDomain(job.companyUrl);
 
   return (
-    <div className="min-h-screen bg-[#0b0a0a]">
+    <div className="min-h-screen bg-[#262626]">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Back Button */}
         <Link
