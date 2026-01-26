@@ -1,10 +1,36 @@
+/**
+ * PORTCO.JOBS DESIGN SYSTEM
+ * Last updated: 2026-01-25
+ * 
+ * COLORS:
+ * --background: #0a0a0b (near-black base)
+ * --foreground: #E5E5E5 (off-white for reduced eye strain)
+ * --muted: #A0A0A0 (secondary text)
+ * --border: #3A3A3A (dividers/borders)
+ * --card: #2D2D2D (elevated surfaces)
+ * --dropdown-bg: #333333
+ * --dropdown-hover: #404040
+ * --dropdown-selected: #4A4A4A
+ * 
+ * TYPOGRAPHY:
+ * Headlines: font-weight 700-800, increased sizes
+ * Subheads: font-weight 400-500, muted color
+ * Body: off-white #E5E5E5 on dark backgrounds
+ * 
+ * BADGES/CHIPS:
+ * Company: bg #2D4A3E, color #6EE7B7
+ * Industry: bg #3D2D4A, color #C4B5FD
+ * Location: bg #3A3A3A, color #A0A0A0
+ * Investor: bg #4A3D2D, color #E7B76E
+ */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: #262626;
-  --foreground: #F9F9F9;
+  --background: #0a0a0b;
+  --foreground: #E5E5E5;
   --muted: #A0A0A0;
   --border: #3A3A3A;
   --card: #2D2D2D;
