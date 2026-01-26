@@ -27,7 +27,7 @@ export default async function CompanyPage({ params }: CompanyPageProps) {
   const companyDomain = getDomain(company.url);
 
   return (
-    <div className="min-h-screen bg-[#0b0a0a]">
+    <div className="min-h-screen bg-[#262626]">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <Link
           href="/"
