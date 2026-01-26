@@ -134,4 +134,6 @@ body {
 
 .job-row:last-child {
   border-bottom: none;
+
+  /* Force rebuild */
 }
