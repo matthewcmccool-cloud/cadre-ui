@@ -17,7 +17,7 @@ export default async function InvestorPage({ params }: InvestorPageProps) {
   const jobsResult = await getJobs({ investor: investor.name });
 
   return (
-    <main className="min-h-screen bg-[#262626] text-white">
+    <main className="min-h-screen text-white">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Back link */}
         <Link
