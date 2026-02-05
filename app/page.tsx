@@ -1,9 +1,8 @@
 import { getJobs, getFilterOptions } from '@/lib/airtable';
 import JobTable from '@/components/JobTable';
-import QueryBuilder from '@/components/QueryBuilder';
 import Header from '@/components/Header';
 import Pagination from '@/components/Pagination';
-import SearchBar from '@/components/SearchBar';
+import SearchFilters from '@/components/SearchFilters';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,18 +50,9 @@ export default async function Home({ searchParams }: PageProps) {
           </p>
         </div>
 
-        <SearchBar
-          initialSearch={searchParams.search}
-          initialLocation={searchParams.location}
-        />
+        <SearchFilters />
 
-        <QueryBuilder
-          options={filterOptions}
-          currentFilters={searchParams}
-          defaultOpen={true}
-        />
-
-        <div className="mt-8 mb-4 flex justify-between items-center">
+        <div className="mb-4 flex justify-between items-center">
           <p className="text-sm text-[#A0A0A0]">
             {jobsResult.totalCount} {jobsResult.totalCount === 1 ? 'job' : 'jobs'} found
           </p>
