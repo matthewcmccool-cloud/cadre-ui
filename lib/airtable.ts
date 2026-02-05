@@ -6,6 +6,15 @@ const TABLES = {
   industries: 'Industry',
 };
 
+// Consistent slug generation - must match JobTable.tsx toSlug()
+export function toSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 interface AirtableRecord {
   id: string;
   fields: Record<string, any>;
@@ -553,7 +562,7 @@ export async function getCompanyBySlug(slug: string): Promise<Company | null> {
 
   const company = companyRecords.records.find(r => {
     const name = r.fields['Company'] as string || '';
-    const companySlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const companySlug = toSlug(name);
     return companySlug === slug;
   });
 
@@ -592,7 +601,7 @@ export async function getCompanyBySlug(slug: string): Promise<Company | null> {
   return {
     id: company.id,
     name: companyName,
-    slug: companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+    slug: toSlug(companyName),
     url: company.fields['URL'] as string || undefined,
     description: company.fields['Description'] as string || undefined,
     investors: Array.from(investorSet),
@@ -624,7 +633,7 @@ export async function getInvestorBySlug(slug: string): Promise<Investor | null> 
 
   const investor = investorRecords.records.find(r => {
     const name = r.fields['Company'] as string || '';
-    const investorSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const investorSlug = toSlug(name);
     return investorSlug === slug;
   });
 
@@ -666,7 +675,7 @@ export async function getInvestorBySlug(slug: string): Promise<Investor | null> 
             companySet.set(companyId, {
               id: companyId,
               name: companyName,
-              slug: companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+              slug: toSlug(companyName),
             });
           }
         });
@@ -677,7 +686,7 @@ export async function getInvestorBySlug(slug: string): Promise<Investor | null> 
   return {
     id: investorId,
     name: investorName,
-    slug: investorName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+    slug: toSlug(investorName),
     companies: Array.from(companySet.values()),
     jobCount,
   };
@@ -701,7 +710,7 @@ export async function getIndustryBySlug(slug: string): Promise<Industry | null> 
 
   const industry = industryRecords.records.find(r => {
     const name = r.fields['Industry Name'] as string || '';
-    const industrySlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const industrySlug = toSlug(name);
     return industrySlug === slug;
   });
 
@@ -743,7 +752,7 @@ export async function getIndustryBySlug(slug: string): Promise<Industry | null> 
             companySet.set(companyId, {
               id: companyId,
               name: companyName,
-              slug: companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+              slug: toSlug(companyName),
             });
           }
         });
@@ -754,7 +763,7 @@ export async function getIndustryBySlug(slug: string): Promise<Industry | null> 
   return {
     id: industryId,
     name: industryName,
-    slug: industryName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+    slug: toSlug(industryName),
     jobCount,
     companies: Array.from(companySet.values()),
   };
