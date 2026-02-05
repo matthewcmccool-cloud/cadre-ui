@@ -39,31 +39,16 @@ export default async function Home({ searchParams }: PageProps) {
     getFilterOptions(),
   ]);
 
-  // Calculate stats from available data
-  const jobCount = jobsResult.totalCount;
-  const investorCount = filterOptions.investors?.length || 0;
-  // Get unique company count from jobs
-  const uniqueCompanies = new Set(jobsResult.jobs.map(job => job.company));
-  const companyCount = uniqueCompanies.size;
-
   return (
     <main className="min-h-screen">
       <Header />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Hero Section - Compact */}
+        {/* Hero Section - Minimal */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-[#F9F9F9] mb-3">
-            Find your next role at a VC-backed company
-          </h1>
-          <p className="text-[#A0A0A0] text-lg mb-4">
+          <p className="text-[#A0A0A0] text-lg">
             High signal jobs at the world's leading technology companies.
           </p>
-          <div className="flex justify-center gap-6 text-sm text-[#A0A0A0]">
-            <span><strong className="text-[#F9F9F9]">{jobCount.toLocaleString()}</strong> jobs</span>
-            <span><strong className="text-[#F9F9F9]">{companyCount.toLocaleString()}</strong> companies</span>
-            <span><strong className="text-[#F9F9F9]">{investorCount.toLocaleString()}</strong> investors</span>
-          </div>
         </div>
 
         <SearchBar
