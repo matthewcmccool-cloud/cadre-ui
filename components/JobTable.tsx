@@ -134,11 +134,7 @@ export default function JobTable({ jobs }: JobTableProps) {
 
                 {/* LOCATION */}
                 <td className="py-4 px-2">
-                  {job.location && (
-                    <span className="inline-flex px-2.5 py-1 rounded text-xs font-medium bg-[#2D3748] text-[#90CDF4]">
-                      {job.location}
-                    </span>
-                  )}
+                  <span className="text-sm text-[#A0A0A0]">{job.location}</span>
                 </td>
               </tr>
             );
