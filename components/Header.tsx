@@ -8,7 +8,7 @@ export default function Header() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <Link href="/" className="flex items-center">
             <h1 className="text-2xl font-bold text-[#F9F9F9] tracking-tight">
-              Portco.Jobs
+              HighSignal.Jobs
             </h1>
           </Link>
 
