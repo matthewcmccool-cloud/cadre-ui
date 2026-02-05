@@ -26,6 +26,32 @@ interface AirtableResponse {
   offset?: string;
 }
 
+// Fetch ALL records from a table, handling pagination (Airtable returns max 100 per page)
+async function fetchAllAirtable(
+  table: string,
+  options?: {
+    filterByFormula?: string;
+    sort?: Array<{ field: string; direction: 'asc' | 'desc' }>;
+    fields?: string[];
+  }
+): Promise<AirtableRecord[]> {
+  const allRecords: AirtableRecord[] = [];
+  let offset: string | undefined;
+
+  do {
+    const result = await fetchAirtable(table, { ...options, offset });
+    allRecords.push(...result.records);
+    offset = result.offset;
+
+    // Rate limit: Airtable allows 5 requests/second
+    if (offset) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+  } while (offset);
+
+  return allRecords;
+}
+
 async function fetchAirtable(
   table: string,
   options?: {
@@ -644,8 +670,8 @@ export async function getInvestorBySlug(slug: string): Promise<Investor | null> 
   const investorName = investor.fields['Company'] as string || '';
   const investorId = investor.id;
 
-  // Fetch all jobs to find companies backed by this investor
-  const jobRecords = await fetchAirtable(TABLES.jobs, {
+  // Fetch ALL jobs to find companies backed by this investor (paginated - 16k+ jobs)
+  const jobRecords = await fetchAllAirtable(TABLES.jobs, {
     fields: ['Companies', 'Investors'],
   });
 
@@ -663,7 +689,7 @@ export async function getInvestorBySlug(slug: string): Promise<Investor | null> 
   const companySet = new Map<string, { id: string; name: string; slug: string }>();
   let jobCount = 0;
 
-  jobRecords.records.forEach(job => {
+  jobRecords.forEach(job => {
     const investorIds = job.fields['Investors'] || [];
     if (Array.isArray(investorIds) && investorIds.includes(investorId)) {
       jobCount++;
@@ -721,8 +747,8 @@ export async function getIndustryBySlug(slug: string): Promise<Industry | null> 
   const industryName = industry.fields['Industry Name'] as string || '';
   const industryId = industry.id;
 
-  // Fetch jobs to find companies in this industry and count jobs
-  const jobRecords = await fetchAirtable(TABLES.jobs, {
+  // Fetch ALL jobs to find companies in this industry (paginated - 16k+ jobs)
+  const jobRecords = await fetchAllAirtable(TABLES.jobs, {
     fields: ['Companies', 'Company Industry (Lookup)'],
   });
 
@@ -740,7 +766,7 @@ export async function getIndustryBySlug(slug: string): Promise<Industry | null> 
   const companySet = new Map<string, { id: string; name: string; slug: string }>();
   let jobCount = 0;
 
-  jobRecords.records.forEach(job => {
+  jobRecords.forEach(job => {
     const industryIds = job.fields['Company Industry (Lookup)'] || [];
     if (Array.isArray(industryIds) && industryIds.includes(industryId)) {
       jobCount++;
