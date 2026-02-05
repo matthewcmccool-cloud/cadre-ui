@@ -3,7 +3,7 @@ import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Portco.Jobs | Jobs at VC-Backed Companies',
+  title: 'HighSignal.Jobs | Jobs at VC-Backed Companies',
   description: 'Discover jobs at venture-backed startups. Filter by investor, funding stage, function, and more.',
 };
 

@@ -57,7 +57,7 @@ export default async function Home({ searchParams }: PageProps) {
             Find your next role at a VC-backed company
           </h1>
           <p className="text-[#A0A0A0] text-lg mb-4">
-            The career graph for VC-backed tech talent.
+            High signal jobs at the world's leading technology companies.
           </p>
           <div className="flex justify-center gap-6 text-sm text-[#A0A0A0]">
             <span><strong className="text-[#F9F9F9]">{jobCount.toLocaleString()}</strong> jobs</span>
