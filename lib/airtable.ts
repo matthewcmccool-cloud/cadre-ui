@@ -189,7 +189,7 @@ export async function getJobs(filters?: {
   const formulaParts: string[] = [];
 
   if (filters?.remoteOnly) {
-    formulaParts.push('{Remote First} = 1');
+    formulaParts.push('OR({Remote First} = 1, FIND("remote", LOWER({Location})))');
   }
 
   if (filters?.search) {
