@@ -1,4 +1,4 @@
-import { getJobById } from '@/lib/airtable';
+import { getJobById, toSlug } from '@/lib/airtable';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
@@ -42,6 +42,15 @@ function decodeHtml(html: string): string {
     .replace(/&amp;/g, '&')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'");
+}
+
+function formatDate(dateStr: string): string {
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch {
+    return dateStr;
+  }
 }
 
 export async function generateMetadata({ params }: JobDetailPageProps): Promise<Metadata> {
@@ -103,27 +112,24 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
   };
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen bg-[#0e0e0f] text-white">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <Header />
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Back Button */}
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        {/* Back link — matching other pages */}
         <Link
           href="/"
-          className="inline-flex items-center text-[#A0A0A0] hover:text-[#F9F9F9] transition-colors mb-8"
+          className="text-[#888] hover:text-white text-sm inline-flex items-center gap-1 transition-colors"
         >
-          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back to jobs
+          ← Back to jobs
         </Link>
 
-        {/* Header Section */}
-        <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
+        {/* Job header */}
+        <div className="mt-8 mb-6">
+          <div className="flex items-center gap-4 mb-3">
             {companyDomain && (
               <CompanyLogo
                 src={`https://www.google.com/s2/favicons?domain=${companyDomain}&sz=64`}
@@ -131,53 +137,103 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
                 className="w-12 h-12 rounded-lg"
               />
             )}
-            <span className="text-[#A0A0A0] text-lg font-medium">{job.company}</span>
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight">{job.title}</h1>
+              <Link
+                href={`/companies/${toSlug(job.company)}`}
+                className="text-sm text-[#888] hover:text-[#e8e8e8] transition-colors"
+              >
+                {job.company}
+              </Link>
+            </div>
           </div>
-          <h1 className="text-3xl font-bold text-[#F9F9F9] mb-4">{job.title}</h1>
-          <div className="flex flex-wrap items-center gap-3 mb-4">
+
+          {/* Info pills */}
+          <div className="flex flex-wrap gap-2 mt-3">
             {job.location && (
-              <span className="inline-flex px-3 py-1 rounded-md text-sm font-medium bg-[#3A3A3A] text-[#A0A0A0]">
+              <span className="px-2.5 py-1 bg-[#252526] rounded text-xs text-[#888]">
                 {job.location}
               </span>
             )}
-            {job.salary && (
-              <span className="inline-flex px-3 py-1 rounded-md text-sm font-medium bg-[#3A3A3A] text-[#A0A0A0]">
-                {job.salary}
+            {job.functionName && (
+              <span className="px-2.5 py-1 bg-[#252526] rounded text-xs text-[#888]">
+                {job.functionName}
               </span>
             )}
             {job.industry && (
-              <Link href={`/industry/${job.industry.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and')}`}>
-                <span className="inline-flex px-3 py-1 rounded-md text-sm font-medium bg-[#3D2D4A] text-[#C4B5FD] hover:opacity-80 cursor-pointer">
+              <Link href={`/industry/${toSlug(job.industry)}`}>
+                <span className="px-2.5 py-1 bg-[#5e6ad2]/15 rounded text-xs text-[#5e6ad2] hover:bg-[#5e6ad2]/25 transition-colors">
                   {job.industry}
                 </span>
               </Link>
             )}
+            {job.salary && (
+              <span className="px-2.5 py-1 bg-[#252526] rounded text-xs text-[#888]">
+                {job.salary}
+              </span>
+            )}
+            {job.datePosted && (
+              <span className="px-2.5 py-1 bg-[#252526] rounded text-xs text-[#888]">
+                Posted {formatDate(job.datePosted)}
+              </span>
+            )}
           </div>
+
+          {/* Investors */}
+          {job.investors.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 mt-3">
+              <span className="text-xs text-[#666]">Backed by</span>
+              {job.investors.map((inv) => (
+                <Link key={inv} href={`/investors/${toSlug(inv)}`}>
+                  <span className="px-2.5 py-1 bg-[#1a1a1b] hover:bg-[#252526] rounded text-xs text-[#e8e8e8] transition-colors">
+                    {inv}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Apply Button */}
+        {/* Apply button */}
         {job.applyUrl && (
           <a
             href={job.applyUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center px-6 py-3 bg-[#F9F9F9] text-[#0b0a0a] font-semibold rounded-lg hover:bg-[#E0E0E0] transition-colors mb-8"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#5e6ad2] hover:bg-[#6e7ae2] text-white text-sm font-medium rounded-lg transition-colors mb-8"
           >
             Apply Now
-            <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
           </a>
         )}
 
-        {/* Job Description */}
+        {/* Job description */}
         {job.description && (
-          <div className="prose prose-invert max-w-none">
-            <h2 className="text-xl font-semibold text-[#F9F9F9] mb-4">About the Role</h2>
+          <section>
+            <h2 className="text-sm font-medium text-[#888] uppercase tracking-wide mb-4">About the Role</h2>
             <div
-              className="text-[#A0A0A0] leading-relaxed [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mb-2 [&_strong]:text-[#F9F9F9] [&_b]:text-[#F9F9F9]"
+              className="job-description text-sm text-[#999] leading-relaxed max-w-3xl whitespace-pre-line [&_p]:mb-4 [&_p]:whitespace-normal [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-4 [&_ul]:whitespace-normal [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-4 [&_ol]:whitespace-normal [&_li]:mb-1.5 [&_li]:whitespace-normal [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-[#e8e8e8] [&_h2]:mt-6 [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-[#e8e8e8] [&_h3]:mt-5 [&_h3]:mb-2 [&_h4]:text-sm [&_h4]:font-medium [&_h4]:text-[#e8e8e8] [&_h4]:mt-4 [&_h4]:mb-2 [&_strong]:text-[#e8e8e8] [&_b]:text-[#e8e8e8] [&_em]:text-[#bbb] [&_a]:text-[#5e6ad2] [&_a:hover]:underline [&_br]:block [&_br]:mb-2"
               dangerouslySetInnerHTML={{ __html: decodeHtml(job.description || "") }}
             />
+          </section>
+        )}
+
+        {/* Bottom apply CTA */}
+        {job.applyUrl && job.description && (
+          <div className="mt-10 pt-6 border-t border-[#1a1a1b]">
+            <a
+              href={job.applyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#5e6ad2] hover:bg-[#6e7ae2] text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              Apply for this role
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
           </div>
         )}
       </div>
