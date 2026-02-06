@@ -1,23 +1,29 @@
-// Infer function from job title when Function field is empty
+// Infer function from job title when Function field is empty.
+// Categories MUST match the Airtable Function table exactly so the client-side
+// fallback produces the same labels as the /api/backfill-functions endpoint.
+// Order matters — specific roles first, broad catch-alls last.
 function inferFunction(title: string): string {
-  const t = title.toLowerCase();
   const rules: [RegExp, string][] = [
-    [/\bengineer|software|developer|sre|devops|infrastructure|platform|full.?stack|backend|frontend|ios|android|mobile dev/i, 'Engineering'],
-    [/\bdesign|ux|ui|graphic|brand|creative director/i, 'Design'],
-    [/\bproduct manag|head of product|vp.*product|director.*product|product lead|product owner/i, 'Product'],
-    [/\bdata scien|machine learn|ml |ai |research scien/i, 'Data Science'],
-    [/\bdata analy|business intel|analytics/i, 'Analytics'],
-    [/\bsales|account exec|business develop|sdr|bdr|revenue/i, 'Sales'],
-    [/\bmarketing|growth|demand gen|content|seo|brand manag|comms|communications/i, 'Marketing'],
-    [/\brecruit|talent|people ops|human resource|hr /i, 'People'],
-    [/\bfinance|account|controller|tax|treasury|financial/i, 'Finance'],
-    [/\boperation|chief of staff|program manag|project manag|business ops/i, 'Operations'],
+    [/\bsolutions? engineer|sales engineer|pre.?sales/i, 'Solutions Engineering'],
+    [/\bdevrel|developer relation|developer advocate|developer evangel/i, 'Developer Relations'],
+    [/\brevenue op|rev\s?ops/i, 'Revenue Operations'],
+    [/\bbusiness develop|partnerships?|partner manager|bd |strategic allianc/i, 'BD & Partnerships'],
+    [/\bcustomer success|customer support|customer experience|support engineer|client success/i, 'Customer Success'],
+    [/\bproduct design|ux|ui designer|graphic design|brand design|creative director/i, 'Product Design / UX'],
+    [/\bproduct manag|head of product|vp.*product|director.*product|product lead|product owner|product strateg/i, 'Product Management'],
+    [/\bdata scien|machine learn|\bml\b|\bai\b|research scien|deep learn|nlp|computer vision|llm/i, 'AI & Research'],
+    [/\bengineer|software|developer|sre|devops|infrastructure|platform|full.?stack|backend|frontend|ios\b|android|mobile dev|architect/i, 'Engineering'],
+    [/\bsales|account exec|sdr\b|bdr\b|account manag|closing|quota/i, 'Sales'],
+    [/\bmarketing|growth|demand gen|content market|seo\b|brand manag|comms\b|communications|social media|pr manager/i, 'Marketing'],
+    [/\brecruit|talent|people ops|human resource|\bhr\b|people partner|head of people/i, 'People'],
+    [/\bfinance|account(ant|ing)|controller|tax\b|treasury|financial|fp&a|cfo/i, 'Finance & Accounting'],
+    [/\boperation|chief of staff|program manag|project manag|business ops|strategy|bizops/i, 'Business Operations'],
     [/\blegal|counsel|compliance|regulatory|policy/i, 'Legal'],
-    [/\bcustomer success|customer support|customer experience|support engineer/i, 'Customer Success'],
-    [/\bsecurity|infosec|cyber|penetration/i, 'Security'],
+    [/\bsecurity|infosec|cyber|penetration/i, 'Engineering'],
+    [/\bdata analy|business intel|analytics/i, 'AI & Research'],
   ];
   for (const [pattern, label] of rules) {
-    if (pattern.test(t)) return label;
+    if (pattern.test(title)) return label;
   }
   return '';
 }

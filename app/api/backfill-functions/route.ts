@@ -6,317 +6,200 @@ export const dynamic = 'force-dynamic';
 
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
-const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
 
 const FUNCTION_TABLE_ID = 'tbl94EXkSIEmhqyYy';
 const JOB_LISTINGS_TABLE_ID = 'tbl4HJr9bYCMOn2Ry';
 
-const BATCH_SIZE = 50;
-const RATE_LIMIT_DELAY = 1000;
+// Airtable rate limit: 5 req/sec — 200ms between requests is safe
+const RATE_LIMIT_DELAY = 200;
+const MAX_RUNTIME_MS = 8000; // Stay under Vercel timeout (10s hobby, 60s pro)
 
-// Delay helper to avoid rate limits
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Valid function categories
-const VALID_FUNCTIONS = [
-  'Sales', 'BD & Partnerships', 'Marketing', 'Customer Success',
-  'Solutions Engineering', 'Revenue Operations', 'Developer Relations',
-  'Product Management', 'Product Design / UX', 'Engineering',
-  'AI & Research', 'Business Operations', 'People',
-  'Finance & Accounting', 'Legal', 'Other'
-];
+// ── Classification rules ─────────────────────────────────────────────
+// Categories MUST match the Function table in Airtable exactly.
+// Order matters — first match wins, so put more specific patterns first.
+function classifyFunction(title: string): string {
+  const t = title.toLowerCase();
+  const rules: [RegExp, string][] = [
+    // Specific roles first (before broad "engineer" or "sales" catch-alls)
+    [/\bsolutions? engineer|sales engineer|pre.?sales/i, 'Solutions Engineering'],
+    [/\bdevrel|developer relation|developer advocate|developer evangel/i, 'Developer Relations'],
+    [/\brevenue op|rev\s?ops/i, 'Revenue Operations'],
+    [/\bbusiness develop|partnerships?|partner manager|bd |strategic allianc/i, 'BD & Partnerships'],
+    [/\bcustomer success|customer support|customer experience|support engineer|client success/i, 'Customer Success'],
+    [/\bproduct design|ux|ui designer|graphic design|brand design|creative director/i, 'Product Design / UX'],
+    [/\bproduct manag|head of product|vp.*product|director.*product|product lead|product owner|product strateg/i, 'Product Management'],
+    [/\bdata scien|machine learn|\bml\b|\bai\b|research scien|deep learn|nlp|computer vision|llm/i, 'AI & Research'],
+    [/\bengineer|software|developer|sre|devops|infrastructure|platform|full.?stack|backend|frontend|ios\b|android|mobile dev|architect/i, 'Engineering'],
+    [/\bsales|account exec|sdr\b|bdr\b|account manag|closing|quota/i, 'Sales'],
+    [/\bmarketing|growth|demand gen|content market|seo\b|brand manag|comms\b|communications|social media|pr manager/i, 'Marketing'],
+    [/\brecruit|talent|people ops|human resource|\bhr\b|people partner|head of people/i, 'People'],
+    [/\bfinance|account(ant|ing)|controller|tax\b|treasury|financial|fp&a|cfo/i, 'Finance & Accounting'],
+    [/\boperation|chief of staff|program manag|project manag|business ops|strategy|bizops/i, 'Business Operations'],
+    [/\blegal|counsel|compliance|regulatory|policy/i, 'Legal'],
+    [/\bsecurity|infosec|cyber|penetration/i, 'Engineering'], // Security → Engineering in Airtable
+    [/\bdata analy|business intel|analytics/i, 'AI & Research'], // Analytics → AI & Research
+  ];
 
-async function classifyJobFunction(title: string): Promise<string | null> {
-  try {
-    // Log that we're attempting classification
-    console.log(`Classifying: "${title}"`);
-    
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'sonar',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a job classifier. Given a job title, respond with ONLY the function category name, nothing else. No asterisks, no punctuation, no explanation. Just the category name. Valid categories: Sales, BD & Partnerships, Marketing, Customer Success, Solutions Engineering, Revenue Operations, Developer Relations, Product Management, Product Design / UX, Engineering, AI & Research, Business Operations, People, Finance & Accounting, Legal, Other'
-          },
-          {
-            role: 'user',
-            content: `Classify this job title: "${title}"`
-          }
-        ],
-        max_tokens: 20,
-        temperature: 0.1,
-      }),
-    });
-
-    // Better error handling - get response as text first
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Perplexity API error (${response.status}): ${errorText.substring(0, 500)}`);
-      return null;
-    }
-
-    // Parse response safely
-    const text = await response.text();
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch (e) {
-      console.error(`Perplexity returned non-JSON: ${text.substring(0, 500)}`);
-      return null;
-    }
-
-    let classification = data.choices?.[0]?.message?.content?.trim();
-    
-    // Strip asterisks and extra whitespace
-    if (classification) {
-      classification = classification.replace(/\*+/g, '').trim();
-    }
-
-    // Log the classification for debugging
-    console.log(`Title: "${title}" -> Perplexity: "${classification}" -> Mapped: "${mapToValidFunction(classification)}"`);
-
-    return classification || null;
-  } catch (error) {
-    console.error('Classification error:', error);
-    return null;
+  for (const [pattern, label] of rules) {
+    if (pattern.test(t)) return label;
   }
-}
-
-function mapToValidFunction(classification: string | null): string {
-  if (!classification) return 'Other';
-  
-  const normalized = classification.toLowerCase().trim();
-  
-  // Exact match first
-  for (const func of VALID_FUNCTIONS) {
-    if (normalized === func.toLowerCase()) {
-      return func;
-    }
-  }
-  
-  // Fuzzy matching for common variations
-  const fuzzyMap: Record<string, string> = {
-    'sales': 'Sales',
-    'account executive': 'Sales',
-    'account manager': 'Sales',
-    'business development': 'BD & Partnerships',
-    'partnerships': 'BD & Partnerships',
-    'marketing': 'Marketing',
-    'growth': 'Marketing',
-    'customer success': 'Customer Success',
-    'customer support': 'Customer Success',
-    'support': 'Customer Success',
-    'solutions engineer': 'Solutions Engineering',
-    'solutions engineering': 'Solutions Engineering',
-    'sales engineer': 'Solutions Engineering',
-    'revenue operations': 'Revenue Operations',
-    'revops': 'Revenue Operations',
-    'developer relations': 'Developer Relations',
-    'devrel': 'Developer Relations',
-    'developer advocate': 'Developer Relations',
-    'product manager': 'Product Management',
-    'product management': 'Product Management',
-    'product': 'Product Management',
-    'design': 'Product Design / UX',
-    'ux': 'Product Design / UX',
-    'ui': 'Product Design / UX',
-    'product design': 'Product Design / UX',
-    'engineering': 'Engineering',
-    'software engineer': 'Engineering',
-    'developer': 'Engineering',
-    'frontend': 'Engineering',
-    'backend': 'Engineering',
-    'fullstack': 'Engineering',
-    'full stack': 'Engineering',
-    'devops': 'Engineering',
-    'sre': 'Engineering',
-    'ai': 'AI & Research',
-    'machine learning': 'AI & Research',
-    'ml': 'AI & Research',
-    'research': 'AI & Research',
-    'data scientist': 'AI & Research',
-    'operations': 'Business Operations',
-    'business operations': 'Business Operations',
-    'strategy': 'Business Operations',
-    'people': 'People',
-    'hr': 'People',
-    'human resources': 'People',
-    'recruiting': 'People',
-    'recruiter': 'People',
-    'talent': 'People',
-    'finance': 'Finance & Accounting',
-    'accounting': 'Finance & Accounting',
-    'controller': 'Finance & Accounting',
-    'legal': 'Legal',
-    'counsel': 'Legal',
-    'compliance': 'Legal',
-  };
-  
-  // Check fuzzy map
-  for (const [key, value] of Object.entries(fuzzyMap)) {
-    if (normalized.includes(key)) {
-      return value;
-    }
-  }
-  
   return 'Other';
 }
 
-async function getFunctionRecordId(functionName: string): Promise<string | null> {
-  try {
-    const params = new URLSearchParams();
-    params.append('filterByFormula', `LOWER({Function}) = LOWER("${functionName}")`);
-    params.append('maxRecords', '1');
+// ── Airtable helpers ─────────────────────────────────────────────────
+// ALWAYS use response.text() + JSON.parse() — never response.json()
+// (avoids Response.clone: Body already consumed crash)
 
-    const response = await fetch(
-      `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${FUNCTION_TABLE_ID}?${params.toString()}`,
-      {
-        headers: {
-          Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Airtable API error: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data.records?.length > 0 ? data.records[0].id : null;
-  } catch (error) {
-    console.error('Error finding function:', error);
-    return null;
+async function airtableFetch(url: string, options?: RequestInit) {
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${AIRTABLE_API_KEY}`,
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`Airtable ${response.status}: ${text.substring(0, 500)}`);
   }
+  return JSON.parse(text);
 }
 
+// Load the Function table once → build name→recordId map
+async function loadFunctionMap(): Promise<Map<string, string>> {
+  const data = await airtableFetch(
+    `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${FUNCTION_TABLE_ID}`
+  );
+  const map = new Map<string, string>();
+  for (const record of data.records) {
+    const name = record.fields?.Function;
+    if (name) {
+      map.set(name, record.id);
+    }
+  }
+  return map;
+}
+
+// Fetch one page of unclassified jobs (100 max per page)
+async function fetchUnclassifiedJobs(offset?: string) {
+  const params = new URLSearchParams();
+  params.append('filterByFormula', `AND({Function} = BLANK(), {Title} != '')`);
+  params.append('pageSize', '100');
+  params.append('fields[]', 'Title');
+  if (offset) params.append('offset', offset);
+
+  return airtableFetch(
+    `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${JOB_LISTINGS_TABLE_ID}?${params.toString()}`
+  );
+}
+
+// Batch update up to 10 records at once (Airtable's max per PATCH)
+async function batchUpdateJobs(updates: Array<{ id: string; fields: Record<string, unknown> }>) {
+  return airtableFetch(
+    `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${JOB_LISTINGS_TABLE_ID}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ records: updates }),
+    }
+  );
+}
+
+// ── Main endpoint ────────────────────────────────────────────────────
 export async function GET() {
   const startTime = Date.now();
-  const maxRuntime = 55000; // 55 seconds
-
-  // Log API key presence (not the actual key)
-  console.log(`PERPLEXITY_API_KEY present: ${!!PERPLEXITY_API_KEY}`);
-  console.log(`PERPLEXITY_API_KEY length: ${PERPLEXITY_API_KEY?.length || 0}`);
-
-  const results: any[] = [];
   let processed = 0;
   let updated = 0;
   let skipped = 0;
-  let rateLimited = 0;
+  let errors = 0;
+  let pagesProcessed = 0;
+
+  if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
+    return NextResponse.json({ success: false, error: 'Missing AIRTABLE_API_KEY or AIRTABLE_BASE_ID' }, { status: 500 });
+  }
 
   try {
-    // Get jobs without Function field, skip empty titles
-    const params = new URLSearchParams();
-    params.append('filterByFormula', `AND({Function} = BLANK(), {Title} != '')`);
-    params.append('maxRecords', String(BATCH_SIZE));
-    params.append('fields[]', 'Title');
-    params.append('fields[]', 'Function');
+    // Step 1: Load Function table (name → record ID)
+    const functionMap = await loadFunctionMap();
+    console.log(`Loaded ${functionMap.size} function categories: ${Array.from(functionMap.keys()).join(', ')}`);
 
-    const response = await fetch(
-      `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${JOB_LISTINGS_TABLE_ID}?${params.toString()}`,
-      {
-        headers: {
-          Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-        },
-      }
-    );
+    let offset: string | undefined;
 
-    if (!response.ok) {
-      throw new Error(`Airtable API error: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    const records = data.records || [];
-
-    console.log(`Found ${records.length} jobs to process`);
-
-    for (const record of records) {
-      // Check if we're running out of time
-      if (Date.now() - startTime > maxRuntime) {
+    // Step 2: Page through unclassified jobs until time runs out
+    do {
+      if (Date.now() - startTime > MAX_RUNTIME_MS) {
         console.log('Approaching timeout, stopping...');
         break;
       }
 
-      const title = record.fields?.Title;
-      if (!title) {
-        skipped++;
-        continue;
-      }
+      const data = await fetchUnclassifiedJobs(offset);
+      const records = data.records || [];
+      offset = data.offset; // undefined if no more pages
+      pagesProcessed++;
 
-      processed++;
+      if (records.length === 0) break;
 
-      // Classify the job title
-      const classification = await classifyJobFunction(title);
-      const mappedFunction = mapToValidFunction(classification);
+      // Step 3: Classify all records locally (instant)
+      const updates: Array<{ id: string; fields: Record<string, unknown> }> = [];
 
-      // Get the function record ID
-      const functionRecordId = await getFunctionRecordId(mappedFunction);
+      for (const record of records) {
+        const title = record.fields?.Title;
+        if (!title) {
+          skipped++;
+          continue;
+        }
 
-      if (functionRecordId) {
-        // Update the job record with the function
-        const updateResponse = await fetch(
-          `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${JOB_LISTINGS_TABLE_ID}/${record.id}`,
-          {
-            method: 'PATCH',
-            headers: {
-              Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              fields: {
-                Function: [functionRecordId]
-              }
-            }),
-          }
-        );
+        processed++;
+        const category = classifyFunction(title);
+        const functionRecordId = functionMap.get(category);
 
-        if (updateResponse.ok) {
-          updated++;
-          results.push({
-            title,
-            classification,
-            mappedFunction,
-            status: 'updated'
+        if (functionRecordId) {
+          updates.push({
+            id: record.id,
+            fields: { Function: [functionRecordId] },
           });
         } else {
-          const errorText = await updateResponse.text();
-          console.error(`Failed to update job ${record.id}:`, errorText);
-          results.push({
-            title,
-            classification,
-            mappedFunction,
-            status: 'error',
-            error: errorText
-          });
+          // Category not in Function table — skip (don't write bad data)
+          skipped++;
+          console.warn(`No Function record for category "${category}" (title: "${title}")`);
         }
-      } else {
-        skipped++;
-        results.push({
-          title,
-          classification,
-          mappedFunction,
-          status: 'skipped',
-          reason: 'Function record not found'
-        });
       }
 
-      // Rate limiting delay
+      // Step 4: Batch write in chunks of 10 (Airtable max)
+      for (let i = 0; i < updates.length; i += 10) {
+        if (Date.now() - startTime > MAX_RUNTIME_MS) break;
+
+        const batch = updates.slice(i, i + 10);
+        try {
+          await batchUpdateJobs(batch);
+          updated += batch.length;
+        } catch (err) {
+          errors += batch.length;
+          console.error(`Batch update failed:`, err);
+        }
+        await delay(RATE_LIMIT_DELAY);
+      }
+
       await delay(RATE_LIMIT_DELAY);
-    }
+    } while (offset && Date.now() - startTime < MAX_RUNTIME_MS);
+
+    const runtime = Date.now() - startTime;
+    const remaining = offset ? true : false;
 
     return NextResponse.json({
       success: true,
       processed,
       updated,
       skipped,
-      rateLimited,
-      runtime: Date.now() - startTime,
-      results
+      errors,
+      pagesProcessed,
+      hasMore: remaining,
+      runtime: `${runtime}ms`,
+      message: remaining
+        ? `Processed ${updated} jobs in ${runtime}ms. More jobs remaining — call again to continue.`
+        : `Done! Classified ${updated} jobs in ${runtime}ms. No more unclassified jobs.`,
     });
 
   } catch (error) {
@@ -327,9 +210,8 @@ export async function GET() {
       processed,
       updated,
       skipped,
-      rateLimited,
-      runtime: Date.now() - startTime,
-      results
-    });
+      errors,
+      runtime: `${Date.now() - startTime}ms`,
+    }, { status: 500 });
   }
 }
