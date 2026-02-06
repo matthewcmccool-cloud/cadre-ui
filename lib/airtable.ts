@@ -188,10 +188,6 @@ export async function getJobs(filters?: {
 
   const formulaParts: string[] = [];
 
-  if (filters?.remoteOnly) {
-    formulaParts.push('OR({Remote First} = 1, FIND("remote", LOWER({Location})))');
-  }
-
   if (filters?.search) {
     const s = filters.search.replace(/'/g, "\\'");
     formulaParts.push('OR(FIND(LOWER(\'' + s + '\'), LOWER({Title})), FIND(LOWER(\'' + s + '\'), LOWER(ARRAYJOIN({Companies}))))');
@@ -385,6 +381,13 @@ export async function getJobs(filters?: {
   if (filters?.location) {
     jobs = jobs.filter(job =>
       job.location.toLowerCase().includes(filters.location!.toLowerCase())
+    );
+  }
+
+  // Remote filter — client-side because location is parsed from Raw JSON
+  if (filters?.remoteOnly) {
+    jobs = jobs.filter(job =>
+      job.remoteFirst || job.location.toLowerCase().includes('remote')
     );
   }
 
