@@ -239,12 +239,22 @@ export default function IndustryPageContent({ industry, jobs }: IndustryPageCont
                     )}
                   </div>
 
-                  {/* Job Info */}
+                  {/* Job Info — left side */}
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-medium text-white truncate">{job.title}</h3>
-                    <p className="text-xs text-[#888] mt-0.5">
-                      {job.company} · {job.location || 'Remote'}
-                    </p>
+                    <p className="text-xs text-[#888] mt-0.5">{job.company}</p>
+                  </div>
+
+                  {/* Function badge + Location — right side */}
+                  <div className="flex-shrink-0 flex items-center gap-3">
+                    {job.functionName && (
+                      <span className="px-2 py-0.5 bg-[#252526] rounded text-xs text-[#aaa] hidden sm:inline-block">
+                        {job.functionName}
+                      </span>
+                    )}
+                    <span className="text-xs text-[#666] w-36 text-right truncate hidden sm:block">
+                      {job.location || 'Remote'}
+                    </span>
                   </div>
                 </Link>
               );
