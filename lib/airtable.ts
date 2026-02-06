@@ -464,34 +464,37 @@ export async function getJobById(id: string): Promise<(Job & { description: stri
     next: { revalidate: 0 },
   });
 
+  // Read body only once to avoid Response.clone error
+  const text = await response.text();
+
   if (!response.ok) {
     throw new Error(`Failed to fetch job: ${response.status}`);
   }
 
-  const record = await response.json();
+  const record = JSON.parse(text);
 
   // Check if record exists and has fields
   if (!record || !record.fields) {
     return null;
   }
 
-  // Fetch related data (companies, investors, industries, functions)
+  // Fetch related data — use fetchAllAirtable for tables with 100+ records
   const [companyRecords, investorRecords, industryRecords, functionRecords] = await Promise.all([
-    fetchAirtable(TABLES.companies, { fields: ['Company', 'URL'] }),
-    fetchAirtable(TABLES.investors, { fields: ['Company'] }),
+    fetchAllAirtable(TABLES.companies, { fields: ['Company', 'URL'] }),
+    fetchAllAirtable(TABLES.investors, { fields: ['Company'] }),
     fetchAirtable(TABLES.industries, { fields: ['Industry Name'] }),
     fetchAirtable(TABLES.functions, { fields: ['Function'] }),
   ]);
 
   const companyMap = new Map<string, string>();
   const companyUrlMap = new Map<string, string>();
-  companyRecords.records.forEach(r => {
+  companyRecords.forEach(r => {
     companyMap.set(r.id, (r.fields['Company'] as string) || '');
     companyUrlMap.set(r.id, (r.fields['URL'] as string) || '');
   });
 
   const investorMap = new Map<string, string>();
-  investorRecords.records.forEach(r => {
+  investorRecords.forEach(r => {
     investorMap.set(r.id, r.fields['Company'] || '');
   });
 
@@ -620,12 +623,12 @@ export async function getCompanyBySlug(slug: string): Promise<Company | null> {
     throw new Error('Missing Airtable environment variables');
   }
 
-  // Fetch all companies and find by slug (company name lowercased and hyphenated)
-  const companyRecords = await fetchAirtable(TABLES.companies, {
-    fields: ['Company', 'URL', 'VCs'], 
-        filterByFormula: 'OR({Rank}=1,{Rank}=2)',});
+  // Fetch ALL companies with pagination — fetchAirtable only returns 100 per page
+  const companyRecords = await fetchAllAirtable(TABLES.companies, {
+    fields: ['Company', 'URL', 'VCs'],
+  });
 
-  const company = companyRecords.records.find(r => {
+  const company = companyRecords.find(r => {
     const name = r.fields['Company'] as string || '';
     const companySlug = toSlug(name);
     return companySlug === slug;
