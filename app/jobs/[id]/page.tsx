@@ -275,7 +275,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
           <section>
             <h2 className="text-sm font-medium text-[#888] uppercase tracking-wide mb-4">About the Role</h2>
             <div
-              className="job-description text-sm text-[#999] leading-relaxed max-w-3xl [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-3 [&_li]:mb-1 [&_li]:text-[#999] [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-[#e8e8e8] [&_h2]:mt-6 [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-[#e8e8e8] [&_h3]:mt-6 [&_h3]:mb-2 [&_h4]:text-sm [&_h4]:font-medium [&_h4]:text-[#e8e8e8] [&_h4]:mt-4 [&_h4]:mb-2 [&_strong]:text-[#e8e8e8] [&_b]:text-[#e8e8e8] [&_em]:text-[#bbb] [&_a]:text-[#5e6ad2] [&_a:hover]:underline"
+              className="job-description text-sm text-[#999] leading-snug max-w-3xl [&_p]:mb-2.5 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2.5 [&_ul]:space-y-0.5 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2.5 [&_ol]:space-y-0.5 [&_li]:text-[#999] [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-[#e8e8e8] [&_h2]:mt-5 [&_h2]:mb-1.5 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-[#e8e8e8] [&_h3]:mt-5 [&_h3]:mb-1.5 [&_h4]:text-sm [&_h4]:font-medium [&_h4]:text-[#e8e8e8] [&_h4]:mt-4 [&_h4]:mb-1.5 [&_strong]:text-[#e8e8e8] [&_b]:text-[#e8e8e8] [&_em]:text-[#bbb] [&_a]:text-[#5e6ad2] [&_a:hover]:underline"
               dangerouslySetInnerHTML={{ __html: formatDescription(job.description || "") }}
             />
           </section>
