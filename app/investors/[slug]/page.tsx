@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getInvestorBySlug, getJobsForCompanyIds } from '@/lib/airtable';
+import { getInvestorBySlug, getJobsForCompanyNames } from '@/lib/airtable';
 import InvestorPageContent from '@/components/InvestorPageContent';
 
 export const dynamic = 'force-dynamic';
@@ -18,8 +18,8 @@ export default async function InvestorPage({ params }: InvestorPageProps) {
   }
 
   // Get ALL jobs from companies backed by this investor
-  const companyIds = investor.companies.map(c => c.id);
-  const jobs = await getJobsForCompanyIds(companyIds);
+  const companyNames = investor.companies.map(c => c.name);
+  const jobs = await getJobsForCompanyNames(companyNames);
 
   return (
     <main className="min-h-screen bg-[#0e0e0f] text-white">

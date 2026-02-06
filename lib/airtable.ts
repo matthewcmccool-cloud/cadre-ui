@@ -773,13 +773,13 @@ export async function getIndustryBySlug(slug: string): Promise<Industry | null> 
   };
 }
 
-// Fetch ALL jobs for a set of company IDs (used by industry/investor pages)
-// Uses Airtable filterByFormula so the API only returns matching jobs (not all 16k+)
-export async function getJobsForCompanyIds(companyIds: string[]): Promise<Job[]> {
-  if (companyIds.length === 0) return [];
+// Fetch ALL jobs for a set of company names (used by industry/investor pages)
+// Uses Airtable filterByFormula — linked record fields resolve to names in formulas, NOT record IDs
+export async function getJobsForCompanyNames(companyNames: string[]): Promise<Job[]> {
+  if (companyNames.length === 0) return [];
 
-  // Batch company IDs into chunks of 50 to keep formula under URL length limits
-  const BATCH_SIZE = 50;
+  // Batch company names into chunks of 30 to keep formula under URL length limits
+  const BATCH_SIZE = 30;
   const allMatchingRecords: AirtableRecord[] = [];
   const jobFields = [
     'Job ID', 'Title', 'Companies', 'Function', 'Location', 'Remote First',
@@ -787,10 +787,13 @@ export async function getJobsForCompanyIds(companyIds: string[]): Promise<Job[]>
     'Company Industry (Lookup)', 'Raw JSON',
   ];
 
-  for (let i = 0; i < companyIds.length; i += BATCH_SIZE) {
-    const batch = companyIds.slice(i, i + BATCH_SIZE);
-    // Build Airtable filter: FIND each company record ID in the Companies linked field
-    const filterParts = batch.map(id => `FIND("${id}", ARRAYJOIN({Companies}, ","))`);
+  for (let i = 0; i < companyNames.length; i += BATCH_SIZE) {
+    const batch = companyNames.slice(i, i + BATCH_SIZE);
+    // Escape double quotes in company names for the Airtable formula
+    const filterParts = batch.map(name => {
+      const escaped = name.replace(/"/g, '\\"');
+      return `FIND("${escaped}", ARRAYJOIN({Companies}, "||") & "")`;
+    });
     const filterByFormula = filterParts.length === 1
       ? filterParts[0]
       : `OR(${filterParts.join(', ')})`;
@@ -906,8 +909,8 @@ export async function getJobsForCompanyIds(companyIds: string[]): Promise<Job[]>
   });
 }
 
-// Alias for backwards compat — investor pages also use company IDs now
-export const getJobsForInvestor = getJobsForCompanyIds;
+// Keep old name as alias for any remaining references
+export const getJobsForCompanyIds = getJobsForCompanyNames;
 
 // Get featured jobs (jobs marked as featured in Airtable)
 export async function getFeaturedJobs(): Promise<Job[]> {

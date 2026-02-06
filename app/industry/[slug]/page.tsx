@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getIndustryBySlug, getJobsForCompanyIds } from '@/lib/airtable';
+import { getIndustryBySlug, getJobsForCompanyNames } from '@/lib/airtable';
 import IndustryPageContent from '@/components/IndustryPageContent';
 
 export const dynamic = 'force-dynamic';
@@ -18,8 +18,8 @@ export default async function IndustryPage({ params }: IndustryPageProps) {
   }
 
   // Get ALL jobs for companies in this industry
-  const companyIds = industry.companies.map(c => c.id);
-  const jobs = await getJobsForCompanyIds(companyIds);
+  const companyNames = industry.companies.map(c => c.name);
+  const jobs = await getJobsForCompanyNames(companyNames);
 
   return (
     <main className="min-h-screen bg-[#0e0e0f] text-white">
