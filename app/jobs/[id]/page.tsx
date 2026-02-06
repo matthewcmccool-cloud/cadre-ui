@@ -44,6 +44,67 @@ function decodeHtml(html: string): string {
     .replace(/&#39;/g, "'");
 }
 
+// Convert plain text job descriptions into structured HTML.
+// ATS feeds return a mix of rich HTML and plain text with \n line breaks.
+// This detects which format it is and processes plain text into proper HTML
+// with headings, bullet lists, and paragraphs.
+function formatDescription(raw: string): string {
+  const decoded = decodeHtml(raw);
+
+  // If content already has meaningful HTML structure, just return it
+  if (/<(p|ul|ol|h[1-6]|div|section|table)\b/i.test(decoded)) {
+    return decoded;
+  }
+
+  // Plain text — convert to structured HTML
+  const lines = decoded.split('\n');
+  let result = '';
+  let inList = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      if (inList) {
+        result += '</ul>';
+        inList = false;
+      }
+      continue;
+    }
+
+    // Detect bullet points (- or • or – prefixed)
+    if (/^[-•–]\s+/.test(trimmed)) {
+      if (!inList) {
+        result += '<ul>';
+        inList = true;
+      }
+      result += `<li>${trimmed.replace(/^[-•–]\s+/, '')}</li>`;
+      continue;
+    }
+
+    // Close list if we hit a non-bullet line
+    if (inList) {
+      result += '</ul>';
+      inList = false;
+    }
+
+    // Detect ALL CAPS section headers (3+ chars, mostly uppercase)
+    if (/^[A-Z][A-Z\s&:,/()\-–]{2,}$/.test(trimmed) && trimmed.length <= 80) {
+      result += `<h3>${trimmed}</h3>`;
+      continue;
+    }
+
+    // Regular paragraph
+    result += `<p>${trimmed}</p>`;
+  }
+
+  if (inList) {
+    result += '</ul>';
+  }
+
+  return result;
+}
+
 function formatDate(dateStr: string): string {
   try {
     const date = new Date(dateStr);
@@ -214,8 +275,8 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
           <section>
             <h2 className="text-sm font-medium text-[#888] uppercase tracking-wide mb-4">About the Role</h2>
             <div
-              className="job-description text-sm text-[#999] leading-relaxed max-w-3xl whitespace-pre-line [&_p]:mb-4 [&_p]:whitespace-normal [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-4 [&_ul]:whitespace-normal [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-4 [&_ol]:whitespace-normal [&_li]:mb-1.5 [&_li]:whitespace-normal [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-[#e8e8e8] [&_h2]:mt-6 [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-[#e8e8e8] [&_h3]:mt-5 [&_h3]:mb-2 [&_h4]:text-sm [&_h4]:font-medium [&_h4]:text-[#e8e8e8] [&_h4]:mt-4 [&_h4]:mb-2 [&_strong]:text-[#e8e8e8] [&_b]:text-[#e8e8e8] [&_em]:text-[#bbb] [&_a]:text-[#5e6ad2] [&_a:hover]:underline [&_br]:block [&_br]:mb-2"
-              dangerouslySetInnerHTML={{ __html: decodeHtml(job.description || "") }}
+              className="job-description text-sm text-[#999] leading-relaxed max-w-3xl [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-3 [&_li]:mb-1 [&_li]:text-[#999] [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-[#e8e8e8] [&_h2]:mt-6 [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-[#e8e8e8] [&_h3]:mt-6 [&_h3]:mb-2 [&_h4]:text-sm [&_h4]:font-medium [&_h4]:text-[#e8e8e8] [&_h4]:mt-4 [&_h4]:mb-2 [&_strong]:text-[#e8e8e8] [&_b]:text-[#e8e8e8] [&_em]:text-[#bbb] [&_a]:text-[#5e6ad2] [&_a:hover]:underline"
+              dangerouslySetInnerHTML={{ __html: formatDescription(job.description || "") }}
             />
           </section>
         )}
