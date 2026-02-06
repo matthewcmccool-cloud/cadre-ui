@@ -697,40 +697,13 @@ export async function getInvestorBySlug(slug: string): Promise<Investor | null> 
     }
   });
 
-  // Fetch ALL jobs to count jobs and find any additional companies through job links
-  const jobRecords = await fetchAllAirtable(TABLES.jobs, {
-    fields: ['Companies', 'Investors'],
-  });
-
-  let jobCount = 0;
-
-  jobRecords.forEach(job => {
-    const investorIds = job.fields['Investors'] || [];
-    if (Array.isArray(investorIds) && investorIds.includes(investorId)) {
-      jobCount++;
-      // Also add any companies from jobs that might not be in the direct link
-      const companyIds = job.fields['Companies'] || [];
-      if (Array.isArray(companyIds)) {
-        companyIds.forEach(companyId => {
-          const companyName = companyMap.get(companyId) || '';
-          if (companyName && !companySet.has(companyId)) {
-            companySet.set(companyId, {
-              id: companyId,
-              name: companyName,
-              slug: toSlug(companyName),
-            });
-          }
-        });
-      }
-    }
-  });
-
+  // Skip the expensive ALL-jobs scan — the page will get real job count from getJobsForCompanyIds
   return {
     id: investorId,
     name: investorName,
     slug: toSlug(investorName),
     companies: Array.from(companySet.values()),
-    jobCount,
+    jobCount: 0, // Will be replaced by actual filtered jobs count in the component
   };
 }
 
@@ -790,78 +763,64 @@ export async function getIndustryBySlug(slug: string): Promise<Industry | null> 
     }
   });
 
-  // Fetch ALL jobs to count jobs in this industry and find any additional companies
-  const jobRecords = await fetchAllAirtable(TABLES.jobs, {
-    fields: ['Companies', 'Company Industry (Lookup)'],
-  });
-
-  let jobCount = 0;
-
-  jobRecords.forEach(job => {
-    const industryIds = job.fields['Company Industry (Lookup)'] || [];
-    if (Array.isArray(industryIds) && industryIds.includes(industryId)) {
-      jobCount++;
-      // Also add any companies from jobs that might not be in the direct link
-      const companyIds = job.fields['Companies'] || [];
-      if (Array.isArray(companyIds)) {
-        companyIds.forEach(companyId => {
-          const companyName = companyMap.get(companyId) || '';
-          if (companyName && !companySet.has(companyId)) {
-            companySet.set(companyId, {
-              id: companyId,
-              name: companyName,
-              slug: toSlug(companyName),
-            });
-          }
-        });
-      }
-    }
-  });
-
+  // Skip the expensive ALL-jobs scan — the page will get real job count from getJobsForCompanyIds
   return {
     id: industryId,
     name: industryName,
     slug: toSlug(industryName),
-    jobCount,
+    jobCount: 0, // Will be replaced by actual filtered jobs count in the component
     companies: Array.from(companySet.values()),
   };
 }
 
 // Fetch ALL jobs for a set of company IDs (used by industry/investor pages)
+// Uses Airtable filterByFormula so the API only returns matching jobs (not all 16k+)
 export async function getJobsForCompanyIds(companyIds: string[]): Promise<Job[]> {
-  const companyIdSet = new Set(companyIds);
+  if (companyIds.length === 0) return [];
 
-  // Fetch ALL jobs with display fields
-  const allRecords = await fetchAllAirtable(TABLES.jobs, {
-    sort: [{ field: 'Date Posted', direction: 'desc' }],
-    fields: [
-      'Job ID', 'Title', 'Companies', 'Function', 'Location', 'Remote First',
-      'Date Posted', 'Job URL', 'Apply URL', 'Salary', 'Investors',
-      'Company Industry (Lookup)', 'Raw JSON',
-    ],
+  // Batch company IDs into chunks of 50 to keep formula under URL length limits
+  const BATCH_SIZE = 50;
+  const allMatchingRecords: AirtableRecord[] = [];
+  const jobFields = [
+    'Job ID', 'Title', 'Companies', 'Function', 'Location', 'Remote First',
+    'Date Posted', 'Job URL', 'Apply URL', 'Salary', 'Investors',
+    'Company Industry (Lookup)', 'Raw JSON',
+  ];
+
+  for (let i = 0; i < companyIds.length; i += BATCH_SIZE) {
+    const batch = companyIds.slice(i, i + BATCH_SIZE);
+    // Build Airtable filter: FIND each company record ID in the Companies linked field
+    const filterParts = batch.map(id => `FIND("${id}", ARRAYJOIN({Companies}, ","))`);
+    const filterByFormula = filterParts.length === 1
+      ? filterParts[0]
+      : `OR(${filterParts.join(', ')})`;
+
+    const records = await fetchAllAirtable(TABLES.jobs, {
+      filterByFormula,
+      sort: [{ field: 'Date Posted', direction: 'desc' }],
+      fields: jobFields,
+    });
+    allMatchingRecords.push(...records);
+  }
+
+  // Deduplicate by record ID (batches may overlap)
+  const seen = new Set<string>();
+  const uniqueRecords = allMatchingRecords.filter(r => {
+    if (seen.has(r.id)) return false;
+    seen.add(r.id);
+    return true;
   });
 
-  // Filter to only jobs whose Companies linked record matches our set
-  const matchingRecords = allRecords.filter(record => {
-    const companies = record.fields['Companies'] || [];
-    if (Array.isArray(companies)) {
-      return companies.some(id => companyIdSet.has(id));
-    }
-    return false;
-  });
-
-  // Build lookup maps
-  const [functionRecords, investorRecords, industryRecords] = await Promise.all([
+  // Build lookup maps in parallel
+  const [functionRecords, investorRecords, industryRecords, companyRecords] = await Promise.all([
     fetchAirtable(TABLES.functions, { fields: ['Function'] }),
     fetchAirtable(TABLES.investors, { fields: ['Company'] }),
     fetchAirtable(TABLES.industries, { fields: ['Industry Name'] }),
+    fetchAllAirtable(TABLES.companies, { fields: ['Company', 'URL'] }),
   ]);
 
   const companyMap = new Map<string, string>();
   const companyUrlMap = new Map<string, string>();
-  const companyRecords = await fetchAllAirtable(TABLES.companies, {
-    fields: ['Company', 'URL'],
-  });
   companyRecords.forEach(r => {
     companyMap.set(r.id, (r.fields['Company'] as string) || '');
     companyUrlMap.set(r.id, (r.fields['URL'] as string) || '');
@@ -876,7 +835,7 @@ export async function getJobsForCompanyIds(companyIds: string[]): Promise<Job[]>
   const industryMap = new Map<string, string>();
   industryRecords.records.forEach(r => industryMap.set(r.id, r.fields['Industry Name'] || ''));
 
-  return matchingRecords.map(record => {
+  return uniqueRecords.map(record => {
     const companyField = record.fields['Companies'];
     let companyName = 'Unknown';
     let companyUrl = '';
