@@ -8,9 +8,9 @@ const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
 const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
 
 const INVESTORS_TABLE = 'Investors';
-const BATCH_SIZE = 10; // Perplexity calls are slow — keep batches small
-const RATE_LIMIT_DELAY = 1200; // Stay under Perplexity rate limits
-const MAX_RUNTIME_MS = 8000; // Stay under Vercel timeout
+const BATCH_SIZE = 50; // Fetch more investors per run
+const RATE_LIMIT_DELAY = 300; // Perplexity paid plan allows higher throughput
+const MAX_RUNTIME_MS = 9000; // Stay under Vercel timeout
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
