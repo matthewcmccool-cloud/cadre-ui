@@ -1,6 +1,8 @@
 import { getJobById } from '@/lib/airtable';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
+import type { Metadata } from 'next';
 import CompanyLogo from '@/components/CompanyLogo';
 import Header from '@/components/Header';
 
@@ -9,6 +11,19 @@ export const revalidate = 0;
 
 interface JobDetailPageProps {
   params: { id: string };
+}
+
+// Deduplicate getJobById between generateMetadata and page component
+const getCachedJob = cache(async (id: string) => {
+  try {
+    return await getJobById(id);
+  } catch {
+    return null;
+  }
+});
+
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
 }
 
 function getDomain(url: string | undefined): string | null {
@@ -29,13 +44,35 @@ function decodeHtml(html: string): string {
     .replace(/&#39;/g, "'");
 }
 
+export async function generateMetadata({ params }: JobDetailPageProps): Promise<Metadata> {
+  const job = await getCachedJob(params.id);
+  if (!job) return {};
+
+  const title = `${job.title} at ${job.company} | Cadre`;
+  const description = job.description
+    ? stripHtml(job.description).slice(0, 160)
+    : `${job.title} at ${job.company}. Find jobs at VC-backed companies on Cadre.`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: 'website',
+      siteName: 'Cadre',
+      url: `https://cadre-ui-psi.vercel.app/jobs/${params.id}`,
+    },
+    twitter: {
+      card: 'summary',
+      title,
+      description,
+    },
+  };
+}
+
 export default async function JobDetailPage({ params }: JobDetailPageProps) {
-  let job;
-  try {
-    job = await getJobById(params.id);
-  } catch (error) {
-    notFound();
-  }
+  const job = await getCachedJob(params.id);
 
   if (!job) {
     notFound();
@@ -43,8 +80,34 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
 
   const companyDomain = getDomain(job.companyUrl);
 
+  // JobPosting JSON-LD structured data
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'JobPosting',
+    title: job.title,
+    description: job.description ? stripHtml(job.description) : `${job.title} at ${job.company}`,
+    ...(job.datePosted && { datePosted: job.datePosted }),
+    hiringOrganization: {
+      '@type': 'Organization',
+      name: job.company,
+      ...(job.companyUrl && { sameAs: job.companyUrl }),
+    },
+    ...(job.location && {
+      jobLocation: {
+        '@type': 'Place',
+        address: job.location,
+      },
+    }),
+    ...(job.salary && { baseSalary: job.salary }),
+    ...(job.applyUrl && { directApply: job.applyUrl }),
+  };
+
   return (
     <main className="min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Header />
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Back Button */}

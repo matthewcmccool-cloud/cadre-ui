@@ -1,8 +1,8 @@
-# CLAUDE.md — Portco.Jobs
+# CLAUDE.md — Cadre
 
 ## Project Overview
 
-Portco.Jobs is a relationship-based job discovery platform for VC-backed companies. It organizes jobs through a knowledge graph connecting Jobs ↔ Companies ↔ Investors ↔ Industries, letting users filter opportunities by investor portfolios, funding stages, and other criteria.
+Cadre is a relationship-based job discovery platform for VC-backed companies. It organizes jobs through a knowledge graph connecting Jobs ↔ Companies ↔ Investors ↔ Industries, letting users filter opportunities by investor portfolios, funding stages, and other criteria.
 
 **Live site:** https://cadre-ui-psi.vercel.app
 **Owner:** Matt (@matthewcmccool-cloud)
