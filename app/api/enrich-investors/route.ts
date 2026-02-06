@@ -198,15 +198,17 @@ export async function GET() {
       await delay(RATE_LIMIT_DELAY);
     }
 
-    // Batch write all updates at once (max 10)
-    if (updates.length > 0) {
+    // Batch write in chunks of 10 (Airtable max per PATCH)
+    for (let i = 0; i < updates.length; i += 10) {
+      const batch = updates.slice(i, i + 10);
       try {
-        await batchUpdateInvestors(updates);
-        updated = updates.length;
+        await batchUpdateInvestors(batch);
+        updated += batch.length;
       } catch (err) {
-        errors = updates.length;
+        errors += batch.length;
         console.error('Batch update failed:', err);
       }
+      await delay(RATE_LIMIT_DELAY);
     }
 
     const runtime = Date.now() - startTime;
