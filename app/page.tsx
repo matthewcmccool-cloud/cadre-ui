@@ -45,7 +45,7 @@ export default async function Home({ searchParams }: PageProps) {
       <div className="max-w-5xl mx-auto px-4 py-8">
         {/* Tagline - Left aligned */}
         <p className="text-[#999] text-base font-medium mb-6">
-          High signal jobs at the world's leading technology companies.
+          Modern job board for technology professionals.
         </p>
 
         <SearchFilters
