@@ -93,15 +93,19 @@ export default function InvestorPageContent({ investor, jobs }: InvestorPageCont
       {/* Investor header */}
       <div className="mt-8 mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">{investor.name}</h1>
-        {investor.website && (
-          <a
-            href={investor.website}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-[#888] hover:text-[#e8e8e8] transition-colors"
-          >
-            {getDomain(investor.website)}
-          </a>
+        {(investor.website || investor.linkedinUrl) && (
+          <div className="flex gap-3 mt-1">
+            {investor.website && (
+              <a href={investor.website} target="_blank" rel="noopener noreferrer" className="text-xs text-[#888] hover:text-[#e8e8e8] transition-colors">
+                Website
+              </a>
+            )}
+            {investor.linkedinUrl && (
+              <a href={investor.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#888] hover:text-[#e8e8e8] transition-colors">
+                LinkedIn
+              </a>
+            )}
+          </div>
         )}
         <div className="flex flex-wrap gap-2 mt-3">
           <span className="px-2.5 py-1 bg-[#252526] rounded text-xs text-[#888]">
@@ -116,15 +120,6 @@ export default function InvestorPageContent({ investor, jobs }: InvestorPageCont
             </span>
           )}
         </div>
-
-        {/* Social links */}
-        {investor.linkedinUrl && (
-          <div className="flex gap-3 mt-3">
-            <a href={investor.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#888] hover:text-[#e8e8e8] transition-colors">
-              LinkedIn
-            </a>
-          </div>
-        )}
 
         {investor.bio && (
           <p className="mt-3 text-sm text-[#999] leading-relaxed max-w-2xl">

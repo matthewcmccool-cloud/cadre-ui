@@ -99,15 +99,24 @@ export default function CompanyPageContent({ company, jobs }: CompanyPageContent
           )}
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">{company.name}</h1>
-            {company.url && (
-              <a
-                href={company.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-[#888] hover:text-[#e8e8e8] transition-colors"
-              >
-                {companyDomain}
-              </a>
+            {(company.url || company.linkedinUrl || company.twitterUrl) && (
+              <div className="flex gap-3 mt-1">
+                {company.url && (
+                  <a href={company.url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#888] hover:text-[#e8e8e8] transition-colors">
+                    Website
+                  </a>
+                )}
+                {company.linkedinUrl && (
+                  <a href={company.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#888] hover:text-[#e8e8e8] transition-colors">
+                    LinkedIn
+                  </a>
+                )}
+                {company.twitterUrl && (
+                  <a href={company.twitterUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#888] hover:text-[#e8e8e8] transition-colors">
+                    X / Twitter
+                  </a>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -127,22 +136,6 @@ export default function CompanyPageContent({ company, jobs }: CompanyPageContent
             </span>
           )}
         </div>
-
-        {/* Social links */}
-        {(company.linkedinUrl || company.twitterUrl) && (
-          <div className="flex gap-3 mt-3">
-            {company.linkedinUrl && (
-              <a href={company.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#888] hover:text-[#e8e8e8] transition-colors">
-                LinkedIn
-              </a>
-            )}
-            {company.twitterUrl && (
-              <a href={company.twitterUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#888] hover:text-[#e8e8e8] transition-colors">
-                X / Twitter
-              </a>
-            )}
-          </div>
-        )}
 
         {company.about && (
           <p className="mt-3 text-sm text-[#999] leading-relaxed max-w-2xl">
