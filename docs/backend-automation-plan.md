@@ -58,7 +58,6 @@ Cadre is a job board for VC-backed companies. The frontend (cadre-ui) is in good
 | ATS Platform | Single Select | ⚠️ Partial | Detection needed |
 | Jobs API URL | URL | ⚠️ Partial | Detection needed |
 | Last Sync | Date | ⚠️ Partial | Sync engine |
-| Rank | Number | ⚠️ Partial | Manual |
 | **About** | **Long Text** | **❌ Mostly empty** | **Perplexity enrichment** |
 | **Stage** | **Single Select** | **❌ Mostly empty** | **Perplexity enrichment** |
 | **Total Raised** | **Currency** | **❌ Empty** | **Perplexity enrichment** |
@@ -66,9 +65,8 @@ Cadre is a job board for VC-backed companies. The frontend (cadre-ui) is in good
 | **LinkedIn URL** | **URL** | **❌ Empty** | **Perplexity enrichment** |
 | **Twitter URL** | **URL** | **❌ Empty** | **Perplexity enrichment** |
 | **HQ Location** | **Text** | **❌ Empty** | **Perplexity enrichment** |
-| **Year Founded** | **Number** | **❌ Empty** | **Perplexity enrichment** |
-| **Status** | **Single Select** | **❌ Empty** | **TBD** |
-| **Last Error** | **Text** | **❌ Empty** | **Sync error logging** |
+
+**Deleted fields (cleaned up Feb 2026):** Rank, Year Founded, Status, Last Error
 
 **Stage values:** Early Stage, Mid Stage, Late Stage, Public
 **Size values:** 1-50, 51-200, 201-1000, 1000+
@@ -84,8 +82,6 @@ Cadre is a job board for VC-backed companies. The frontend (cadre-ui) is in good
 | PortCo's (Linked) | Linked Record → Companies | ✅ Populated | Portfolio scrape |
 | Website | URL | ✅ Populated | Manual |
 | LinkedIn | URL | ✅ Populated | Manual |
-| Portfolio URL | URL | ✅ Populated | Manual |
-| URL Verified | Checkbox | ⚠️ Partial | Manual |
 | Last Scraped | Date | ⚠️ Partial | Scrape endpoint |
 | **Bio** | **Long Text** | **❌ Mostly empty** | **Perplexity enrichment** |
 | **Location** | **Text** | **❌ Mostly empty** | **Perplexity enrichment** |
