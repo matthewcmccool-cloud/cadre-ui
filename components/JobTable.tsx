@@ -102,7 +102,7 @@ export default function JobTable({ jobs }: JobTableProps) {
             </div>
 
             {/* Industry Column */}
-            <div className="hidden sm:flex items-center flex-shrink-0">
+            <div className="hidden sm:flex items-center flex-shrink-0 w-44 justify-start">
               {job.industry && (
                 <Link
                   href={`/industry/${toSlug(job.industry)}`}
@@ -114,7 +114,7 @@ export default function JobTable({ jobs }: JobTableProps) {
             </div>
 
             {/* Investors Column */}
-            <div className="hidden sm:flex items-center gap-1 flex-shrink-0 justify-start ml-4">
+            <div className="hidden sm:flex items-center gap-1 flex-shrink-0 justify-end w-56">
               {job.investors && job.investors.slice(0, 2).map((investor) => (
                 <Link
                   key={investor}
