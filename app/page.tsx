@@ -42,7 +42,7 @@ export default async function Home({ searchParams }: PageProps) {
     <main className="min-h-screen bg-[#0e0e0f]">
       <Header />
 
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="max-w-5xl mx-auto px-4 pt-3 pb-8">
         {/* Tagline - Left aligned */}
         <p className="text-[#999] text-base font-medium mb-6">
           Modern job board for technology professionals.
