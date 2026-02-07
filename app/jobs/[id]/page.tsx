@@ -242,7 +242,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
 
           {/* Investors */}
           {job.investors.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 mt-3">
+            <div className="flex flex-wrap items-center gap-2 mt-3 max-w-full overflow-hidden">
               <span className="text-xs text-[#666]">Backed by</span>
               {job.investors.map((inv) => (
                 <Link key={inv} href={`/investors/${toSlug(inv)}`}>
