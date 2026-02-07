@@ -209,7 +209,6 @@ export async function getJobs(filters?: {
       'Companies',
       'Function',
       'Location',
-      'Remote First',
       'Date Posted',
       'Job URL',
       'Apply URL',
@@ -842,8 +841,7 @@ export async function getJobsForCompanyNames(companyNames: string[]): Promise<Jo
   const BATCH_SIZE = 30;
   const allMatchingRecords: AirtableRecord[] = [];
   const jobFields = [
-    'Job ID', 'Title', 'Companies', 'Function', 'Location', 'Remote First',
-    'Date Posted', 'Job URL', 'Apply URL', 'Salary', 'Investors',
+    'Job ID', 'Title', 'Companies', 'Function', 'Location',    'Date Posted', 'Job URL', 'Apply URL', 'Salary', 'Investors',
     'Company Industry (Lookup)', 'Raw JSON',
   ];
 
@@ -989,8 +987,7 @@ export async function getFeaturedJobs(): Promise<Job[]> {
       sort: [{ field: 'Date Posted', direction: 'desc' }],
     maxRecords: 10,
     fields: [
-      'Job ID', 'Title', 'Companies', 'Function', 'Location', 'Remote First',
-      'Date Posted', 'Job URL', 'Apply URL', 'Salary', 'Investors',
+      'Job ID', 'Title', 'Companies', 'Function', 'Location',      'Date Posted', 'Job URL', 'Apply URL', 'Salary', 'Investors',
       'Company Industry (Lookup)', 'Raw JSON',
     ],
   });
@@ -1104,8 +1101,7 @@ export async function getOrganicJobs(page: number = 1, pageSize: number = 25): P
     sort: [{ field: 'Date Posted', direction: 'desc' }],
     maxRecords: 100,
     fields: [
-      'Job ID', 'Title', 'Companies', 'Function', 'Location', 'Remote First',
-      'Date Posted', 'Job URL', 'Apply URL', 'Salary', 'Investors',
+      'Job ID', 'Title', 'Companies', 'Function', 'Location',      'Date Posted', 'Job URL', 'Apply URL', 'Salary', 'Investors',
       'Company Industry (Lookup)', 'Raw JSON',
     ],
   });
