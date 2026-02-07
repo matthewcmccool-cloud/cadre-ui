@@ -48,7 +48,11 @@ export default async function Home({ searchParams }: PageProps) {
           High signal jobs at the world's leading technology companies.
         </p>
 
-        <SearchFilters />
+        <SearchFilters
+          companies={filterOptions.companies}
+          investors={filterOptions.investors}
+          industries={filterOptions.industries}
+        />
 
         {/* Results count */}
         <div className="flex items-center justify-between mb-3">

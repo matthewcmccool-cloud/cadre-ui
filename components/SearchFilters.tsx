@@ -1,7 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 const POPULAR_TAGS = [
   'engineering', 'product', 'design', 'sales', 'marketing',
@@ -10,13 +11,58 @@ const POPULAR_TAGS = [
   'operations', 'finance', 'growth', 'customer success', 'recruiting',
 ];
 
-export default function SearchFilters() {
+function toSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+interface SearchFiltersProps {
+  companies?: string[];
+  investors?: string[];
+  industries?: string[];
+}
+
+export default function SearchFilters({ companies = [], investors = [], industries = [] }: SearchFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('search') || '');
 
   const isRemote = searchParams.get('remote') === 'true';
   const currentSearch = searchParams.get('search') || '';
+
+  // Match entities against current search input (2+ chars)
+  const entityMatches = useMemo(() => {
+    if (search.length < 2) return [];
+
+    const q = search.toLowerCase();
+    const matches: Array<{ name: string; type: 'company' | 'investor' | 'industry'; href: string }> = [];
+
+    for (const name of companies) {
+      if (name.toLowerCase().includes(q)) {
+        matches.push({ name, type: 'company', href: `/companies/${toSlug(name)}` });
+      }
+      if (matches.length >= 5) break;
+    }
+
+    for (const name of investors) {
+      if (name.toLowerCase().includes(q)) {
+        matches.push({ name, type: 'investor', href: `/investors/${toSlug(name)}` });
+      }
+      if (matches.length >= 8) break;
+    }
+
+    for (const name of industries) {
+      if (name.toLowerCase().includes(q)) {
+        matches.push({ name, type: 'industry', href: `/industry/${toSlug(name)}` });
+      }
+      if (matches.length >= 10) break;
+    }
+
+    return matches;
+  }, [search, companies, investors, industries]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +89,6 @@ export default function SearchFilters() {
 
   const handleTagClick = (tag: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    // Toggle off if already selected
     if (currentSearch.toLowerCase() === tag.toLowerCase()) {
       params.delete('search');
       setSearch('');
@@ -122,6 +167,22 @@ export default function SearchFilters() {
           <span>Remote</span>
         </button>
       </div>
+
+      {/* Entity Match Chips */}
+      {entityMatches.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {entityMatches.map((match) => (
+            <Link
+              key={`${match.type}-${match.name}`}
+              href={match.href}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#5e6ad2]/10 hover:bg-[#5e6ad2]/20 rounded text-xs text-[#5e6ad2] transition-colors"
+            >
+              {match.name}
+              <span className="text-[#5e6ad2]/50">{match.type}</span>
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* Popular Tags */}
       <div className="flex flex-wrap gap-1.5">
