@@ -237,7 +237,6 @@ export async function getJobs(filters?: {
   do {
     const companyRecords = await fetchAirtable(TABLES.companies, {
       fields: ['Company', 'URL'],
-            filterByFormula: 'OR({Rank}=1,{Rank}=2)',
       offset: companyOffset,
     });
     companyRecords.records.forEach(r => {
@@ -983,11 +982,11 @@ export async function getJobsForCompanyNames(companyNames: string[]): Promise<Jo
 // Keep old name as alias for any remaining references
 export const getJobsForCompanyIds = getJobsForCompanyNames;
 
-// Get featured jobs (jobs marked as featured in Airtable)
+// Get featured jobs — placeholder until monetization fields are re-added
 export async function getFeaturedJobs(): Promise<Job[]> {
   const allRecordsResult = await fetchAirtable(TABLES.jobs, {
-    filterByFormula: 'AND({is_featured} = TRUE(), {featured_status} = "approved", {featured_end} > TODAY())',
-      sort: [{ field: 'featured_start', direction: 'desc' }],
+    filterByFormula: 'FALSE()',
+      sort: [{ field: 'Date Posted', direction: 'desc' }],
     maxRecords: 10,
     fields: [
       'Job ID', 'Title', 'Companies', 'Function', 'Location', 'Remote First',
@@ -1232,7 +1231,7 @@ export async function getStats(): Promise<{ jobCount: number; companyCount: numb
   // Fetch counts from each table
   const [jobRecords, companyRecords, investorRecords] = await Promise.all([
     fetchAirtable(TABLES.jobs, { fields: ['Job ID'], maxRecords: 1000 }),
-    fetchAirtable(TABLES.companies, { fields: ['Company'], filterByFormula: 'OR({Rank}=1,{Rank}=2)' }),
+    fetchAirtable(TABLES.companies, { fields: ['Company'] }),
     fetchAirtable(TABLES.investors, { fields: ['Company'] }),
   ]);
 
