@@ -16,7 +16,13 @@ interface CompanyPageContentProps {
   company: {
     name: string;
     url?: string;
-    description?: string;
+    about?: string;
+    stage?: string;
+    size?: string;
+    hqLocation?: string;
+    totalRaised?: string;
+    linkedinUrl?: string;
+    twitterUrl?: string;
     investors: string[];
   };
   jobs: Job[];
@@ -109,6 +115,26 @@ export default function CompanyPageContent({ company, jobs }: CompanyPageContent
           <span className="px-2.5 py-1 bg-[#252526] rounded text-xs text-[#888]">
             {filteredJobs.length} open positions
           </span>
+          {company.stage && (
+            <span className="px-2.5 py-1 bg-[#5e6ad2]/15 rounded text-xs text-[#5e6ad2]">
+              {company.stage}
+            </span>
+          )}
+          {company.size && (
+            <span className="px-2.5 py-1 bg-[#252526] rounded text-xs text-[#888]">
+              {company.size} employees
+            </span>
+          )}
+          {company.hqLocation && (
+            <span className="px-2.5 py-1 bg-[#252526] rounded text-xs text-[#888]">
+              {company.hqLocation}
+            </span>
+          )}
+          {company.totalRaised && (
+            <span className="px-2.5 py-1 bg-[#252526] rounded text-xs text-[#888]">
+              Raised {company.totalRaised}
+            </span>
+          )}
           {company.investors.length > 0 && (
             <span className="px-2.5 py-1 bg-[#252526] rounded text-xs text-[#888]">
               Backed by {company.investors.slice(0, 3).join(', ')}
@@ -116,9 +142,26 @@ export default function CompanyPageContent({ company, jobs }: CompanyPageContent
             </span>
           )}
         </div>
-        {company.description && (
+
+        {/* Social links */}
+        {(company.linkedinUrl || company.twitterUrl) && (
+          <div className="flex gap-3 mt-3">
+            {company.linkedinUrl && (
+              <a href={company.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#888] hover:text-[#e8e8e8] transition-colors">
+                LinkedIn
+              </a>
+            )}
+            {company.twitterUrl && (
+              <a href={company.twitterUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#888] hover:text-[#e8e8e8] transition-colors">
+                X / Twitter
+              </a>
+            )}
+          </div>
+        )}
+
+        {company.about && (
           <p className="mt-3 text-sm text-[#999] leading-relaxed max-w-2xl">
-            {company.description}
+            {company.about}
           </p>
         )}
       </div>

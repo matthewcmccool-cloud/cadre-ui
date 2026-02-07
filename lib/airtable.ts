@@ -620,8 +620,14 @@ export interface Company {
   name: string;
   slug: string;
   url?: string;
-  description?: string;
+  about?: string;
   industry?: string;
+  stage?: string;
+  size?: string;
+  hqLocation?: string;
+  totalRaised?: string;
+  linkedinUrl?: string;
+  twitterUrl?: string;
   investors: string[];
   jobCount: number;
 }
@@ -637,7 +643,7 @@ export async function getCompanyBySlug(slug: string): Promise<Company | null> {
 
   // Fetch ALL companies with pagination — fetchAirtable only returns 100 per page
   const companyRecords = await fetchAllAirtable(TABLES.companies, {
-    fields: ['Company', 'URL', 'VCs'],
+    fields: ['Company', 'URL', 'VCs', 'About', 'Stage', 'Size', 'HQ Location', 'Total Raised', 'LinkedIn URL', 'Twitter URL'],
   });
 
   const company = companyRecords.find(r => {
@@ -683,7 +689,13 @@ export async function getCompanyBySlug(slug: string): Promise<Company | null> {
     name: companyName,
     slug: toSlug(companyName),
     url: company.fields['URL'] as string || undefined,
-    description: company.fields['Description'] as string || undefined,
+    about: company.fields['About'] as string || undefined,
+    stage: company.fields['Stage'] as string || undefined,
+    size: company.fields['Size'] as string || undefined,
+    hqLocation: company.fields['HQ Location'] as string || undefined,
+    totalRaised: company.fields['Total Raised'] as string || undefined,
+    linkedinUrl: company.fields['LinkedIn URL'] as string || undefined,
+    twitterUrl: company.fields['Twitter URL'] as string || undefined,
     investors: Array.from(investorSet),
     jobCount: jobRecords.records.length,
   };
@@ -701,6 +713,8 @@ export interface Investor {
   slug: string;
   bio: string;
   location: string;
+  website?: string;
+  linkedinUrl?: string;
   companies: Array<{ id: string; name: string; slug: string }>;
   jobCount: number;
 }
@@ -709,7 +723,7 @@ export interface Investor {
 export async function getInvestorBySlug(slug: string): Promise<Investor | null> {
   // Fetch all investors
   const investorRecords = await fetchAirtable(TABLES.investors, {
-    fields: ['Company', 'Bio', 'Location'],
+    fields: ['Company', 'Bio', 'Location', 'Website', 'LinkedIn'],
   });
 
   const investor = investorRecords.records.find(r => {
@@ -725,6 +739,8 @@ export async function getInvestorBySlug(slug: string): Promise<Investor | null> 
   const investorName = investor.fields['Company'] as string || '';
   const investorBio = investor.fields['Bio'] as string || '';
   const investorLocation = investor.fields['Location'] as string || '';
+  const investorWebsite = investor.fields['Website'] as string || '';
+  const investorLinkedin = investor.fields['LinkedIn'] as string || '';
   const investorId = investor.id;
 
   // Fetch ALL companies with their VCs field to find portfolio companies
@@ -761,6 +777,8 @@ export async function getInvestorBySlug(slug: string): Promise<Investor | null> 
     slug: toSlug(investorName),
     bio: investorBio,
     location: investorLocation,
+    website: investorWebsite || undefined,
+    linkedinUrl: investorLinkedin || undefined,
     companies: Array.from(companySet.values()),
     jobCount: 0, // Will be replaced by actual filtered jobs count in the component
   };
