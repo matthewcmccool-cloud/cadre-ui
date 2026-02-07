@@ -115,24 +115,9 @@ export default function CompanyPageContent({ company, jobs }: CompanyPageContent
           <span className="px-2.5 py-1 bg-[#252526] rounded text-xs text-[#888]">
             {filteredJobs.length} open positions
           </span>
-          {company.stage && (
-            <span className="px-2.5 py-1 bg-[#5e6ad2]/15 rounded text-xs text-[#5e6ad2]">
-              {company.stage}
-            </span>
-          )}
-          {company.size && (
-            <span className="px-2.5 py-1 bg-[#252526] rounded text-xs text-[#888]">
-              {company.size} employees
-            </span>
-          )}
           {company.hqLocation && (
             <span className="px-2.5 py-1 bg-[#252526] rounded text-xs text-[#888]">
               {company.hqLocation}
-            </span>
-          )}
-          {company.totalRaised && (
-            <span className="px-2.5 py-1 bg-[#252526] rounded text-xs text-[#888]">
-              Raised {company.totalRaised}
             </span>
           )}
           {company.investors.length > 0 && (
