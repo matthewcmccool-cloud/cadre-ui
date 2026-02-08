@@ -1,30 +1,27 @@
 // Infer function from job title when Function field is empty.
 // Categories MUST match the Airtable Function table exactly so the client-side
 // fallback produces the same labels as the /api/backfill-functions endpoint.
-// 10-segment taxonomy aligned to VC portfolio analytics:
-//   Sales & GTM, Marketing, Engineering, AI & Research, Product,
-//   Design, Customer Success & Support, People & Talent,
-//   Finance & Legal, Operations & Admin
+// These are granular function names — the 10-segment analytics rollup
+// (Sales & GTM, Marketing, Engineering, etc.) lives in Airtable's
+// Department column on the Function table.
 // Order matters — specific roles first, broad catch-alls last.
 function inferFunction(title: string): string {
   const rules: [RegExp, string][] = [
-    // Specific roles first (before broad "engineer" or "sales" catch-alls)
-    [/\bsolutions? engineer|sales engineer|pre.?sales/i, 'Sales & GTM'],
-    [/\bdevrel|developer relation|developer advocate|developer evangel/i, 'Marketing'],
-    [/\brevenue op|rev\s?ops/i, 'Sales & GTM'],
-    [/\bbusiness develop|partnerships?|partner manager|bd |strategic allianc/i, 'Sales & GTM'],
-    [/\bcustomer success|customer support|customer experience|support engineer|client success/i, 'Customer Success & Support'],
-    [/\bproduct design|ux|ui designer|graphic design|brand design|creative director|ux research/i, 'Design'],
-    [/\bproduct manag|head of product|vp.*product|director.*product|product lead|product owner|product strateg/i, 'Product'],
+    [/\bsolutions? engineer|sales engineer|pre.?sales/i, 'Solutions Engineering'],
+    [/\bdevrel|developer relation|developer advocate|developer evangel/i, 'Developer Relations'],
+    [/\brevenue op|rev\s?ops/i, 'Revenue Operations'],
+    [/\bbusiness develop|partnerships?|partner manager|bd |strategic allianc/i, 'BD & Partnerships'],
+    [/\bcustomer success|customer support|customer experience|support engineer|client success/i, 'Customer Success'],
+    [/\bproduct design|ux|ui designer|graphic design|brand design|creative director|ux research/i, 'Product Design / UX'],
+    [/\bproduct manag|head of product|vp.*product|director.*product|product lead|product owner|product strateg/i, 'Product Management'],
     [/\bdata scien|machine learn|\bml\b|\bai\b|research scien|deep learn|nlp|computer vision|llm/i, 'AI & Research'],
-    // Broad catch-alls
     [/\bengineer|software|developer|sre|devops|infrastructure|platform|full.?stack|backend|frontend|ios\b|android|mobile dev|architect/i, 'Engineering'],
-    [/\bsales|account exec|sdr\b|bdr\b|account manag|closing|quota/i, 'Sales & GTM'],
+    [/\bsales|account exec|sdr\b|bdr\b|account manag|closing|quota/i, 'Sales'],
     [/\bmarketing|growth|demand gen|content market|seo\b|brand manag|comms\b|communications|social media|pr manager/i, 'Marketing'],
-    [/\brecruit|talent|people ops|human resource|\bhr\b|people partner|head of people/i, 'People & Talent'],
-    [/\bfinance|account(ant|ing)|controller|tax\b|treasury|financial|fp&a|cfo/i, 'Finance & Legal'],
-    [/\blegal|counsel|compliance|regulatory|policy/i, 'Finance & Legal'],
-    [/\boperation|chief of staff|program manag|project manag|business ops|strategy|bizops/i, 'Operations & Admin'],
+    [/\brecruit|talent|people ops|human resource|\bhr\b|people partner|head of people/i, 'People'],
+    [/\bfinance|account(ant|ing)|controller|tax\b|treasury|financial|fp&a|cfo/i, 'Finance & Accounting'],
+    [/\boperation|chief of staff|program manag|project manag|business ops|strategy|bizops/i, 'Business Operations'],
+    [/\blegal|counsel|compliance|regulatory|policy/i, 'Legal'],
     [/\bsecurity|infosec|cyber|penetration/i, 'Engineering'],
     [/\bdata analy|business intel|analytics/i, 'AI & Research'],
   ];
