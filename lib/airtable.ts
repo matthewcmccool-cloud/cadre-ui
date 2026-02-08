@@ -768,12 +768,12 @@ export interface Investor {
 
 // Fetch a single investor by slug
 export async function getInvestorBySlug(slug: string): Promise<Investor | null> {
-  // Fetch all investors
-  const investorRecords = await fetchAirtable(TABLES.investors, {
+  // Fetch ALL investors (200+, need pagination)
+  const allInvestors = await fetchAllAirtable(TABLES.investors, {
     fields: ['Company', 'Bio', 'Location', 'Website', 'LinkedIn'],
   });
 
-  const investor = investorRecords.records.find(r => {
+  const investor = allInvestors.find(r => {
     const name = r.fields['Company'] as string || '';
     const investorSlug = toSlug(name);
     return investorSlug === slug;
