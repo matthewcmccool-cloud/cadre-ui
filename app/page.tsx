@@ -49,17 +49,14 @@ export default async function Home({ searchParams }: PageProps) {
           industries={filterOptions.industries}
         />
 
-        {/* Results count */}
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-xs text-[#666]">
-            {jobsResult.totalCount} {jobsResult.totalCount === 1 ? 'job' : 'jobs'}
-          </p>
-          {jobsResult.totalPages > 1 && (
+        {/* Pagination info */}
+        {jobsResult.totalPages > 1 && (
+          <div className="flex items-center justify-end mb-3">
             <p className="text-xs text-[#666]">
               Page {jobsResult.page} of {jobsResult.totalPages}
             </p>
-          )}
-        </div>
+          </div>
+        )}
 
         <JobTable jobs={jobsResult.jobs} />
 
