@@ -30,7 +30,6 @@ export default function SearchFilters({ companies = [], investors = [], industri
   const [search, setSearch] = useState(searchParams.get('search') || '');
 
   const isRemote = searchParams.get('remote') === 'true';
-  const currentSearch = searchParams.get('search') || '';
 
   // Match entities against current search input (2+ chars)
   const entityMatches = useMemo(() => {

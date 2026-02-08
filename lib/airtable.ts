@@ -447,8 +447,7 @@ export async function getJobs(filters?: {
     scored.sort((a, b) => b.overall - a.overall || a.job.id.localeCompare(b.job.id));
 
     // Diversify the first page: greedy pick with caps
-    const firstPageSize = pageSize;
-    const diversified = diversifyTopN(scored, firstPageSize);
+    const diversified = diversifyTopN(scored, pageSize);
 
     // Remainder: everything not in the diversified set, sorted by overall
     const pickedIds = new Set(diversified.map(s => s.job.id));
