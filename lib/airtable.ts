@@ -201,7 +201,7 @@ export async function getJobs(filters?: {
 
   const allRecordsResult = await fetchAirtable(TABLES.jobs, { 
     filterByFormula,
-    sort: [{ field: 'Date Posted', direction: 'desc' }],
+    sort: [{ field: 'Created Time', direction: 'desc' }],
     maxRecords: 100,
     fields: [
       'Job ID',
@@ -209,7 +209,7 @@ export async function getJobs(filters?: {
       'Companies',
       'Function',
       'Location',
-      'Date Posted',
+      'Created Time',
       'Job URL',
       'Apply URL',
       'Salary',
@@ -336,7 +336,7 @@ export async function getJobs(filters?: {
       remoteFirst,
       functionName: funcName,
       industry: industryName,
-      datePosted: record.fields['Date Posted'] || '',
+      datePosted: record.fields['Created Time'] || record.createdTime || '',
       jobUrl: record.fields['Job URL'] || '',
       applyUrl: record.fields['Apply URL'] || record.fields['Job URL'] || '',
       salary: record.fields['Salary'] || '',
@@ -605,7 +605,7 @@ export async function getJobById(id: string): Promise<(Job & { description: stri
     remoteFirst,
     functionName: funcName,
     industry: industryName,
-    datePosted: record.fields['Date Posted'] || '',
+    datePosted: record.fields['Created Time'] || record.createdTime || '',
     jobUrl: record.fields['Job URL'] || '',
     applyUrl: record.fields['Apply URL'] || record.fields['Job URL'] || '',
     salary: record.fields['Salary'] || '',
@@ -859,7 +859,7 @@ export async function getJobsForCompanyNames(companyNames: string[]): Promise<Jo
   const BATCH_SIZE = 30;
   const allMatchingRecords: AirtableRecord[] = [];
   const jobFields = [
-    'Job ID', 'Title', 'Companies', 'Function', 'Location',    'Date Posted', 'Job URL', 'Apply URL', 'Salary', 'Investors',
+    'Job ID', 'Title', 'Companies', 'Function', 'Location',    'Created Time', 'Job URL', 'Apply URL', 'Salary', 'Investors',
     'Company Industry (Lookup)', 'Raw JSON',
   ];
 
@@ -876,7 +876,7 @@ export async function getJobsForCompanyNames(companyNames: string[]): Promise<Jo
 
     const records = await fetchAllAirtable(TABLES.jobs, {
       filterByFormula,
-      sort: [{ field: 'Date Posted', direction: 'desc' }],
+      sort: [{ field: 'Created Time', direction: 'desc' }],
       fields: jobFields,
     });
     allMatchingRecords.push(...records);
@@ -987,7 +987,7 @@ export async function getJobsForCompanyNames(companyNames: string[]): Promise<Jo
       remoteFirst,
       functionName: funcName,
       industry: industryName,
-      datePosted: record.fields['Date Posted'] || '',
+      datePosted: record.fields['Created Time'] || record.createdTime || '',
       jobUrl: record.fields['Job URL'] || '',
       applyUrl: record.fields['Apply URL'] || record.fields['Job URL'] || '',
       salary: record.fields['Salary'] || '',
@@ -1002,10 +1002,10 @@ export const getJobsForCompanyIds = getJobsForCompanyNames;
 export async function getFeaturedJobs(): Promise<Job[]> {
   const allRecordsResult = await fetchAirtable(TABLES.jobs, {
     filterByFormula: 'FALSE()',
-      sort: [{ field: 'Date Posted', direction: 'desc' }],
+      sort: [{ field: 'Created Time', direction: 'desc' }],
     maxRecords: 10,
     fields: [
-      'Job ID', 'Title', 'Companies', 'Function', 'Location',      'Date Posted', 'Job URL', 'Apply URL', 'Salary', 'Investors',
+      'Job ID', 'Title', 'Companies', 'Function', 'Location',      'Created Time', 'Job URL', 'Apply URL', 'Salary', 'Investors',
       'Company Industry (Lookup)', 'Raw JSON',
     ],
   });
@@ -1105,7 +1105,7 @@ export async function getFeaturedJobs(): Promise<Job[]> {
       remoteFirst,
       functionName: funcName,
       industry: industryName,
-      datePosted: record.fields['Date Posted'] || '',
+      datePosted: record.fields['Created Time'] || record.createdTime || '',
       jobUrl: record.fields['Job URL'] || '',
       applyUrl: record.fields['Apply URL'] || record.fields['Job URL'] || '',
       salary: record.fields['Salary'] || '',
@@ -1113,13 +1113,13 @@ export async function getFeaturedJobs(): Promise<Job[]> {
   });
 }
 
-  // Get organic jobs sorted by Date Posted
+  // Get organic jobs sorted by Created Time
 export async function getOrganicJobs(page: number = 1, pageSize: number = 25): Promise<JobsResult> {
   const allRecordsResult = await fetchAirtable(TABLES.jobs, {
-    sort: [{ field: 'Date Posted', direction: 'desc' }],
+    sort: [{ field: 'Created Time', direction: 'desc' }],
     maxRecords: 100,
     fields: [
-      'Job ID', 'Title', 'Companies', 'Function', 'Location',      'Date Posted', 'Job URL', 'Apply URL', 'Salary', 'Investors',
+      'Job ID', 'Title', 'Companies', 'Function', 'Location',      'Created Time', 'Job URL', 'Apply URL', 'Salary', 'Investors',
       'Company Industry (Lookup)', 'Raw JSON',
     ],
   });
@@ -1219,7 +1219,7 @@ export async function getOrganicJobs(page: number = 1, pageSize: number = 25): P
       remoteFirst,
       functionName: funcName,
       industry: industryName,
-      datePosted: record.fields['Date Posted'] || '',
+      datePosted: record.fields['Created Time'] || record.createdTime || '',
       jobUrl: record.fields['Job URL'] || '',
       applyUrl: record.fields['Apply URL'] || record.fields['Job URL'] || '',
       salary: record.fields['Salary'] || '',
