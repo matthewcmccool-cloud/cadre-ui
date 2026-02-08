@@ -191,7 +191,6 @@ async function fetchJobsNeedingBackfill(offset?: string) {
   params.append('pageSize', '100');
   params.append('fields[]', 'Raw JSON');
   params.append('fields[]', 'Location');
-  params.append('fields[]', 'Remote First');
   params.append('fields[]', 'Country');
   params.append('fields[]', 'Salary');
   if (offset) params.append('offset', offset);
@@ -274,12 +273,8 @@ export async function GET() {
           Location: location,
         };
 
-        if (remoteFirst) {
-          fields['Remote First'] = true;
-        }
-
         if (country) {
-          fields['Country'] = country;
+          fields['Country'] = { name: country };
         }
 
         if (salary) {
