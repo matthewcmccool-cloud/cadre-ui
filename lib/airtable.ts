@@ -445,14 +445,8 @@ export async function getJobs(filters?: {
     // Sort by overall score (deterministic tie-break on id)
     scored.sort((a, b) => b.overall - a.overall || a.job.id.localeCompare(b.job.id));
 
-    // Diversify the first page: greedy pick with caps
-    const diversified = diversifyTopN(scored, pageSize);
-
-    // Remainder: everything not in the diversified set, sorted by overall
-    const pickedIds = new Set(diversified.map(s => s.job.id));
-    const remainder = scored.filter(s => !pickedIds.has(s.job.id));
-
-    jobs = [...diversified.map(s => s.job), ...remainder.map(s => s.job)];
+    // Interleave ALL jobs with diversity constraints (not just first page)
+    jobs = diversifyAll(scored);
   }
   // else 'recent' — keep existing Created Time desc order from Airtable
 
@@ -521,33 +515,45 @@ interface ScoredJob {
   overall: number;
 }
 
-/** Greedy pick of top N jobs with diversity constraints */
-function diversifyTopN(sorted: ScoredJob[], n: number): ScoredJob[] {
+/**
+ * Interleave ALL jobs with diversity constraints.
+ * Pass 1: greedy pick with per-company cap (max 2 per company per page-sized
+ * window). Pass 2: append deferred jobs so nothing is lost.
+ */
+function diversifyAll(sorted: ScoredJob[]): Job[] {
   const MAX_PER_COMPANY = 2;
-  const MAX_PER_DEPT = 8;
+  const WINDOW = 20; // per-page window for company cap
 
-  const picked: ScoredJob[] = [];
+  const result: Job[] = [];
+  const deferred: ScoredJob[] = [];
   const companyCounts = new Map<string, number>();
-  const deptCounts = new Map<string, number>();
+  let windowStart = 0;
 
   for (const item of sorted) {
-    if (picked.length >= n) break;
-
     const co = item.job.company;
-    const dept = item.job.departmentName || 'Other';
-
     const coCount = companyCounts.get(co) || 0;
-    const deptCount = deptCounts.get(dept) || 0;
 
-    if (coCount >= MAX_PER_COMPANY) continue;
-    if (deptCount >= MAX_PER_DEPT) continue;
+    if (coCount >= MAX_PER_COMPANY) {
+      deferred.push(item);
+      continue;
+    }
 
-    picked.push(item);
+    result.push(item.job);
     companyCounts.set(co, coCount + 1);
-    deptCounts.set(dept, deptCount + 1);
+
+    // Reset company counts every WINDOW picks so later pages stay diverse
+    if (result.length - windowStart >= WINDOW) {
+      windowStart = result.length;
+      companyCounts.clear();
+    }
   }
 
-  return picked;
+  // Append deferred jobs (they keep their score order)
+  for (const item of deferred) {
+    result.push(item.job);
+  }
+
+  return result;
 }
 
 export async function getFilterOptions(): Promise<FilterOptions> {
