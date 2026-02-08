@@ -58,7 +58,7 @@ export default function Pagination({ currentPage, totalPages, searchParams }: Pa
   };
 
   return (
-    <div className="mt-8 flex items-center justify-center gap-1">
+    <div className="mt-4 flex items-center justify-center gap-1">
       <button
         onClick={() => goToPage(currentPage - 1)}
         disabled={currentPage === 1}

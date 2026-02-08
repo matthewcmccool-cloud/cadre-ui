@@ -79,8 +79,8 @@ export default function JobTable({ jobs }: JobTableProps) {
   }
 
   return (
-    <div className="space-y-0.5">
-      {jobs.map((job, index) => {
+    <div className="rounded-lg border border-[#1a1a1b] divide-y divide-[#1a1a1b] overflow-hidden">
+      {jobs.map((job) => {
         const companyDomain = getDomain(job.companyUrl);
         const { text: dateText, isNew } = formatDate(job.datePosted);
         const salary = formatSalary(job.salary);
@@ -89,9 +89,7 @@ export default function JobTable({ jobs }: JobTableProps) {
         return (
           <div
             key={job.id}
-            className={`group flex items-center gap-4 px-3 py-3 rounded-lg hover:bg-[#1a1a1b] transition-colors ${
-              index % 2 === 0 ? 'bg-transparent' : 'bg-[#0e0e0f]'
-            }`}
+            className="group flex items-center gap-3 px-3 py-2.5 bg-[#0e0e0f] hover:bg-[#141415] transition-colors"
           >
             {/* Company Logo */}
             <div className="flex-shrink-0">
@@ -99,13 +97,13 @@ export default function JobTable({ jobs }: JobTableProps) {
                 <img
                   src={`https://www.google.com/s2/favicons?domain=${companyDomain}&sz=32`}
                   alt=""
-                  className="w-8 h-8 rounded"
+                  className="w-7 h-7 rounded"
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
                   }}
                 />
               ) : (
-                <div className="w-8 h-8 rounded bg-[#252526]" />
+                <div className="w-7 h-7 rounded bg-[#1a1a1b]" />
               )}
             </div>
 
@@ -114,7 +112,7 @@ export default function JobTable({ jobs }: JobTableProps) {
               <div className="flex items-baseline gap-2">
                 <Link
                   href={`/jobs/${job.id}`}
-                  className="text-sm font-medium text-white hover:text-[#5e6ad2] truncate transition-colors"
+                  className="text-sm font-medium text-white group-hover:text-[#5e6ad2] truncate transition-colors"
                 >
                   {job.title}
                 </Link>
@@ -137,7 +135,7 @@ export default function JobTable({ jobs }: JobTableProps) {
                 </Link>
                 {job.location && (
                   <>
-                    <span className="text-[#444]">·</span>
+                    <span className="text-[#333]">·</span>
                     <span className="text-xs text-[#666] truncate">{job.location}</span>
                   </>
                 )}

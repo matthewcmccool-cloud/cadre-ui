@@ -108,9 +108,9 @@ export default function SearchFilters({ companies = [], investors = [], industri
   };
 
   return (
-    <div className="mb-6">
+    <div className="mb-4">
       {/* Search Bar + Remote Toggle */}
-      <div className="flex gap-3 mb-5">
+      <div className="flex gap-2.5 mb-3">
         <form onSubmit={handleSearch} className="flex-1">
           <div className="relative">
             <svg
@@ -131,7 +131,7 @@ export default function SearchFilters({ companies = [], investors = [], industri
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search roles, companies, skills..."
-              className="w-full pl-10 pr-10 py-2.5 bg-[#1a1a1b] text-[#e8e8e8] placeholder-[#666] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#5e6ad2]/50 transition-all"
+              className="w-full pl-10 pr-10 py-2 bg-[#1a1a1b] text-[#e8e8e8] placeholder-[#666] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#5e6ad2]/50 transition-all"
             />
             {search && (
               <button
@@ -150,26 +150,26 @@ export default function SearchFilters({ companies = [], investors = [], industri
         {/* Remote Toggle */}
         <button
           onClick={toggleRemote}
-          className={`flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
             isRemote
               ? 'bg-[#5e6ad2]/20 text-[#5e6ad2]'
               : 'bg-[#1a1a1b] text-[#888] hover:text-[#e8e8e8] hover:bg-[#252526]'
           }`}
         >
-          <div className={`w-8 h-5 rounded-full relative transition-colors ${isRemote ? 'bg-[#5e6ad2]' : 'bg-[#333]'}`}>
+          <div className={`w-7 h-4 rounded-full relative transition-colors ${isRemote ? 'bg-[#5e6ad2]' : 'bg-[#333]'}`}>
             <div
-              className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+              className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform ${
                 isRemote ? 'translate-x-3.5' : 'translate-x-0.5'
               }`}
             />
           </div>
-          <span>Remote</span>
+          <span className="hidden sm:inline">Remote</span>
         </button>
       </div>
 
       {/* Entity Match Chips */}
       {entityMatches.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-4">
+        <div className="flex flex-wrap gap-1.5 mb-3">
           {entityMatches.map((match) => (
             <Link
               key={`${match.type}-${match.name}`}
@@ -183,7 +183,7 @@ export default function SearchFilters({ companies = [], investors = [], industri
         </div>
       )}
 
-      {/* Popular Tags */}
+      {/* Department Tags */}
       <div className="flex flex-wrap gap-1.5">
         {POPULAR_TAGS.map((tag) => (
           <button
