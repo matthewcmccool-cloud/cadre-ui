@@ -517,12 +517,12 @@ interface ScoredJob {
 
 /**
  * Interleave ALL jobs with diversity constraints.
- * Multiple passes: each pass allows max 2 per company. This spreads
- * any single company's jobs evenly across the full list instead of
- * clustering them together.
+ * Multiple passes: each pass allows 1 per company. This round-robins
+ * through companies so the same company never appears back-to-back
+ * and is maximally spread across pages.
  */
 function diversifyAll(sorted: ScoredJob[]): Job[] {
-  const MAX_PER_COMPANY_PER_PASS = 2;
+  const MAX_PER_COMPANY_PER_PASS = 1;
 
   const result: Job[] = [];
   let remaining = [...sorted];
