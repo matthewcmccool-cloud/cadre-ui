@@ -306,9 +306,11 @@ export async function GET(request: Request) {
         try {
           await batchUpdateJobs(batch);
           updated += batch.length;
-        } catch (err) {
+        } catch (err: any) {
           errors += batch.length;
-          console.error('Batch update failed:', err);
+          if (debug && samples.length < 5) {
+            samples.push({ error: err?.message || String(err), failedBatch: batch.slice(0, 1) });
+          }
         }
         await delay(RATE_LIMIT_DELAY);
       }
