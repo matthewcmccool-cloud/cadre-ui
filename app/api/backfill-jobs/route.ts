@@ -288,7 +288,7 @@ export async function GET(request: Request) {
         };
 
         if (country) {
-          fields['Country'] = { name: country };
+          fields['Country'] = country;
         }
 
         if (salary) {
