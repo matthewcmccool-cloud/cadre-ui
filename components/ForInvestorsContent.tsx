@@ -180,6 +180,165 @@ export default function ForInvestorsContent() {
         </div>
       </div>
 
+      {/* ── Mock: Portfolio-Wide Insights ──────────────────────── */}
+      <div className="mb-20">
+        <h2 className="text-lg font-semibold text-white mb-2">Portfolio-Wide Insights</h2>
+        <p className="text-sm text-[#666] mb-6">
+          Aggregate hiring activity across every portfolio company in one view.
+        </p>
+        <div className="rounded-xl bg-[#131314] border border-[#1a1a1b] p-5 sm:p-6">
+          {/* Summary cards */}
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            <div className="bg-[#0e0e0f] rounded-lg p-4 border border-[#1a1a1b]">
+              <p className="text-xs text-[#666] mb-1">Open Roles</p>
+              <p className="text-2xl font-bold text-white">1,247</p>
+              <p className="text-xs text-green-400 mt-1">+8.3% this week</p>
+            </div>
+            <div className="bg-[#0e0e0f] rounded-lg p-4 border border-[#1a1a1b]">
+              <p className="text-xs text-[#666] mb-1">Hiring Velocity</p>
+              <p className="text-2xl font-bold text-white">62</p>
+              <p className="text-xs text-[#888] mt-1">new roles / week</p>
+            </div>
+            <div className="bg-[#0e0e0f] rounded-lg p-4 border border-[#1a1a1b]">
+              <p className="text-xs text-[#666] mb-1">Top Department</p>
+              <p className="text-2xl font-bold text-white">Eng</p>
+              <p className="text-xs text-[#888] mt-1">34% of all roles</p>
+            </div>
+          </div>
+          {/* Department bar chart */}
+          <p className="text-xs text-[#666] mb-3">Hiring by department</p>
+          <div className="space-y-2">
+            {[
+              { dept: 'Engineering', pct: 34, count: 424 },
+              { dept: 'Sales & GTM', pct: 22, count: 274 },
+              { dept: 'Product', pct: 12, count: 150 },
+              { dept: 'Marketing', pct: 10, count: 125 },
+              { dept: 'AI & Research', pct: 8, count: 100 },
+              { dept: 'Design', pct: 5, count: 62 },
+              { dept: 'Customer Success', pct: 4, count: 50 },
+              { dept: 'People & Talent', pct: 3, count: 37 },
+              { dept: 'Finance & Legal', pct: 1.5, count: 15 },
+              { dept: 'Ops & Admin', pct: 0.5, count: 10 },
+            ].map((row) => (
+              <div key={row.dept} className="flex items-center gap-3">
+                <span className="text-xs text-[#888] w-32 sm:w-36 truncate flex-shrink-0">{row.dept}</span>
+                <div className="flex-1 h-5 bg-[#0e0e0f] rounded overflow-hidden">
+                  <div
+                    className="h-full bg-[#5e6ad2]/40 rounded"
+                    style={{ width: `${Math.max((row.pct / 34) * 90, 3)}%` }}
+                  />
+                </div>
+                <span className="text-xs text-[#666] w-8 text-right flex-shrink-0">{row.count}</span>
+              </div>
+            ))}
+          </div>
+          {/* 4-week trend line */}
+          <div className="mt-6 pt-5 border-t border-[#1a1a1b]">
+            <p className="text-xs text-[#666] mb-3">Portfolio hiring trend (4 weeks)</p>
+            <svg viewBox="0 0 400 80" className="w-full h-20" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#5e6ad2" stopOpacity="0.2" />
+                  <stop offset="100%" stopColor="#5e6ad2" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {/* Grid lines */}
+              <line x1="0" y1="20" x2="400" y2="20" stroke="#1a1a1b" strokeWidth="1" />
+              <line x1="0" y1="40" x2="400" y2="40" stroke="#1a1a1b" strokeWidth="1" />
+              <line x1="0" y1="60" x2="400" y2="60" stroke="#1a1a1b" strokeWidth="1" />
+              {/* Area fill */}
+              <path d="M0,55 L57,50 L114,42 L171,45 L228,35 L285,28 L342,22 L400,18 L400,80 L0,80 Z" fill="url(#trendFill)" />
+              {/* Trend line */}
+              <path d="M0,55 L57,50 L114,42 L171,45 L228,35 L285,28 L342,22 L400,18" fill="none" stroke="#5e6ad2" strokeWidth="2" />
+              {/* Data points */}
+              <circle cx="0" cy="55" r="3" fill="#5e6ad2" />
+              <circle cx="114" cy="42" r="3" fill="#5e6ad2" />
+              <circle cx="228" cy="35" r="3" fill="#5e6ad2" />
+              <circle cx="400" cy="18" r="3" fill="#5e6ad2" />
+            </svg>
+            <div className="flex justify-between text-xs text-[#555] mt-1">
+              <span>Jan 13</span>
+              <span>Jan 20</span>
+              <span>Jan 27</span>
+              <span>Feb 3</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Mock: Company Comparisons ──────────────────────────── */}
+      <div className="mb-20">
+        <h2 className="text-lg font-semibold text-white mb-2">Company Comparisons</h2>
+        <p className="text-sm text-[#666] mb-6">
+          Side-by-side hiring breakdown for any companies in the Cadre database.
+        </p>
+        <div className="rounded-xl bg-[#131314] border border-[#1a1a1b] overflow-hidden">
+          {/* Header row */}
+          <div className="grid grid-cols-4 gap-0 border-b border-[#1a1a1b]">
+            <div className="p-4 text-xs text-[#555]" />
+            <div className="p-4 text-center border-l border-[#1a1a1b]">
+              <p className="text-sm font-medium text-white">Acme AI</p>
+              <p className="text-xs text-[#666]">Series B</p>
+            </div>
+            <div className="p-4 text-center border-l border-[#1a1a1b]">
+              <p className="text-sm font-medium text-white">Beacon Labs</p>
+              <p className="text-xs text-[#666]">Series A</p>
+            </div>
+            <div className="p-4 text-center border-l border-[#1a1a1b]">
+              <p className="text-sm font-medium text-white">Cortex</p>
+              <p className="text-xs text-[#666]">Series C</p>
+            </div>
+          </div>
+          {/* Data rows */}
+          {[
+            { label: 'Open roles', values: ['48', '22', '85'] },
+            { label: 'Top department', values: ['Engineering', 'Sales & GTM', 'Engineering'] },
+            { label: '4-week change', values: ['+12%', '+31%', '-4%'], colors: ['text-green-400', 'text-green-400', 'text-red-400'] },
+            { label: 'Eng % of hiring', values: ['42%', '18%', '38%'] },
+            { label: 'Hiring velocity', values: ['6/wk', '4/wk', '9/wk'] },
+          ].map((row, i) => (
+            <div key={row.label} className={`grid grid-cols-4 gap-0 ${i !== 4 ? 'border-b border-[#1a1a1b]' : ''}`}>
+              <div className="px-4 py-3 text-xs text-[#888]">{row.label}</div>
+              {row.values.map((val, j) => (
+                <div key={j} className="px-4 py-3 text-center text-sm border-l border-[#1a1a1b]">
+                  <span className={row.colors ? row.colors[j] : 'text-[#e8e8e8]'}>{val}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+          {/* Mini trend overlay */}
+          <div className="border-t border-[#1a1a1b] p-4">
+            <p className="text-xs text-[#555] mb-3">Hiring trend overlay</p>
+            <svg viewBox="0 0 400 60" className="w-full h-14" preserveAspectRatio="none">
+              {/* Grid */}
+              <line x1="0" y1="15" x2="400" y2="15" stroke="#1a1a1b" strokeWidth="1" />
+              <line x1="0" y1="30" x2="400" y2="30" stroke="#1a1a1b" strokeWidth="1" />
+              <line x1="0" y1="45" x2="400" y2="45" stroke="#1a1a1b" strokeWidth="1" />
+              {/* Acme AI — blue */}
+              <path d="M0,40 L67,38 L133,32 L200,30 L267,25 L333,22 L400,20" fill="none" stroke="#5e6ad2" strokeWidth="2" />
+              {/* Beacon Labs — green */}
+              <path d="M0,50 L67,48 L133,42 L200,38 L267,30 L333,26 L400,22" fill="none" stroke="#4ade80" strokeWidth="2" />
+              {/* Cortex — amber */}
+              <path d="M0,15 L67,16 L133,18 L200,20 L267,22 L333,25 L400,24" fill="none" stroke="#f59e0b" strokeWidth="2" />
+            </svg>
+            <div className="flex gap-5 mt-2">
+              <span className="flex items-center gap-1.5 text-xs text-[#888]">
+                <span className="w-3 h-0.5 bg-[#5e6ad2] rounded-full inline-block" />
+                Acme AI
+              </span>
+              <span className="flex items-center gap-1.5 text-xs text-[#888]">
+                <span className="w-3 h-0.5 bg-[#4ade80] rounded-full inline-block" />
+                Beacon Labs
+              </span>
+              <span className="flex items-center gap-1.5 text-xs text-[#888]">
+                <span className="w-3 h-0.5 bg-[#f59e0b] rounded-full inline-block" />
+                Cortex
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* ── 10 Analytics Segments ─────────────────────────────── */}
       <div className="mb-20">
         <h2 className="text-lg font-semibold text-white mb-2">
