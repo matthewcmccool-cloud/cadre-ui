@@ -228,27 +228,27 @@ export async function getJobs(filters?: {
     ? 'AND(' + formulaParts.join(', ') + ')'
     : '';
 
-  const allRecordsResult = await fetchAirtable(TABLES.jobs, { 
-    filterByFormula,
-    sort: [{ field: 'Created Time', direction: 'desc' }],
-    maxRecords: 100,
-    fields: [
-      'Job ID',
-      'Title',
-      'Companies',
-      'Function',
-      'Location',
-      'Created Time',
-      'Job URL',
-      'Apply URL',
-      'Salary',
-      'Investors',
-      'Company Industry (Lookup)',
-      'Raw JSON',
-    ],
-  });
-
-  const allRecords = allRecordsResult.records;
+  // Fetch up to 500 jobs (paginated — Airtable returns max 100 per page)
+  const jobFields = [
+    'Job ID', 'Title', 'Companies', 'Function', 'Location',
+    'Created Time', 'Job URL', 'Apply URL', 'Salary', 'Investors',
+    'Company Industry (Lookup)', 'Raw JSON',
+  ];
+  const TARGET_RECORDS = 500;
+  const allRecords: AirtableRecord[] = [];
+  let jobOffset: string | undefined;
+  do {
+    const batch = await fetchAirtable(TABLES.jobs, {
+      filterByFormula,
+      sort: [{ field: 'Created Time', direction: 'desc' }],
+      fields: jobFields,
+      offset: jobOffset,
+    });
+    allRecords.push(...batch.records);
+    jobOffset = batch.offset;
+    if (allRecords.length >= TARGET_RECORDS) break;
+    if (jobOffset) await new Promise(r => setTimeout(r, 200)); // rate limit
+  } while (jobOffset);
 
   const functionRecords = await fetchAirtable(TABLES.functions, {
     fields: ['Function', 'Department (Primary)'],
