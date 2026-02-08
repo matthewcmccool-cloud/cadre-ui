@@ -79,7 +79,9 @@ function detectAtsFromUrl(url: string): AtsInfo | null {
 }
 
 // ---------------------------------------------------------------------------
-// Perplexity: find careers page URL (NOT the API URL)
+// Perplexity: find an actual job posting URL (not just the careers page)
+// Individual job URLs reveal the ATS platform even when careers pages don't
+// e.g. stripe.com/jobs tells us nothing, but boards.greenhouse.io/stripe/jobs/123 does
 // ---------------------------------------------------------------------------
 
 async function findCareersUrl(companyName: string): Promise<string | null> {
@@ -96,11 +98,11 @@ async function findCareersUrl(companyName: string): Promise<string | null> {
       messages: [
         {
           role: 'system',
-          content: 'You find company careers page URLs. Return ONLY the URL, nothing else. Look for job board pages hosted on greenhouse.io, lever.co, or ashbyhq.com. Return the actual URL or "unknown" if not found.',
+          content: 'You find job posting URLs for companies. Return ONLY the URL, nothing else. I need a direct link to an actual open job posting (not just the careers page), because the individual job URL reveals which ATS platform the company uses. Look for URLs containing greenhouse.io, lever.co, or ashbyhq.com. Return the URL or "unknown" if not found.',
         },
         {
           role: 'user',
-          content: `What is the careers or jobs page URL for ${companyName}? Look for their job listings page on Greenhouse, Lever, or Ashby. Just the URL.`,
+          content: `Find a direct link to any single open job posting at ${companyName}. Not their careers page — an actual job listing URL. The URL will usually be on greenhouse.io, lever.co, or ashbyhq.com. Just the URL.`,
         },
       ],
       max_tokens: 150,
