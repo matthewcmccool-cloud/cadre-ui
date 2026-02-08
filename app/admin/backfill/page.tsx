@@ -22,7 +22,8 @@ export default function BackfillPage() {
         const data = JSON.parse(text);
 
         totalUpdated += data.updated || 0;
-        addLog(`Call ${calls}: ${data.updated || 0} updated (${totalUpdated} total) — ${data.runtime}`);
+        const extra = data.alreadyHadLocation ? `, ${data.alreadyHadLocation} already done` : '';
+        addLog(`Call ${calls}: ${data.updated || 0} updated (${totalUpdated} total${extra}) — ${data.runtime}`);
 
         if (!data.hasMore) {
           addLog(`✓ ${label} complete! ${totalUpdated} records updated.`);
@@ -51,11 +52,37 @@ export default function BackfillPage() {
     addLog('Stopping...');
   };
 
+  const diagnose = async () => {
+    setRunning(true);
+    setLog([]);
+    addLog('--- Running diagnostics ---');
+    try {
+      const res = await fetch('/api/backfill-jobs?mode=diagnose');
+      const text = await res.text();
+      const data = JSON.parse(text);
+      addLog(`Records with Raw JSON: ${data.withRawJson}`);
+      addLog(`  - Already have Location: ${data.withRawJsonAndLocation}`);
+      addLog(`  - Need backfill: ${data.withRawJsonNoLocation}`);
+      addLog(`Scan complete: ${data.complete ? 'Yes' : 'No (timed out, more exist)'}`);
+      addLog(`Runtime: ${data.runtime}`);
+    } catch (err) {
+      addLog(`Error: ${err}`);
+    }
+    setRunning(false);
+  };
+
   return (
     <div className="min-h-screen bg-[#1a1a1a] text-white p-8 font-mono">
       <h1 className="text-xl font-bold mb-6">Cadre Admin — Backfill</h1>
 
       <div className="flex gap-4 mb-6">
+        <button
+          onClick={diagnose}
+          disabled={running}
+          className="px-4 py-2 bg-[#444] rounded text-sm disabled:opacity-50"
+        >
+          Diagnose (count records)
+        </button>
         <button
           onClick={() => start('/api/backfill-jobs', 'Location / Country / Salary')}
           disabled={running}
