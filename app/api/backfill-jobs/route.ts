@@ -137,9 +137,9 @@ function extractCountry(location: string): string {
   if (usCities.test(loc)) return 'United States';
 
   // If it just says "Remote" with no other info, skip
-  if (/^remote$/i.test(loc)) return '';
+  if (/^remote$/i.test(loc)) return 'Remote';
 
-  return '';
+  return 'Other';
 }
 
 // ── Salary extraction ────────────────────────────────────────────────
