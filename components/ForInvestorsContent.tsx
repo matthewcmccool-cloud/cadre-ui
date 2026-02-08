@@ -72,13 +72,6 @@ const FEATURE_OPTIONS = [
   'Raw data exports',
 ];
 
-const COMPETITORS = [
-  { name: 'Getro', gap: 'Expensive, limited analytics, siloed portals with no organic traffic' },
-  { name: 'Pallet', gap: 'Community job boards, not VC-focused' },
-  { name: 'Harmonic', gap: 'Company/people data for sourcing, not portfolio-oriented' },
-  { name: 'Manual LinkedIn posts', gap: 'Labor-intensive, stale within days' },
-];
-
 // ── Component ────────────────────────────────────────────────────────
 
 export default function ForInvestorsContent() {
@@ -86,10 +79,8 @@ export default function ForInvestorsContent() {
     name: '',
     email: '',
     firm: '',
-    role: '',
     portfolioSize: '',
     features: [] as string[],
-    other: '',
   });
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -111,13 +102,9 @@ export default function ForInvestorsContent() {
       `Name: ${formData.name}`,
       `Email: ${formData.email}`,
       `Firm: ${formData.firm}`,
-      `Role: ${formData.role}`,
       `Portfolio size: ${formData.portfolioSize}`,
       `Features: ${formData.features.join(', ') || 'None selected'}`,
-      formData.other ? `Other: ${formData.other}` : '',
-    ]
-      .filter(Boolean)
-      .join('\n');
+    ].join('\n');
 
     window.open(
       `mailto:matt@cadre.work?subject=${encodeURIComponent(
@@ -144,12 +131,11 @@ export default function ForInvestorsContent() {
           Trends, comparisons, and alerts that replace manual tracking.
           Built for talent partners, platform teams, and GPs.
         </p>
-        <a
-          href="#request-access"
-          className="inline-block px-5 py-2.5 bg-[#5e6ad2] hover:bg-[#4f5bc3] text-white text-sm font-medium rounded-lg transition-colors"
+        <span
+          className="inline-block px-5 py-2.5 bg-[#252526] text-[#888] text-sm font-medium rounded-lg cursor-default"
         >
-          Request early access
-        </a>
+          Coming soon
+        </span>
       </div>
 
       {/* ── The Problem ───────────────────────────────────────── */}
@@ -237,33 +223,6 @@ export default function ForInvestorsContent() {
         </div>
       </div>
 
-      {/* ── vs. Alternatives ──────────────────────────────────── */}
-      <div className="mb-20">
-        <h2 className="text-lg font-semibold text-white mb-6">
-          vs. the alternatives
-        </h2>
-        <div className="rounded-xl bg-[#131314] border border-[#1a1a1b] overflow-hidden">
-          {COMPETITORS.map((comp, i) => (
-            <div
-              key={comp.name}
-              className={`flex items-start gap-4 px-5 py-3.5 text-sm ${
-                i !== COMPETITORS.length - 1 ? 'border-b border-[#1a1a1b]' : ''
-              }`}
-            >
-              <span className="text-[#e8e8e8] font-medium w-40 flex-shrink-0">
-                {comp.name}
-              </span>
-              <span className="text-[#666]">{comp.gap}</span>
-            </div>
-          ))}
-        </div>
-        <p className="text-xs text-[#555] mt-3">
-          Cadre&apos;s edge: one destination for all VC-backed jobs with investor-specific
-          analytics layered on top. VCs don&apos;t get a dead-end portal — they get a window
-          into a platform that already has traffic.
-        </p>
-      </div>
-
       {/* ── Interest Form ─────────────────────────────────────── */}
       <div
         id="request-access"
@@ -315,20 +274,12 @@ export default function ForInvestorsContent() {
               />
               <input
                 type="text"
-                placeholder="Role / title"
-                value={formData.role}
-                onChange={(e) => setFormData((p) => ({ ...p, role: e.target.value }))}
+                placeholder="Approximate portfolio size"
+                value={formData.portfolioSize}
+                onChange={(e) => setFormData((p) => ({ ...p, portfolioSize: e.target.value }))}
                 className="px-3 py-2.5 bg-[#0e0e0f] border border-[#252526] rounded-lg text-sm text-white placeholder-[#555] focus:outline-none focus:border-[#5e6ad2]/50"
               />
             </div>
-            <input
-              type="text"
-              placeholder="Approximate portfolio size (number of companies)"
-              value={formData.portfolioSize}
-              onChange={(e) => setFormData((p) => ({ ...p, portfolioSize: e.target.value }))}
-              className="w-full px-3 py-2.5 bg-[#0e0e0f] border border-[#252526] rounded-lg text-sm text-white placeholder-[#555] focus:outline-none focus:border-[#5e6ad2]/50"
-            />
-
             <div>
               <p className="text-xs text-[#888] mb-2.5">
                 Which features matter most to you?
@@ -353,14 +304,6 @@ export default function ForInvestorsContent() {
                 })}
               </div>
             </div>
-
-            <textarea
-              placeholder="Anything else you'd want to see? (optional)"
-              value={formData.other}
-              onChange={(e) => setFormData((p) => ({ ...p, other: e.target.value }))}
-              rows={2}
-              className="w-full px-3 py-2.5 bg-[#0e0e0f] border border-[#252526] rounded-lg text-sm text-white placeholder-[#555] focus:outline-none focus:border-[#5e6ad2]/50 resize-none"
-            />
 
             <button
               type="submit"
