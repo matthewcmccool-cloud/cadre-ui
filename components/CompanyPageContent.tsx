@@ -58,7 +58,7 @@ export default function CompanyPageContent({ company, jobs }: CompanyPageContent
 
     const matchesTag = !activeTag ||
       job.title.toLowerCase().includes(tagLower) ||
-      (job.functionName && job.functionName.toLowerCase().includes(tagLower));
+      (job.departmentName && job.departmentName.toLowerCase().includes(tagLower));
 
     const matchesRemote = !isRemote ||
       job.remoteFirst ||
@@ -258,9 +258,9 @@ export default function CompanyPageContent({ company, jobs }: CompanyPageContent
 
                   {/* Function badge + Location — right side */}
                   <div className="flex-shrink-0 flex items-center gap-3">
-                    {job.functionName && (
+                    {job.departmentName && (
                       <span className="px-2 py-0.5 bg-[#252526] rounded text-xs text-[#aaa] hidden sm:inline-block">
-                        {job.functionName}
+                        {job.departmentName}
                       </span>
                     )}
                     <span className="text-xs text-[#666] w-36 text-right truncate hidden sm:block">
