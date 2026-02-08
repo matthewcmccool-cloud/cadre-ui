@@ -170,7 +170,7 @@ export interface Job {
   jobId: string;
   title: string;
   company: string;
-  companyUrl?: string;
+  companyUrl: string;
   investors: string[];
   location: string;
   remoteFirst: boolean;
