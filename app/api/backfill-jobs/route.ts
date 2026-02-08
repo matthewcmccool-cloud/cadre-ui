@@ -213,12 +213,16 @@ async function batchUpdateJobs(updates: Array<{ id: string; fields: Record<strin
 
 // ── Main endpoint ────────────────────────────────────────────────────
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const debug = searchParams.get('debug') === 'true';
+
   const startTime = Date.now();
   let processed = 0;
   let updated = 0;
   let skipped = 0;
   let errors = 0;
+  const samples: any[] = [];
 
   if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
     return NextResponse.json({ success: false, error: 'Missing AIRTABLE_API_KEY or AIRTABLE_BASE_ID' }, { status: 500 });
@@ -257,6 +261,16 @@ export async function GET() {
         } catch {
           skipped++;
           continue;
+        }
+
+        if (debug && samples.length < 3) {
+          samples.push({
+            id: record.id,
+            topKeys: Object.keys(rawData).slice(0, 15),
+            offices: rawData.offices,
+            location: rawData.location,
+            jobLocation: rawData.jobLocation,
+          });
         }
 
         const location = extractLocation(rawData);
@@ -312,6 +326,7 @@ export async function GET() {
       skipped,
       errors,
       hasMore,
+      ...(debug && { samples }),
       runtime: `${runtime}ms`,
       message: hasMore
         ? `Processed ${updated} jobs in ${runtime}ms. More jobs remaining — call again to continue.`
