@@ -5,10 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useMemo } from 'react';
 
 const POPULAR_TAGS = [
-  'engineering', 'product', 'design', 'sales', 'marketing',
-  'data science', 'ai', 'machine learning', 'backend', 'frontend',
-  'full stack', 'devops', 'mobile', 'product manager', 'analyst',
-  'operations', 'finance', 'growth', 'customer success', 'recruiting',
+  'Sales & GTM', 'Marketing', 'Engineering', 'AI & Research', 'Product',
+  'Design', 'Customer Success & Support', 'People & Talent',
+  'Finance & Legal', 'Operations & Admin',
 ];
 
 function toSlug(name: string): string {
@@ -87,14 +86,14 @@ export default function SearchFilters({ companies = [], investors = [], industri
     router.push(`/?${params.toString()}`);
   };
 
+  const currentDepartment = searchParams.get('functionName') || '';
+
   const handleTagClick = (tag: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (currentSearch.toLowerCase() === tag.toLowerCase()) {
-      params.delete('search');
-      setSearch('');
+    if (currentDepartment === tag) {
+      params.delete('functionName');
     } else {
-      params.set('search', tag);
-      setSearch(tag);
+      params.set('functionName', tag);
     }
     params.delete('page');
     router.push(`/?${params.toString()}`);
@@ -191,7 +190,7 @@ export default function SearchFilters({ companies = [], investors = [], industri
             key={tag}
             onClick={() => handleTagClick(tag)}
             className={`px-2.5 py-1 rounded text-xs font-medium transition-all ${
-              currentSearch.toLowerCase() === tag.toLowerCase()
+              currentDepartment === tag
                 ? 'bg-[#5e6ad2] text-white'
                 : 'bg-[#1a1a1b] text-[#888] hover:bg-[#252526] hover:text-[#e8e8e8]'
             }`}
