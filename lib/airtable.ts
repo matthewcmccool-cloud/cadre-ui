@@ -31,6 +31,28 @@ function inferFunction(title: string): string {
   return '';
 }
 
+// Maps granular Function names → 10 analytics Department segments.
+// Used as fallback when department isn't available from Airtable lookup
+// (e.g., when inferFunction() provides the function name client-side).
+const FUNCTION_TO_DEPARTMENT: Record<string, string> = {
+  'Sales': 'Sales & GTM',
+  'BD & Partnerships': 'Sales & GTM',
+  'Solutions Engineering': 'Sales & GTM',
+  'Revenue Operations': 'Sales & GTM',
+  'Marketing': 'Marketing',
+  'Developer Relations': 'Marketing',
+  'Engineering': 'Engineering',
+  'AI & Research': 'AI & Research',
+  'Product Management': 'Product',
+  'Product Design / UX': 'Design',
+  'Customer Success': 'Customer Success & Support',
+  'People': 'People & Talent',
+  'Finance & Accounting': 'Finance & Legal',
+  'Legal': 'Finance & Legal',
+  'Business Operations': 'Operations & Admin',
+  'Other': 'Operations & Admin',
+};
+
 const TABLES = {
   jobs: 'Job Listings',
   companies: 'Companies',
@@ -153,6 +175,7 @@ export interface Job {
   location: string;
   remoteFirst: boolean;
   functionName: string;
+  departmentName: string;
   industry: string;
   datePosted: string;
   jobUrl: string;
@@ -163,6 +186,7 @@ export interface Job {
 
 export interface FilterOptions {
   functions: string[];
+  departments: string[];
   locations: string[];
   investors: string[];
   industries: string[];
@@ -226,11 +250,13 @@ export async function getJobs(filters?: {
   const allRecords = allRecordsResult.records;
 
   const functionRecords = await fetchAirtable(TABLES.functions, {
-    fields: ['Function'],
+    fields: ['Function', 'Department (Primary)'],
   });
   const functionMap = new Map<string, string>();
+  const departmentMap = new Map<string, string>();
   functionRecords.records.forEach(r => {
     functionMap.set(r.id, r.fields['Function'] || '');
+    departmentMap.set(r.id, r.fields['Department (Primary)'] || '');
   });
 
   // Fetch all company records with pagination
@@ -282,8 +308,12 @@ export async function getJobs(filters?: {
 
     const functionIds = record.fields['Function'] || [];
     let funcName = functionIds.length > 0 ? functionMap.get(functionIds[0]) || '' : '';
+    let deptName = functionIds.length > 0 ? departmentMap.get(functionIds[0]) || '' : '';
     if (!funcName) {
       funcName = inferFunction(record.fields['Title'] as string || '');
+    }
+    if (!deptName) {
+      deptName = FUNCTION_TO_DEPARTMENT[funcName] || '';
     }
 
     const investorIds = record.fields['Investors'] || [];
@@ -340,6 +370,7 @@ export async function getJobs(filters?: {
       location,
       remoteFirst,
       functionName: funcName,
+      departmentName: deptName,
       industry: industryName,
       datePosted: record.fields['Date Posted'] || '',
       jobUrl: record.fields['Job URL'] || '',
@@ -348,11 +379,11 @@ export async function getJobs(filters?: {
     };
   });
 
-  // Multi-select filter: functionName (OR logic within, comma-separated)
+  // Multi-select filter: functionName — matches against departmentName (10 segments)
   if (filters?.functionName) {
-    const selectedFunctions = filters.functionName.split(',').map(f => f.trim().toLowerCase());
+    const selectedDepts = filters.functionName.split(',').map(f => f.trim().toLowerCase());
     jobs = jobs.filter(job =>
-      selectedFunctions.some(fn => job.functionName.toLowerCase() === fn)
+      selectedDepts.some(d => job.departmentName.toLowerCase() === d)
     );
   }
 
@@ -413,7 +444,7 @@ export async function getJobs(filters?: {
 
 export async function getFilterOptions(): Promise<FilterOptions> {
   const [functionRecords, investorRecords, industryRecords, companyRecords] = await Promise.all([
-    fetchAirtable(TABLES.functions, { fields: ['Function'] }),
+    fetchAirtable(TABLES.functions, { fields: ['Function', 'Department (Primary)'] }),
     fetchAllAirtable(TABLES.investors, { fields: ['Company'] }),
     fetchAirtable(TABLES.industries, { fields: ['Industry Name'] }),
     fetchAllAirtable(TABLES.companies, { fields: ['Company'] }),
@@ -423,6 +454,12 @@ export async function getFilterOptions(): Promise<FilterOptions> {
     .map(r => r.fields['Function'])
     .filter(Boolean)
     .sort();
+
+  const departments = [...new Set(
+    functionRecords.records
+      .map(r => r.fields['Department (Primary)'])
+      .filter(Boolean)
+  )].sort();
 
   const investors = investorRecords
     .map(r => r.fields['Company'])
@@ -452,7 +489,7 @@ export async function getFilterOptions(): Promise<FilterOptions> {
 
   const locations = Array.from(locationSet).sort();
 
-  return { functions, locations, investors, industries, companies };
+  return { functions, departments, locations, investors, industries, companies };
 }
 
 // Fetch a single job by its Airtable record ID
@@ -493,7 +530,7 @@ export async function getJobById(id: string): Promise<(Job & { description: stri
     fetchAllAirtable(TABLES.companies, { fields: ['Company', 'URL'] }),
     fetchAllAirtable(TABLES.investors, { fields: ['Company'] }),
     fetchAirtable(TABLES.industries, { fields: ['Industry Name'] }),
-    fetchAirtable(TABLES.functions, { fields: ['Function'] }),
+    fetchAirtable(TABLES.functions, { fields: ['Function', 'Department (Primary)'] }),
   ]);
 
   const companyMap = new Map<string, string>();
@@ -514,8 +551,10 @@ export async function getJobById(id: string): Promise<(Job & { description: stri
   });
 
   const functionMap = new Map<string, string>();
+  const departmentMap = new Map<string, string>();
   functionRecords.records.forEach(r => {
     functionMap.set(r.id, r.fields['Function'] || '');
+    departmentMap.set(r.id, r.fields['Department (Primary)'] || '');
   });
 
   // Map the record to a Job object
@@ -531,8 +570,12 @@ export async function getJobById(id: string): Promise<(Job & { description: stri
 
   const functionIds = record.fields['Function'] || [];
   let funcName = functionIds.length > 0 ? functionMap.get(functionIds[0]) || '' : '';
+  let deptName = functionIds.length > 0 ? departmentMap.get(functionIds[0]) || '' : '';
   if (!funcName) {
     funcName = inferFunction(record.fields['Title'] as string || '');
+  }
+  if (!deptName) {
+    deptName = FUNCTION_TO_DEPARTMENT[funcName] || '';
   }
 
   const investorIds = record.fields['Investors'] || [];
@@ -609,6 +652,7 @@ export async function getJobById(id: string): Promise<(Job & { description: stri
     location,
     remoteFirst,
     functionName: funcName,
+    departmentName: deptName,
     industry: industryName,
     datePosted: record.fields['Date Posted'] || '',
     jobUrl: record.fields['Job URL'] || '',
@@ -880,7 +924,7 @@ export async function getJobsForCompanyNames(companyNames: string[]): Promise<Jo
 
   // Build lookup maps in parallel
   const [functionRecords, investorRecords, industryRecords, companyRecords] = await Promise.all([
-    fetchAirtable(TABLES.functions, { fields: ['Function'] }),
+    fetchAirtable(TABLES.functions, { fields: ['Function', 'Department (Primary)'] }),
     fetchAirtable(TABLES.investors, { fields: ['Company'] }),
     fetchAirtable(TABLES.industries, { fields: ['Industry Name'] }),
     fetchAllAirtable(TABLES.companies, { fields: ['Company', 'URL'] }),
@@ -894,7 +938,11 @@ export async function getJobsForCompanyNames(companyNames: string[]): Promise<Jo
   });
 
   const functionMap = new Map<string, string>();
-  functionRecords.records.forEach(r => functionMap.set(r.id, r.fields['Function'] || ''));
+  const departmentMap = new Map<string, string>();
+  functionRecords.records.forEach(r => {
+    functionMap.set(r.id, r.fields['Function'] || '');
+    departmentMap.set(r.id, r.fields['Department (Primary)'] || '');
+  });
 
   const investorMap = new Map<string, string>();
   investorRecords.records.forEach(r => investorMap.set(r.id, r.fields['Company'] || ''));
@@ -915,15 +963,21 @@ export async function getJobsForCompanyNames(companyNames: string[]): Promise<Jo
 
     const functionIds = record.fields['Function'] || [];
     let funcName = '';
+    let deptName = '';
     if (Array.isArray(functionIds) && functionIds.length > 0) {
       funcName = functionMap.get(functionIds[0]) || (typeof functionIds[0] === 'string' ? functionIds[0] : '');
+      deptName = departmentMap.get(functionIds[0]) || '';
     } else if (typeof functionIds === 'string') {
       funcName = functionMap.get(functionIds) || functionIds;
+      deptName = departmentMap.get(functionIds) || '';
     }
     // Fallback: infer function from job title
     const jobTitle = (record.fields['Title'] as string) || '';
     if (!funcName) {
       funcName = inferFunction(jobTitle);
+    }
+    if (!deptName) {
+      deptName = FUNCTION_TO_DEPARTMENT[funcName] || '';
     }
 
     const investorIds = record.fields['Investors'] || [];
@@ -974,6 +1028,7 @@ export async function getJobsForCompanyNames(companyNames: string[]): Promise<Jo
       location,
       remoteFirst,
       functionName: funcName,
+      departmentName: deptName,
       industry: industryName,
       datePosted: record.fields['Date Posted'] || '',
       jobUrl: record.fields['Job URL'] || '',
@@ -1000,7 +1055,7 @@ export async function getFeaturedJobs(): Promise<Job[]> {
   });
 
   const [functionRecords, investorRecords, industryRecords] = await Promise.all([
-    fetchAirtable(TABLES.functions, { fields: ['Function'] }),
+    fetchAirtable(TABLES.functions, { fields: ['Function', 'Department (Primary)'] }),
     fetchAirtable(TABLES.investors, { fields: ['Company'] }),
     fetchAirtable(TABLES.industries, { fields: ['Industry Name'] }),
   ]);
@@ -1022,7 +1077,11 @@ export async function getFeaturedJobs(): Promise<Job[]> {
   } while (companyOffset);
 
   const functionMap = new Map<string, string>();
-  functionRecords.records.forEach(r => functionMap.set(r.id, r.fields['Function'] || ''));
+  const departmentMap = new Map<string, string>();
+  functionRecords.records.forEach(r => {
+    functionMap.set(r.id, r.fields['Function'] || '');
+    departmentMap.set(r.id, r.fields['Department (Primary)'] || '');
+  });
 
   const investorMap = new Map<string, string>();
   investorRecords.records.forEach(r => investorMap.set(r.id, r.fields['Company'] || ''));
@@ -1043,8 +1102,12 @@ export async function getFeaturedJobs(): Promise<Job[]> {
 
     const functionIds = record.fields['Function'] || [];
     let funcName = functionIds.length > 0 ? functionMap.get(functionIds[0]) || '' : '';
+    let deptName = functionIds.length > 0 ? departmentMap.get(functionIds[0]) || '' : '';
     if (!funcName) {
       funcName = inferFunction(record.fields['Title'] as string || '');
+    }
+    if (!deptName) {
+      deptName = FUNCTION_TO_DEPARTMENT[funcName] || '';
     }
 
     const investorIds = record.fields['Investors'] || [];
@@ -1093,6 +1156,7 @@ export async function getFeaturedJobs(): Promise<Job[]> {
       location,
       remoteFirst,
       functionName: funcName,
+      departmentName: deptName,
       industry: industryName,
       datePosted: record.fields['Date Posted'] || '',
       jobUrl: record.fields['Job URL'] || '',
@@ -1115,7 +1179,7 @@ export async function getOrganicJobs(page: number = 1, pageSize: number = 25): P
   });
 
   const [functionRecords, investorRecords, industryRecords] = await Promise.all([
-    fetchAirtable(TABLES.functions, { fields: ['Function'] }),
+    fetchAirtable(TABLES.functions, { fields: ['Function', 'Department (Primary)'] }),
     fetchAirtable(TABLES.investors, { fields: ['Company'] }),
     fetchAirtable(TABLES.industries, { fields: ['Industry Name'] }),
   ]);
@@ -1137,7 +1201,11 @@ export async function getOrganicJobs(page: number = 1, pageSize: number = 25): P
   } while (companyOffset);
 
   const functionMap = new Map<string, string>();
-  functionRecords.records.forEach(r => functionMap.set(r.id, r.fields['Function'] || ''));
+  const departmentMap = new Map<string, string>();
+  functionRecords.records.forEach(r => {
+    functionMap.set(r.id, r.fields['Function'] || '');
+    departmentMap.set(r.id, r.fields['Department (Primary)'] || '');
+  });
 
   const investorMap = new Map<string, string>();
   investorRecords.records.forEach(r => investorMap.set(r.id, r.fields['Company'] || ''));
@@ -1158,8 +1226,12 @@ export async function getOrganicJobs(page: number = 1, pageSize: number = 25): P
 
     const functionIds = record.fields['Function'] || [];
     let funcName = functionIds.length > 0 ? functionMap.get(functionIds[0]) || '' : '';
+    let deptName = functionIds.length > 0 ? departmentMap.get(functionIds[0]) || '' : '';
     if (!funcName) {
       funcName = inferFunction(record.fields['Title'] as string || '');
+    }
+    if (!deptName) {
+      deptName = FUNCTION_TO_DEPARTMENT[funcName] || '';
     }
 
     const investorIds = record.fields['Investors'] || [];
@@ -1208,6 +1280,7 @@ export async function getOrganicJobs(page: number = 1, pageSize: number = 25): P
       location,
       remoteFirst,
       functionName: funcName,
+      departmentName: deptName,
       industry: industryName,
       datePosted: record.fields['Date Posted'] || '',
       jobUrl: record.fields['Job URL'] || '',

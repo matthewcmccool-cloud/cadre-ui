@@ -30,7 +30,7 @@ interface QueryBuilderProps {
 }
 
 const fieldConfigs: Record<FieldType, { label: string; optionsKey?: keyof FilterOptions }> = {
-  function: { label: 'Function', optionsKey: 'functions' },
+  function: { label: 'Department', optionsKey: 'departments' },
   industry: { label: 'Industry', optionsKey: 'industries' },
   investor: { label: 'Investor', optionsKey: 'investors' },
   location: { label: 'Location', optionsKey: 'locations' },

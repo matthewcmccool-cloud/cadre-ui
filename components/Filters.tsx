@@ -24,8 +24,8 @@ const filterConfigs: Record<FilterType, {
 }> = {
   function: {
     paramName: 'functionName',
-    label: 'Function',
-    optionsKey: 'functions',
+    label: 'Department',
+    optionsKey: 'departments',
     colors: { bg: 'bg-pink-50', text: 'text-pink-700', border: 'border-pink-200' },
   },
   industry: {
