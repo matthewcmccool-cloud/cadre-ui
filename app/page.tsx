@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { getJobs, getFilterOptions } from '@/lib/airtable';
 import JobTable from '@/components/JobTable';
-import Header from '@/components/Header';
+
 import Pagination from '@/components/Pagination';
 import SearchFilters from '@/components/SearchFilters';
 
@@ -56,8 +56,6 @@ export default async function Home({ searchParams }: PageProps) {
 
   return (
     <main className="min-h-screen bg-[#0e0e0f]">
-      <Header />
-
       <div className="max-w-6xl mx-auto px-4 pt-5 pb-6">
         {/* ── Hero ─────────────────────────────────────────── */}
         <div className="mb-5">
@@ -68,15 +66,15 @@ export default async function Home({ searchParams }: PageProps) {
             Discover roles at companies backed by top investors. Updated daily.
           </p>
           <div className="flex items-center gap-4 mt-2.5">
-            <span className="text-xs text-[#666]">
+            <span className="text-xs text-[#999]">
               <span className="text-[#e8e8e8] font-medium">{jobsResult.totalCount.toLocaleString()}</span> live roles
             </span>
             <span className="text-[#333]">·</span>
-            <span className="text-xs text-[#666]">
+            <span className="text-xs text-[#999]">
               <span className="text-[#e8e8e8] font-medium">{filterOptions.companies.length.toLocaleString()}</span> companies
             </span>
             <span className="text-[#333]">·</span>
-            <span className="text-xs text-[#666]">
+            <span className="text-xs text-[#999]">
               <span className="text-[#e8e8e8] font-medium">{filterOptions.investors.length}</span> investors
             </span>
           </div>

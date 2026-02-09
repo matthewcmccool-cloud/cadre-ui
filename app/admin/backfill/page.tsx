@@ -229,7 +229,7 @@ export default function BackfillPage() {
       {/* Log output */}
       <div className="bg-[#252526] rounded p-4 max-h-[60vh] overflow-y-auto text-xs leading-5">
         {log.length === 0 && (
-          <p className="text-[#666]">Click a button to start. Each endpoint auto-loops until done.</p>
+          <p className="text-[#999]">Click a button to start. Each endpoint auto-loops until done.</p>
         )}
         {log.map((line, i) => (
           <p

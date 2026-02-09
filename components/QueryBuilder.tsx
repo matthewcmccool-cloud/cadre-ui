@@ -202,7 +202,7 @@ export default function QueryBuilder({ options, defaultOpen, currentFilters }: Q
       {/* Filter Rows */}
       <div className="bg-[#1a1a1a] border border-[#333] rounded-lg p-4">
         {conditions.length === 0 ? (
-          <p className="text-[#666] text-sm">No filters applied. Click "+ Add condition" to filter results.</p>
+          <p className="text-[#999] text-sm">No filters applied. Click "+ Add condition" to filter results.</p>
         ) : (
           <div className="space-y-2">
             {conditions.map((condition, index) => (
@@ -307,7 +307,7 @@ export default function QueryBuilder({ options, defaultOpen, currentFilters }: Q
                 {/* Delete Button */}
                 <button
                   onClick={() => removeCondition(condition.id)}
-                  className="p-1 text-[#666] hover:text-red-500 transition-colors"
+                  className="p-1 text-[#999] hover:text-red-500 transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -332,7 +332,7 @@ export default function QueryBuilder({ options, defaultOpen, currentFilters }: Q
         </button>
         <button
           disabled
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#666] cursor-not-allowed"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#999] cursor-not-allowed"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -342,7 +342,7 @@ export default function QueryBuilder({ options, defaultOpen, currentFilters }: Q
         {hasFilters && (
           <button
             onClick={() => { setConditions([]); router.push(pathname); }}
-            className="text-sm text-[#666] hover:text-white transition-colors"
+            className="text-sm text-[#999] hover:text-white transition-colors"
           >
             Clear all
           </button>

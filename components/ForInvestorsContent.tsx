@@ -229,7 +229,7 @@ export default function ForInvestorsContent() {
               <h3 className="text-sm font-semibold text-white">
                 Where is hiring accelerating?
               </h3>
-              <p className="text-xs text-[#666] mt-0.5">
+              <p className="text-xs text-[#999] mt-0.5">
                 Engineering leads at 34% of all open roles.
               </p>
             </div>
@@ -237,17 +237,17 @@ export default function ForInvestorsContent() {
             {/* Summary metrics */}
             <div className="grid grid-cols-3 gap-2 mb-3">
               <div className="bg-[#0e0e0f] rounded-lg p-2.5 border border-[#1a1a1b]">
-                <p className="text-[11px] text-[#666]">Open Roles</p>
+                <p className="text-[11px] text-[#999]">Open Roles</p>
                 <p className="text-lg font-bold text-white leading-tight">1,247</p>
                 <p className="text-[10px] text-green-400">+8.3% this week</p>
               </div>
               <div className="bg-[#0e0e0f] rounded-lg p-2.5 border border-[#1a1a1b]">
-                <p className="text-[11px] text-[#666]">Velocity</p>
+                <p className="text-[11px] text-[#999]">Velocity</p>
                 <p className="text-lg font-bold text-white leading-tight">62</p>
                 <p className="text-[10px] text-[#888]">new roles / week</p>
               </div>
               <div className="bg-[#0e0e0f] rounded-lg p-2.5 border border-[#1a1a1b]">
-                <p className="text-[11px] text-[#666]">Top Dept</p>
+                <p className="text-[11px] text-[#999]">Top Dept</p>
                 <p className="text-lg font-bold text-white leading-tight">Eng</p>
                 <p className="text-[10px] text-[#888]">34% of roles</p>
               </div>
@@ -271,7 +271,7 @@ export default function ForInvestorsContent() {
                       style={{ width: `${Math.max((row.pct / 34) * 90, 3)}%` }}
                     />
                   </div>
-                  <span className="text-[10px] text-[#666] w-6 text-right flex-shrink-0">{row.count}</span>
+                  <span className="text-[10px] text-[#999] w-6 text-right flex-shrink-0">{row.count}</span>
                 </div>
               ))}
             </div>
@@ -307,7 +307,7 @@ export default function ForInvestorsContent() {
               <h3 className="text-sm font-semibold text-white">
                 How do portfolio companies compare?
               </h3>
-              <p className="text-xs text-[#666] mt-0.5">
+              <p className="text-xs text-[#999] mt-0.5">
                 Beacon Labs grew headcount 31% in 4 weeks — the fastest in this cohort.
               </p>
             </div>
@@ -317,15 +317,15 @@ export default function ForInvestorsContent() {
               <div className="px-4 py-1.5" />
               <div className="px-3 py-1.5 text-center border-l border-[#1a1a1b]">
                 <p className="text-xs font-medium text-white">Acme AI</p>
-                <p className="text-[10px] text-[#666]">Series B</p>
+                <p className="text-[10px] text-[#999]">Series B</p>
               </div>
               <div className="px-3 py-1.5 text-center border-l border-[#1a1a1b]">
                 <p className="text-xs font-medium text-white">Beacon Labs</p>
-                <p className="text-[10px] text-[#666]">Series A</p>
+                <p className="text-[10px] text-[#999]">Series A</p>
               </div>
               <div className="px-3 py-1.5 text-center border-l border-[#1a1a1b]">
                 <p className="text-xs font-medium text-white">Cortex</p>
-                <p className="text-[10px] text-[#666]">Series C</p>
+                <p className="text-[10px] text-[#999]">Series C</p>
               </div>
             </div>
 
@@ -390,7 +390,7 @@ export default function ForInvestorsContent() {
               className={`px-3 py-2 ${CARD}`}
             >
               <p className="text-xs font-medium text-[#e8e8e8] leading-tight">{seg.name}</p>
-              <p className="text-[10px] text-[#666] mt-0.5">{seg.signal}</p>
+              <p className="text-[10px] text-[#999] mt-0.5">{seg.signal}</p>
             </div>
           ))}
         </div>

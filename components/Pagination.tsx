@@ -82,7 +82,7 @@ export default function Pagination({ currentPage, totalPages, searchParams }: Pa
               {page}
             </button>
           ) : (
-            <span key={index} className="px-1 text-[#666]">
+            <span key={index} className="px-1 text-[#999]">
               {page}
             </span>
           )

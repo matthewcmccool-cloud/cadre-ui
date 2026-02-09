@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import type { Metadata } from 'next';
 import CompanyLogo from '@/components/CompanyLogo';
-import Header from '@/components/Header';
+
 
 export const revalidate = 3600;
 
@@ -186,7 +186,6 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <Header />
       <div className="max-w-5xl mx-auto px-4 py-8">
         {/* Back link — matching other pages */}
         <Link
@@ -251,7 +250,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
           {/* Investors */}
           {job.investors.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 mt-3 max-w-full overflow-hidden">
-              <span className="text-xs text-[#666]">Backed by</span>
+              <span className="text-xs text-[#999]">Backed by</span>
               {job.investors.map((inv) => (
                 <Link key={inv} href={`/investors/${toSlug(inv)}`}>
                   <span className="px-2.5 py-1 bg-[#1a1a1b] hover:bg-[#252526] rounded text-xs text-[#e8e8e8] transition-colors">

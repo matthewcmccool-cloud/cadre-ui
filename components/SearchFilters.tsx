@@ -231,7 +231,7 @@ export default function SearchFilters({
       <form onSubmit={handleSearch} className="mb-3">
         <div className="relative">
           <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#666]"
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#999]"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -243,13 +243,13 @@ export default function SearchFilters({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search roles, companies, skills..."
-            className="w-full pl-10 pr-10 py-2 bg-[#1a1a1b] text-[#e8e8e8] placeholder-[#666] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#5e6ad2]/50 transition-all"
+            className="w-full pl-10 pr-10 py-2 bg-[#1a1a1b] text-[#e8e8e8] placeholder-[#999] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#5e6ad2]/50 transition-all"
           />
           {search && (
             <button
               type="button"
               onClick={clearSearch}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#666] hover:text-[#e8e8e8] transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#999] hover:text-[#e8e8e8] transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

@@ -1,4 +1,3 @@
-import Header from '@/components/Header';
 import ForInvestorsContent from '@/components/ForInvestorsContent';
 
 export const metadata = {
@@ -10,7 +9,6 @@ export const metadata = {
 export default function ForInvestorsPage() {
   return (
     <main className="min-h-screen bg-[#0e0e0f]">
-      <Header />
       <ForInvestorsContent />
     </main>
   );

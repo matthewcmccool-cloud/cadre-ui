@@ -50,6 +50,35 @@ function formatSalary(salary: string): string {
   return salary.length > 25 ? salary.substring(0, 22) + '...' : salary;
 }
 
+const AVATAR_COLORS = [
+  'bg-blue-500/20 text-blue-400',
+  'bg-purple-500/20 text-purple-400',
+  'bg-pink-500/20 text-pink-400',
+  'bg-orange-500/20 text-orange-400',
+  'bg-teal-500/20 text-teal-400',
+  'bg-cyan-500/20 text-cyan-400',
+  'bg-emerald-500/20 text-emerald-400',
+  'bg-rose-500/20 text-rose-400',
+];
+
+function getAvatarColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function LetterAvatar({ name }: { name: string }) {
+  const letter = name.charAt(0).toUpperCase();
+  const color = getAvatarColor(name);
+  return (
+    <div className={`w-7 h-7 rounded flex items-center justify-center text-xs font-semibold ${color}`}>
+      {letter}
+    </div>
+  );
+}
+
 const FUNCTION_COLORS: Record<string, string> = {
   'Engineering': 'text-blue-400 border-blue-400/30',
   'Product Management': 'text-purple-400 border-purple-400/30',
@@ -73,7 +102,7 @@ export default function JobTable({ jobs }: JobTableProps) {
     return (
       <div className="text-center py-16">
         <p className="text-[#888]">No jobs found matching your filters.</p>
-        <p className="text-[#666] text-sm mt-1">Try adjusting your search criteria.</p>
+        <p className="text-[#999] text-sm mt-1">Try adjusting your search criteria.</p>
       </div>
     );
   }
@@ -92,18 +121,23 @@ export default function JobTable({ jobs }: JobTableProps) {
             className="group flex items-center gap-3 px-3 py-2.5 bg-[#0e0e0f] hover:bg-[#141415] transition-colors"
           >
             {/* Company Logo */}
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 relative">
               {companyDomain ? (
-                <img
-                  src={`https://www.google.com/s2/favicons?domain=${companyDomain}&sz=32`}
-                  alt=""
-                  className="w-7 h-7 rounded"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
+                <>
+                  <div className="absolute inset-0">
+                    <LetterAvatar name={job.company} />
+                  </div>
+                  <img
+                    src={`https://www.google.com/s2/favicons?domain=${companyDomain}&sz=32`}
+                    alt=""
+                    className="w-7 h-7 rounded relative z-10"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </>
               ) : (
-                <div className="w-7 h-7 rounded bg-[#1a1a1b]" />
+                <LetterAvatar name={job.company} />
               )}
             </div>
 
@@ -136,7 +170,7 @@ export default function JobTable({ jobs }: JobTableProps) {
                 {job.location && (
                   <>
                     <span className="text-[#333]">·</span>
-                    <span className="text-xs text-[#666] truncate">{job.location}</span>
+                    <span className="text-xs text-[#999] truncate">{job.location}</span>
                   </>
                 )}
               </div>
@@ -164,7 +198,7 @@ export default function JobTable({ jobs }: JobTableProps) {
                 <Link
                   key={investor}
                   href={`/investors/${toSlug(investor)}`}
-                  className="px-2 py-0.5 rounded text-xs bg-[#1a1a1b] text-[#666] hover:bg-[#252526] hover:text-[#e8e8e8] transition-colors truncate max-w-[110px]"
+                  className="px-2 py-0.5 rounded text-xs bg-[#1a1a1b] text-[#999] hover:bg-[#252526] hover:text-[#e8e8e8] transition-colors truncate max-w-[110px]"
                 >
                   {investor}
                 </Link>

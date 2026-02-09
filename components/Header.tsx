@@ -36,7 +36,7 @@ export default function Header() {
                 className={`px-4 py-2.5 text-sm font-medium transition-colors relative ${
                   isActive
                     ? 'text-white'
-                    : 'text-[#666] hover:text-[#e8e8e8]'
+                    : 'text-[#999] hover:text-[#e8e8e8]'
                 }`}
               >
                 {tab.label}
