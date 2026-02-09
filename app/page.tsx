@@ -9,15 +9,20 @@ export const dynamic = 'force-dynamic';
 
 interface PageProps {
   searchParams: {
-    functionName?: string;
+    department?: string;
     industry?: string;
-    location?: string;
-    remote?: string;
-    search?: string;
-    company?: string;
+    country?: string;
+    workMode?: string;
     investor?: string;
+    posted?: string;
+    search?: string;
     page?: string;
     sort?: string;
+    // Legacy params (backward compat)
+    functionName?: string;
+    remote?: string;
+    location?: string;
+    company?: string;
   };
 }
 
@@ -26,15 +31,21 @@ export default async function Home({ searchParams }: PageProps) {
   const sortMode = (searchParams.sort === 'recent' ? 'recent' : 'featured') as 'featured' | 'recent';
 
   const filters = {
-    functionName: searchParams.functionName,
+    // New multi-select params
+    department: searchParams.department,
     industry: searchParams.industry,
-    location: searchParams.location,
-    remoteOnly: searchParams.remote === 'true',
-    search: searchParams.search,
-    company: searchParams.company,
+    country: searchParams.country,
+    workMode: searchParams.workMode,
     investor: searchParams.investor,
+    posted: searchParams.posted,
+    search: searchParams.search,
     page: currentPage,
     sort: sortMode,
+    // Legacy support
+    functionName: searchParams.functionName,
+    remoteOnly: searchParams.remote === 'true',
+    location: searchParams.location,
+    company: searchParams.company,
   };
 
   const [jobsResult, filterOptions] = await Promise.all([
@@ -75,6 +86,12 @@ export default async function Home({ searchParams }: PageProps) {
           companies={filterOptions.companies}
           investors={filterOptions.investors}
           industries={filterOptions.industries}
+          jobs={jobsResult.jobs.map(j => ({
+            location: j.location,
+            remoteFirst: j.remoteFirst,
+            investors: j.investors,
+          }))}
+          totalCount={jobsResult.totalCount}
         />
 
         {/* ── Job List ─────────────────────────────────────── */}

@@ -1,3 +1,5 @@
+import { parseCountry, parseWorkMode, matchesPostedFilter } from './location-parser';
+
 // Infer function from job title when Function field is empty.
 // Categories MUST match the Airtable Function table exactly so the client-side
 // fallback produces the same labels as the /api/backfill-functions endpoint.
@@ -204,9 +206,13 @@ export interface JobsResult {
 
 export async function getJobs(filters?: {
   functionName?: string;
+  department?: string;
   industry?: string;
   investor?: string;
   location?: string;
+  country?: string;
+  workMode?: string;
+  posted?: string;
   remoteOnly?: boolean;
   search?: string;
   company?: string;
@@ -380,15 +386,16 @@ export async function getJobs(filters?: {
     };
   });
 
-  // Multi-select filter: functionName — matches against departmentName (10 segments)
-  if (filters?.functionName) {
-    const selectedDepts = filters.functionName.split(',').map(f => f.trim().toLowerCase());
+  // ── Department filter (new multi-select or legacy functionName) ──
+  const deptFilter = filters?.department || filters?.functionName;
+  if (deptFilter) {
+    const selectedDepts = deptFilter.split(',').map(f => f.trim().toLowerCase());
     jobs = jobs.filter(job =>
       selectedDepts.some(d => job.departmentName.toLowerCase() === d)
     );
   }
 
-  // Multi-select filter: industry (OR logic within, comma-separated)
+  // ── Industry filter ────────────────────────────────────────────
   if (filters?.industry) {
     const selectedIndustries = filters.industry.split(',').map(i => i.trim().toLowerCase());
     jobs = jobs.filter(job =>
@@ -396,7 +403,7 @@ export async function getJobs(filters?: {
     );
   }
 
-  // Multi-select filter: investor (OR logic within, comma-separated)
+  // ── Investor filter ────────────────────────────────────────────
   if (filters?.investor) {
     const selectedInvestors = filters.investor.split(',').map(inv => inv.trim().toLowerCase());
     jobs = jobs.filter(job =>
@@ -406,21 +413,44 @@ export async function getJobs(filters?: {
     );
   }
 
-  // Filter by company if specified
+  // ── Country filter (uses location parser) ──────────────────────
+  if (filters?.country) {
+    const selectedCountries = filters.country.split(',').map(c => c.trim().toLowerCase());
+    jobs = jobs.filter(job => {
+      const jobCountry = parseCountry(job.location).toLowerCase();
+      return selectedCountries.some(c => jobCountry === c);
+    });
+  }
+
+  // ── Work mode filter ───────────────────────────────────────────
+  if (filters?.workMode) {
+    const selectedModes = filters.workMode.split(',').map(m => m.trim().toLowerCase());
+    jobs = jobs.filter(job => {
+      const mode = parseWorkMode(job.location, job.remoteFirst);
+      return selectedModes.includes(mode);
+    });
+  }
+
+  // ── Posted date filter ─────────────────────────────────────────
+  if (filters?.posted && filters.posted !== 'all') {
+    jobs = jobs.filter(job => matchesPostedFilter(job.datePosted, filters.posted!));
+  }
+
+  // ── Legacy: company name filter ────────────────────────────────
   if (filters?.company) {
     jobs = jobs.filter(job =>
       job.company.toLowerCase().includes(filters.company!.toLowerCase())
     );
   }
 
-    // Filter by location if specified
+  // ── Legacy: location string filter ─────────────────────────────
   if (filters?.location) {
     jobs = jobs.filter(job =>
       job.location.toLowerCase().includes(filters.location!.toLowerCase())
     );
   }
 
-  // Remote filter — client-side because location is parsed from Raw JSON
+  // ── Legacy: remote toggle ──────────────────────────────────────
   if (filters?.remoteOnly) {
     jobs = jobs.filter(job =>
       job.remoteFirst || job.location.toLowerCase().includes('remote')
