@@ -4,7 +4,7 @@
 **Status:** Active — this is the canonical plan
 **Owner:** Matt (@matthewcmccool-cloud)
 **Supersedes:** `investor-product-draft.md` (ideation doc, still useful for context)
-**Incorporates:** Model council findings on UI/UX audit (consumer + investor dashboard design spec)
+**Incorporates:** Model council findings on UI/UX audit (consumer + investor dashboard design spec) + technical audit (backend performance, Airtable schema, infrastructure)
 
 ---
 
@@ -21,6 +21,9 @@
 | Design partners | a16z, Collab + Currency, and broader AI/Crypto VC network |
 | Competitive differentiator vs. Getro | Cadre gives VCs distribution — job seekers use Cadre, which drives candidates to portfolio companies. Getro aggregates listings but has no demand-side audience. |
 | Build philosophy | Build clean for handoff. No hacks. Someone will eventually own this codebase. |
+| Vercel plan | Pro ($20/mo) — required for ToS compliance (Hobby is non-commercial only), raises timeout 10s→300s |
+| Rate limiting | `p-limit(4)` on all Airtable fetches (4 req/sec, not 5 — avoids 30s penalty on 429) |
+| Caching | ISR with `revalidate = 3600` on all pages. Background regen reads from Supabase (fast), not Airtable (slow). |
 | Deferred | Featured listings, Slack integration, CVHI index, LinkedIn content strategy |
 | Focus | Product > marketing. Matt sources leads through his network. |
 | Chart library | Tremor (React + Tailwind + Recharts, native dark theme) |
@@ -52,9 +55,10 @@ Examples:
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                    CONSUMER BOARD                         │
-│            (stays on Airtable, no changes)                │
 │                                                           │
-│  Next.js App Router → lib/airtable.ts → Airtable API     │
+│  Next.js App Router (ISR, revalidate=3600)               │
+│  Homepage/listing: reads from Supabase (fast, <100ms)    │
+│  Detail pages: filterByFormula on Airtable Slug fields   │
 │  Job seekers browse, filter, apply                        │
 │  This side generates the data + SEO + candidate flow      │
 └─────────────────────────────────────────────────────────┘
@@ -63,7 +67,7 @@ Examples:
 │                   INVESTOR PRODUCT                        │
 │              (new, built on Supabase)                      │
 │                                                           │
-│  Supabase Postgres ← nightly sync from Airtable          │
+│  Supabase Postgres ← incremental sync from Airtable      │
 │  + daily snapshot pipeline (captures hiring state)        │
 │  + investor-scoped auth (Clerk)                           │
 │  + Loops.so for email (Portfolio Pulse, digests)          │
@@ -75,21 +79,29 @@ Examples:
 Data flow:
   ATS APIs → GitHub Actions cron → Airtable (source of truth)
                                        ↓
-                                  Nightly sync job
+                              Incremental sync (Last Modified Time cursor)
+                              Only changed records, ~1-5 API pages/night
                                        ↓
                                   Supabase Postgres
+                                 /                \
+                    Consumer board ISR          Investor dashboard
+                    (reads pre-computed         (reads real-time
+                     data, <100ms)              queries + snapshots)
                                        ↓
                               Daily snapshot pipeline
                               (captures state per company)
                                        ↓
-                              Investor dashboard + alerts
+                              Alert engine → Loops.so digest
 ```
 
 **Why this architecture:**
-- Zero risk to the working consumer product (Airtable untouched)
-- Supabase handles the analytical queries Airtable can't (aggregations, time-series, joins)
+- Consumer board reads from Supabase via ISR — eliminates the 36-41 Airtable API calls per homepage load
+- Detail pages use Airtable Slug formula fields + `filterByFormula` — 1 API call instead of 14+
+- `p-limit(4)` on all remaining Airtable calls prevents rate limit race conditions
+- Incremental sync (not full dump) respects Airtable limits: ~1-5 pages/night vs. 160+
+- Supabase handles analytical queries Airtable can't (aggregations, time-series, joins)
 - Clean separation — future engineer inherits a clear boundary between products
-- Supabase Pro ($25/mo) handles the scale we need for 12+ months
+- Vercel Pro ($20/mo) + Supabase Pro ($25/mo) = $45/mo total infrastructure
 
 ---
 
@@ -261,32 +273,88 @@ GROUP BY ic.investor_id;
 - [ ] Wire `CompanyLogo.tsx` letter-avatar fallback into `JobTable.tsx` (component already exists, just not used in the table)
 - [ ] Show colored circle with company initial instead of `display:none` on error
 
-### Phase 0B — Stale Job Cleanup (Week 1)
+### Phase 0B — Backend Quick Wins (Week 1, ~2.5 hours)
+> These fix the performance crisis and set up the foundation for everything else.
+
+**Vercel Pro upgrade (5 min):**
+- [ ] Upgrade to Vercel Pro ($20/mo) — raises timeout 10s→300s, resolves ToS (Hobby = non-commercial only)
+
+**Airtable Slug fields (30 min):**
+- [ ] Add `Slug` formula field to Companies table: `LOWER(SUBSTITUTE(SUBSTITUTE({Company}, " ", "-"), "&", "and"))`
+- [ ] Add `Slug` formula field to Investors table: `LOWER(SUBSTITUTE(SUBSTITUTE({Company}, " ", "-"), "&", "and"))`
+- [ ] Update `getCompanyBySlug()` in `lib/airtable.ts`: replace "fetch all + .find()" with `filterByFormula={Slug}="${slug}"` + `maxRecords: 1`
+- [ ] Update `getInvestorBySlug()` the same way
+- [ ] Detail pages go from 14+ API calls → 1
+
+**Rate limiter (30 min):**
+- [ ] `npm install p-limit`
+- [ ] Add to `lib/airtable.ts`: `const limit = pLimit(4)` — wrap all `fetchAirtable` and `fetchAllAirtable` calls
+- [ ] Eliminates race condition between `getJobs()` and `getFilterOptions()` both paginating simultaneously
+- [ ] 4 req/sec (not 5) gives 20% headroom to avoid Airtable's 30-second penalty on 429 errors
+
+**ISR caching (15 min):**
+- [ ] Remove `export const dynamic = 'force-dynamic'` from `app/page.tsx`
+- [ ] Remove `cache: 'no-store'` from `fetchAirtable()` — or make it configurable
+- [ ] Add `export const revalidate = 3600` to homepage and listing pages
+- [ ] Note: ISR background regen still hits Airtable until Supabase read path is built (Phase 1). This is OK on Pro plan (300s timeout) as a stopgap.
+
+**Airtable schema additions (30 min — done in Airtable UI):**
+- [ ] Jobs table: add `Last Seen At` (date) field
+- [ ] Jobs table: add `Removed At` (date) field
+- [ ] Jobs table: add `Is Active` (checkbox, default true) field
+- [ ] All tables: add `Last Modified Time` auto-field (enables incremental sync)
+- [ ] Companies table: add `Enrichment Status` (single select: pending / enriched / failed) field
+- [ ] Rename Investors.`Company` → `Firm Name` (fixes confusing name collision)
+  - Update all references in `lib/airtable.ts` and API routes
+
+**Enable swcMinify (5 min):**
+- [ ] Set `swcMinify: true` in `next.config.js` (stable since Next.js 13, reduces bundle size)
+
+**Extract shared helpers (2 hrs):**
+- [ ] Extract `parseLocation()` from 5 duplicated copies in `airtable.ts` → `lib/parsers/location.ts`
+- [ ] Extract `mapJobRecord()` from 5 duplicated record-mapping blocks → `lib/mappers/job.ts`
+- [ ] Extract `buildLookupMaps()` (company/investor/industry/function maps) → `lib/mappers/lookup.ts`
+- [ ] Verify all pages still work after refactor
+- [ ] This must happen before building the Supabase sync (Phase 1) so the sync can reuse these helpers
+
+### Phase 0C — Stale Job Cleanup (Week 1)
 > "If a talent partner sees 48 open roles but 20 are stale, trust is destroyed instantly."
 
 This is prerequisite to the investor product. Data quality is the product.
 
-- [ ] Add `lastSeenAt` field to Job Listings in Airtable
-- [ ] Update sync pipeline (`/api/sync-jobs`): on each sync run, update `lastSeenAt` for every job returned by ATS API
-- [ ] Add removal detection: after sync, find jobs for that company where `lastSeenAt` < today → mark as inactive / set `removedAt`
+- [ ] Update sync pipeline (`/api/sync-jobs`): on each sync run, update `Last Seen At` for every job returned by ATS API
+- [ ] Add removal detection: after sync, find jobs for that company where `Last Seen At` < today → set `Is Active` = false, set `Removed At` = today
 - [ ] Add expiration rule: jobs not seen for 14+ days are flagged as stale, 30+ days are hidden from consumer board
+- [ ] Update `getJobs()` to filter out inactive jobs (where `Is Active` = false)
 - [ ] Verify on preview URL that stale jobs no longer appear
+- [ ] Increase `enrich-ats-urls` batch size from 15 → 50 and add to GitHub Actions cron (speeds up ATS discovery for investor onboarding)
 
 ### Phase 1 — Supabase Foundation (Weeks 1-2)
 
-- [ ] Set up Supabase Pro project
-- [ ] Create schema (tables above)
-- [ ] Build nightly Airtable → Supabase sync job
-  - Runs after the daily ATS sync completes
-  - Syncs: companies, investors, investor_companies edges, jobs, industries
-  - Maps Airtable record IDs to Supabase UUIDs
-  - Respects Airtable 5 req/sec rate limit
-- [ ] Build daily snapshot pipeline
-  - Runs after Supabase sync
+- [ ] Set up Supabase Pro project ($25/mo)
+- [ ] Create schema (tables in schema section above)
+- [ ] **Initial full sync** (run locally, not on Vercel — no timeout constraint):
+  - One-time: fetch all records from all Airtable tables
+  - Map Airtable record IDs → Supabase UUIDs
+  - Populate: companies, investors, investor_companies edges, jobs, industries
+  - Verify: spot-check 10 companies, 50 jobs between Airtable and Supabase
+- [ ] **Incremental nightly sync** (GitHub Actions cron, after daily ATS sync):
+  - Uses `Last Modified Time` field as cursor (added in Phase 0B)
+  - `filterByFormula: IS_AFTER({Last Modified Time}, '${lastSyncTimestamp}')`
+  - Fetches only changed records (~50-200 records/night = 1-5 API pages)
+  - Upserts into Supabase (ON CONFLICT on airtable_id)
+  - Stores last sync timestamp in Supabase `sync_metadata` table
+  - Handles deleted records: weekly full reconciliation (fetch all IDs, diff against Supabase, soft-delete missing)
+- [ ] **Daily snapshot pipeline** (runs after sync):
   - For each company: count active jobs, group by department/location/seniority
   - Compare to previous day's snapshot: compute delta, new roles, removed roles
   - Insert into `company_snapshots`
-- [ ] Verify data integrity: spot-check 10 companies between Airtable and Supabase
+  - Refresh `portfolio_summaries` materialized view
+- [ ] **Consumer board read path** (switches homepage from Airtable → Supabase):
+  - New `lib/supabase.ts` with `getJobsFromSupabase()` — single SQL query with JOINs replaces 36+ Airtable calls
+  - Homepage `getJobs()` reads from Supabase instead of Airtable
+  - ISR `revalidate = 3600` now regenerates in <100ms (Supabase query) instead of 36+ seconds (Airtable pagination)
+  - Detail pages can remain on Airtable (Slug-based filterByFormula is fast enough)
 
 ### Phase 2 — Portfolio Pulse Email (Week 2-3)
 > The demand validation play. Ship this before building any dashboard.
@@ -609,10 +677,15 @@ Step 5: Companies without any ATS (no Greenhouse/Lever/Ashby/etc.)
 
 ## Open Items for Matt
 
+- [ ] **Upgrade Vercel to Pro ($20/mo)** — this is urgent (ToS compliance + timeout fix)
+- [ ] Upgrade Supabase to Pro plan ($25/mo)
 - [ ] Confirm design partner list (5-10 firms from a16z, Collab + Currency, AI/Crypto network)
 - [ ] Set up Loops.so account
 - [ ] Set up Stripe account (or confirm existing)
-- [ ] Upgrade Supabase to Pro plan ($25/mo)
+- [ ] Add Slug formula fields to Companies and Investors tables in Airtable (see Phase 0B)
+- [ ] Add Last Seen At, Removed At, Is Active, Last Modified Time fields to Jobs table in Airtable (see Phase 0B)
+- [ ] Add Enrichment Status field to Companies table in Airtable
+- [ ] Rename Investors.Company → Firm Name in Airtable
 - [ ] Draft initial outreach message to design partners (can use Portfolio Pulse concept as the hook: "Want to get a free weekly hiring pulse across your portfolio? We're piloting this with 5 firms.")
 
 ---
