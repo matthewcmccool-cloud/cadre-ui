@@ -6,8 +6,7 @@ import type { Metadata } from 'next';
 import CompanyLogo from '@/components/CompanyLogo';
 import Header from '@/components/Header';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 3600;
 
 interface JobDetailPageProps {
   params: { id: string };

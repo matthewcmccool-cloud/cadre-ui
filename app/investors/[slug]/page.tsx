@@ -3,8 +3,7 @@ import Link from 'next/link';
 import { getInvestorBySlug, getJobsForCompanyNames } from '@/lib/airtable';
 import InvestorPageContent from '@/components/InvestorPageContent';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 3600;
 
 interface InvestorPageProps {
   params: { slug: string };

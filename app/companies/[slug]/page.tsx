@@ -3,8 +3,7 @@ import { notFound } from 'next/navigation';
 import Header from '@/components/Header';
 import CompanyPageContent from '@/components/CompanyPageContent';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 3600;
 
 interface CompanyPageProps {
   params: { slug: string };

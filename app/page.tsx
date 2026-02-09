@@ -5,7 +5,8 @@ import Header from '@/components/Header';
 import Pagination from '@/components/Pagination';
 import SearchFilters from '@/components/SearchFilters';
 
-export const dynamic = 'force-dynamic';
+// ISR: regenerate page every 60 minutes in the background
+export const revalidate = 3600;
 
 interface PageProps {
   searchParams: {
