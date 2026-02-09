@@ -1,9 +1,10 @@
-# Cadre for Investors — Implementation Plan
+# Cadre — Implementation Plan
 
 **Date:** February 2026
 **Status:** Active — this is the canonical plan
 **Owner:** Matt (@matthewcmccool-cloud)
 **Supersedes:** `investor-product-draft.md` (ideation doc, still useful for context)
+**Incorporates:** Model council findings on UI/UX audit (consumer + investor dashboard design spec)
 
 ---
 
@@ -22,6 +23,10 @@
 | Build philosophy | Build clean for handoff. No hacks. Someone will eventually own this codebase. |
 | Deferred | Featured listings, Slack integration, CVHI index, LinkedIn content strategy |
 | Focus | Product > marketing. Matt sources leads through his network. |
+| Chart library | Tremor (React + Tailwind + Recharts, native dark theme) |
+| Dashboard pattern | Sidebar + top bar shell (Linear/Vercel pattern) |
+| Dashboard default sort | Week-over-week change descending (movement, not static counts) |
+| Alert model | Three tiers: inline table badges + notification bell + dedicated alerts page — one underlying data model |
 
 ---
 
@@ -222,10 +227,44 @@ GROUP BY ic.investor_id;
 
 ## Implementation Phases
 
-### Phase 0 — Stale Job Cleanup (Week 1)
+### Phase 0A — Consumer Quick Wins (Week 1, ~5 hours)
+> These ship before design partner demos. The investor dashboard shares the same app shell — polish here benefits both products.
+
+**Navigation fix (15 min):**
+- [ ] Move `<Header />` into root `app/layout.tsx` so every page gets navigation
+- [ ] Remove manual `<Header />` imports from individual pages
+- [ ] Replace "← Back to jobs" links on detail pages with breadcrumbs (`Jobs → Sequoia Capital`)
+
+**Loading / Error / Not Found states (2-3 hrs):**
+- [ ] Add `app/loading.tsx` — skeleton loader (dark pulse animation on #0e0e0f)
+- [ ] Add `app/error.tsx` — error boundary with retry button
+- [ ] Add `app/not-found.tsx` — branded 404 page
+- [ ] Add `app/dashboard/loading.tsx` (for investor dashboard, preemptively)
+- [ ] Add route-segment loading states for `/jobs/[id]`, `/companies/[slug]`, `/investors/[slug]`, `/industry/[slug]`
+
+**Consolidate /jobs → / (1 hr):**
+- [ ] Remove `app/jobs/page.tsx` (the duplicate listing page with #262626 background)
+- [ ] Add 301 redirect: `/jobs` → `/` in `next.config.js` rewrites
+- [ ] Keep `/jobs/[id]` job detail routes untouched
+
+**Clerk dark theme (5 min):**
+- [ ] Add `appearance` prop to `<ClerkProvider>` in `app/layout.tsx`:
+  ```tsx
+  appearance={{ variables: { colorBackground: '#0e0e0f', colorText: '#e8e8e8', colorPrimary: '#5e6ad2' } }}
+  ```
+
+**Contrast fix (30 min):**
+- [ ] Replace `#666` → `#999` across all components (WCAG AA compliance: ~5.1:1 ratio on #1a1a1b)
+- [ ] Replace `#555` → `#888` where used as body text (not as ultra-subtle decorative text)
+
+**Favicon fallback (30 min):**
+- [ ] Wire `CompanyLogo.tsx` letter-avatar fallback into `JobTable.tsx` (component already exists, just not used in the table)
+- [ ] Show colored circle with company initial instead of `display:none` on error
+
+### Phase 0B — Stale Job Cleanup (Week 1)
 > "If a talent partner sees 48 open roles but 20 are stale, trust is destroyed instantly."
 
-This is prerequisite to everything. The investor product is only as good as the data.
+This is prerequisite to the investor product. Data quality is the product.
 
 - [ ] Add `lastSeenAt` field to Job Listings in Airtable
 - [ ] Update sync pipeline (`/api/sync-jobs`): on each sync run, update `lastSeenAt` for every job returned by ATS API
@@ -271,53 +310,236 @@ This is prerequisite to everything. The investor product is only as good as the 
 
 ### Phase 3 — Investor Dashboard MVP (Weeks 3-5)
 
-- [ ] Investor auth flow (Clerk, gated behind login)
-- [ ] **Portfolio Overview page** (`/dashboard`)
-  - Table of all tracked portfolio companies
-  - Columns: Company, Stage, Open Roles, WoW Change, Top Department, Sync Status
-  - Sortable by any column
-  - Filter by stage, industry
-  - Visual indicator for spikes (green arrow), freezes (red arrow), pending sync (gray)
-- [ ] **Company Deep-Dive page** (`/dashboard/company/[slug]`)
-  - Department breakdown (bar chart)
-  - Role listing with title, department, location, posted date
-  - Trend line: open roles over time (daily snapshots, 4/8/12 week views)
-  - "New this week" and "Removed this week" role lists
-- [ ] **Side-by-Side Comparison** (`/dashboard/compare`)
-  - Select 2-5 companies
-  - Metrics: total roles, department mix, WoW change, hiring velocity
-  - Overlay trend lines
-- [ ] **Onboarding flow for missing companies**
-  - In dashboard: "Add companies" button
-  - Submit company names → we check for ATS URL
-  - If found: auto-start sync, show "syncing, data available within 24 hours"
-  - If not found: show "We'll investigate and add this company within 2-3 business days"
-  - Matt gets notified (Loops.so transactional email) to manually find ATS URL
-  - Company shows in dashboard as "pending" — does NOT count toward billing
+#### 3.0 — Dashboard Shell & Foundations
+
+- [ ] Install Tremor: `npm install @tremor/react`
+- [ ] Configure Tremor dark theme tokens in `tailwind.config.ts`:
+  ```
+  Area fill: 10-15% opacity of accent (#5e6ad2)
+  Grid lines: #2a2a2b
+  Tooltip background: #262626
+  Tooltip text: #e8e8e8
+  Axis labels: #888
+  ```
+- [ ] Build dashboard layout (`app/dashboard/layout.tsx`):
+  - **Sidebar** (left, 240px, collapsible on mobile):
+    - Cadre logo (top)
+    - Nav items: Portfolio, Alerts, Compare, Settings
+    - Active state: accent left border + bg highlight
+    - Firm name + user avatar at bottom
+    - Collapse to icon-only on mobile (hamburger toggle)
+  - **Top bar** (right of sidebar):
+    - Breadcrumb trail (Dashboard → Company Name)
+    - Data status indicator: "Coverage: 42/50 companies | Last sync: 2h ago"
+    - Notification bell (alert count badge)
+    - User menu (settings, billing, sign out)
+  - **Main content area:** scrollable, max-w-6xl centered
+- [ ] Investor auth flow (Clerk, gated behind login — redirect to /dashboard after sign-in)
+- [ ] Add `app/dashboard/loading.tsx` skeleton (sidebar + KPI placeholders + table shimmer)
+
+#### 3.1 — Portfolio Overview (`/dashboard`)
+
+**Above the fold — KPI strip (4-5 metric cards):**
+- [ ] Total Open Roles (number + sparkline mini trend)
+- [ ] WoW Net Change (number + green/red arrow + percentage)
+- [ ] Companies Actively Hiring (count out of total tracked)
+- [ ] Active Alerts (count, colored by severity — clicking navigates to /dashboard/alerts)
+- [ ] Hiring Velocity (new roles/week, rolling 4-week average)
+
+**Portfolio table:**
+- [ ] Columns:
+  | Company | Stage | Open Roles | WoW Change | Top Department | Velocity | Sync Status |
+  - Company: logo + name (linked to deep-dive)
+  - Stage: pill badge (Seed, A, B, C, D+)
+  - Open Roles: number
+  - WoW Change: number with arrow + color (green positive, red negative, gray zero)
+  - Top Department: name + percentage of total
+  - Velocity: roles/week (4-week rolling average)
+  - Sync Status: "Active" (green dot), "Pending" (amber dot + "est. 48h"), "No ATS" (gray dot), "Sync failing" (red dot)
+- [ ] **Default sort: WoW Change descending** (biggest movers first)
+- [ ] Sortable by clicking any column header (ascending/descending toggle)
+- [ ] Filter bar above table: stage multi-select, industry multi-select, search by company name
+- [ ] **Inline alert badges:** on company rows with active alerts:
+  - Red dot: hiring freeze detected
+  - Amber dot: significant change (>25% WoW)
+  - Blue dot: new department or executive hire
+- [ ] **Unmatched companies shown as grayed-out rows** at the bottom of the table:
+  - All metric columns show `—`
+  - Status column shows "Pending — est. 48h" or "No ATS detected"
+  - NOT counted in KPI strip totals
+- [ ] Pagination: 50 companies per page (most portfolios fit on one page)
+- [ ] Empty state: "Add your portfolio companies to get started" with CTA button
+
+#### 3.2 — Company Deep-Dive (`/dashboard/company/[slug]`)
+
+**Header section:**
+- [ ] Company name, logo, stage badge, industry badge, HQ location
+- [ ] Sync status indicator + "Last synced: X hours ago"
+- [ ] Quick stats row: Total Open Roles | WoW Change | Hiring Velocity | Time on Cadre
+
+**Trend chart (primary visualization):**
+- [ ] Tremor `<AreaChart>` — open roles over time
+- [ ] Line with subtle area fill (10-15% opacity of #5e6ad2)
+- [ ] Default range: 8 weeks, weekly aggregation
+- [ ] Time range toggle: 4w / 8w / 12w buttons
+- [ ] Hover tooltip: date, total roles, net change from previous period
+- [ ] Grid lines at #2a2a2b, axis labels at #888
+
+**Department breakdown:**
+- [ ] Tremor `<BarList>` — horizontal bars showing roles per department
+- [ ] Sorted by count descending
+- [ ] Each bar shows: department name, count, percentage of total
+- [ ] Color-coded to match consumer product department colors (Engineering blue, Sales orange, etc.)
+
+**Role listing:**
+- [ ] Tabbed view: "All Open" | "New This Week" | "Removed This Week"
+- [ ] Each tab shows role cards: title, department badge, location, posted date
+- [ ] "New This Week" tab: green left border on each card
+- [ ] "Removed This Week" tab: red left border, strikethrough title
+- [ ] Searchable by role title
+- [ ] Pagination: 25 per page
+
+**Alert history for this company:**
+- [ ] Compact timeline of past alerts (last 30 days)
+- [ ] "Hiring spike detected — +8 roles in 1 week" with date
+- [ ] Links to full alert detail
+
+#### 3.3 — Side-by-Side Comparison (`/dashboard/compare`)
+
+- [ ] Company selector: multi-select dropdown, pick 2-5 companies from portfolio
+- [ ] **URL state: `?companies=acme-ai,beacon-labs,cortex`** (shareable link)
+- [ ] **Comparison table:**
+  | Metric | Company A | Company B | Company C |
+  - Open Roles
+  - WoW Change (colored)
+  - Top Department
+  - Eng % of Hiring
+  - Hiring Velocity (roles/week)
+  - Stage
+- [ ] **Trend overlay chart:**
+  - Tremor `<LineChart>` — multi-line, one per company
+  - Each company a different color (accent, green, amber, etc.)
+  - NOT area chart (overlapping fills obscure data — council consensus)
+  - Legend below chart with company name + color swatch
+  - Default: 8 weeks, weekly aggregation
+- [ ] **Department comparison:**
+  - Grouped horizontal bar chart: departments as rows, bars per company
+  - Visual diff: which company is heavier on Engineering vs. Sales
+
+#### 3.4 — Onboarding Flow
+
+- [ ] **Step 1: Welcome screen** after first sign-in
+  - "Add your portfolio companies to get started"
+  - Textarea: paste company names (one per line)
+  - OR: CSV upload (column: company_name)
+  - "Add companies" button
+- [ ] **Step 2: Matching screen** (instant, client-side fuzzy match + server confirmation)
+  - Three-column result:
+    - Green check: "Matched — data available now" (count)
+    - Amber clock: "Syncing — data available in 24-48h" (count)
+    - Gray question: "Under investigation — 2-3 business days" (count)
+  - Each section expandable to show individual company names
+  - "Continue to dashboard" button
+- [ ] **Step 3: Dashboard loads** with matched companies showing real data immediately
+  - Banner at top: "15 companies are being added. We'll notify you when they're ready."
+  - Unmatched companies visible as grayed-out rows (council consensus: don't hide them)
+- [ ] **Matt notification:** Loops.so transactional email with list of unmatched companies for manual ATS discovery
+- [ ] **In-dashboard "Add companies" button** in sidebar for ongoing additions (same flow, minus the welcome screen)
 
 ### Phase 4 — Alerts & Billing (Weeks 5-7)
 
-- [ ] **Alert engine** (runs after daily snapshot)
+#### 4.1 — Alert Data Model & Engine
+
+- [ ] **Supabase `alerts` table:**
+  ```sql
+  alerts (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    investor_account_id uuid REFERENCES investor_accounts,
+    company_id uuid REFERENCES companies,
+    alert_type text NOT NULL,        -- hiring_spike, hiring_freeze, new_department, executive_hire, sync_failing
+    severity text NOT NULL,          -- info, warning, critical
+    title text NOT NULL,             -- "Hiring spike: +12 roles this week"
+    body text,                       -- "Beacon Labs added 12 roles, up from avg 3/week. 8 of 12 are Sales & GTM."
+    data jsonb,                      -- structured payload (roles added, dept breakdown, etc.)
+    is_read boolean DEFAULT false,
+    created_at timestamptz DEFAULT now()
+  )
+  CREATE INDEX idx_alerts_investor_unread ON alerts(investor_account_id, is_read, created_at DESC);
+  ```
+- [ ] **Alert engine** (cron job, runs after daily snapshot):
   - Hiring Spike: >25% role increase in 1 week
-  - Hiring Freeze: >30% role decrease in 1 week, or 0 new roles for 3+ weeks
+  - Hiring Freeze: >30% role decrease in 1 week, or 0 new roles for 3+ weeks when prior avg was >2/week
   - New Department: first-ever role in a department for that company
   - Executive Hire: VP/C-suite/Head-of/Director title posted
-  - Delivery: email via Loops.so (consolidate into daily alert digest, not per-alert spam)
-- [ ] **Alert preferences** in dashboard settings
-  - Toggle each alert type on/off
-  - Choose delivery: email only (V1)
+  - Sync Failing: company's ATS hasn't returned data for 48+ hours (GPT's catch — data health is alert-worthy)
+
+#### 4.2 — Alert UI (Three Tiers)
+
+- [ ] **Tier 1 — Inline table badges** (on Portfolio Overview):
+  - Red dot on row: hiring freeze
+  - Amber dot: significant change (>25% WoW)
+  - Blue dot: new department or executive hire
+  - Clicking badge opens popover with alert summary + "View details" link
+- [ ] **Tier 2 — Notification bell** (in dashboard top bar):
+  - Badge with unread count
+  - Dropdown: last 15-20 alerts, compact cards
+  - Each card: company logo, alert title, timestamp, severity color stripe
+  - "Mark all read" + "View all alerts" links
+- [ ] **Tier 3 — Alerts page** (`/dashboard/alerts`):
+  - Full feed of all alerts, filterable by type and severity
+  - Each alert card: company, type badge, title, body text, timestamp
+  - Bulk actions: mark read, dismiss
+  - "This week" / "This month" / "All time" time filters
+- [ ] **Alert delivery via Loops.so:**
+  - Daily digest email (not per-alert) consolidating all alerts from the past 24h
+  - Only sent if there are new alerts
+  - Links back to specific alerts in dashboard
+
+#### 4.3 — Alert Preferences (`/dashboard/settings/alerts`)
+
+- [ ] Toggle each alert type on/off
+- [ ] Email digest: on/off + frequency (daily / weekly)
+- [ ] Per-company mute (silence alerts for specific companies)
+
+#### 4.4 — Stripe Billing
+
 - [ ] **Stripe integration**
   - Stripe Checkout for initial signup
   - Metered billing based on active synced companies
   - Monthly invoice with line items
-  - Billing page in dashboard showing current plan, company count, next invoice estimate
-  - Free during pilot period for design partners (manual override)
-- [ ] **Billing logic**
+  - Free during pilot period for design partners (manual override flag in `investor_accounts`)
+- [ ] **Billing page** (`/dashboard/settings/billing`):
+  - Current plan summary: "42 active companies × $20 = $840 + $500 base = $1,340/mo"
+  - Company breakdown: which companies are billable (active) vs. free (pending/no_ats)
+  - Next invoice estimate
+  - Payment method management (Stripe Customer Portal)
+  - Invoice history
+- [ ] **Billing logic:**
   - Count `portfolio_tracked_companies` where `sync_status = 'active'`
   - Apply formula: $500 + max(0, count - 15) × $20
-  - Companies with `sync_status = 'pending'` or `'no_ats'` are excluded from billing
+  - Companies with `sync_status = 'pending'` or `'no_ats'` are excluded
 
-### Phase 5 — Polish & Scale (Weeks 7-10)
+### Phase 5 — Consumer Polish (Weeks 6-8, interleaved with Phase 4)
+> Deeper consumer fixes from the UI/UX audit. Lower priority than investor product but improves the platform design partners will also see.
+
+- [ ] **EntityDetailLayout** — unified shared component for investor/company/industry pages:
+  - Shared: header section, search + remote toggle, dynamic tags, job list with pagination
+  - Dynamic tags derived from actual job data on that page (not hardcoded 15)
+  - Multi-select tags (match homepage filter behavior, not single-select)
+  - Consistent remote filtering: `isRemoteJob(job)` helper → `remoteFirst === true OR location includes "remote"`
+  - Responsive: badges hide on mobile, tags wrap
+- [ ] **Mobile bottom sheet filter** (replaces current hidden dropdown):
+  - Full-screen sheet sliding up from bottom
+  - Accordion sections: Department, Location, Industry, Work Mode, Investor, Posted
+  - Sticky footer: "Show N results" button + "Clear all"
+  - Quick chips above results (top 2-3 filters: search + department + remote toggle) always visible
+- [ ] **Color token centralization:**
+  - Move all hardcoded hex strings to Tailwind theme in `tailwind.config.ts`
+  - Define: `bg-base`, `bg-surface`, `bg-elevated`, `bg-hover`, `text-primary`, `text-body`, `text-muted`, `text-subtle`, `accent`, `accent-hover`
+  - Replace `bg-[#1a1a1b]` → `bg-surface`, `text-[#888]` → `text-muted`, etc. across all components
+  - Makes future theme changes (or investor dashboard theming) a single-file edit
+
+### Phase 6 — Dashboard Polish & Scale (Weeks 7-10)
 
 - [ ] **PDF export** for board decks / LP reports
   - One-page snapshot: portfolio aggregate stats, top movers, flags, trend chart
@@ -392,6 +614,81 @@ Step 5: Companies without any ATS (no Greenhouse/Lever/Ashby/etc.)
 - [ ] Set up Stripe account (or confirm existing)
 - [ ] Upgrade Supabase to Pro plan ($25/mo)
 - [ ] Draft initial outreach message to design partners (can use Portfolio Pulse concept as the hook: "Want to get a free weekly hiring pulse across your portfolio? We're piloting this with 5 firms.")
+
+---
+
+---
+
+## Dashboard Design Tokens (Reference for Implementation)
+
+All dashboard charts and UI elements should use these tokens for consistency across the dark theme.
+
+### Color System
+
+```
+Background:
+  --bg-base:      #0e0e0f   (page background)
+  --bg-surface:   #1a1a1b   (cards, table rows)
+  --bg-elevated:  #252526   (hover states, dropdowns)
+  --bg-hover:     #2a2a2b   (active states)
+
+Text:
+  --text-primary: #ffffff   (headings, numbers)
+  --text-body:    #e8e8e8   (body text, table cells)
+  --text-muted:   #999999   (secondary text — WCAG AA compliant on #1a1a1b)
+  --text-subtle:  #888888   (tertiary text, timestamps)
+
+Accent:
+  --accent:       #5e6ad2   (interactive elements, links, primary charts)
+  --accent-hover: #6e7ae2   (hover on interactive elements)
+
+Severity:
+  --green:        #4ade80   (positive change, spikes, new)
+  --red:          #f87171   (negative change, freezes, removed)
+  --amber:        #fbbf24   (warnings, significant changes)
+  --blue:         #60a5fa   (info, new departments, exec hires)
+
+Charts (Tremor overrides):
+  --chart-grid:   #2a2a2b   (gridline color)
+  --chart-tooltip-bg: #262626
+  --chart-tooltip-text: #e8e8e8
+  --chart-area-opacity: 0.12  (10-15%)
+```
+
+### Alert Badge Colors
+
+| Alert Type | Inline Badge | Severity |
+|-----------|-------------|----------|
+| Hiring Freeze | Red dot (#f87171) | Critical |
+| Significant Change (>25% WoW) | Amber dot (#fbbf24) | Warning |
+| New Department | Blue dot (#60a5fa) | Info |
+| Executive Hire | Blue dot (#60a5fa) | Info |
+| Sync Failing | Red dot (#f87171) | Critical |
+
+### Department Badge Colors (shared between consumer + investor)
+
+```
+Engineering:                #3b82f6 (blue)
+Sales & GTM:                #f97316 (orange)
+Marketing:                  #a855f7 (purple)
+AI & Research:              #06b6d4 (cyan)
+Product:                    #10b981 (emerald)
+Design:                     #ec4899 (pink)
+Customer Success & Support: #eab308 (yellow)
+People & Talent:            #8b5cf6 (violet)
+Finance & Legal:            #6b7280 (gray)
+Operations & Admin:         #78716c (stone)
+```
+
+### Chart Types by Use Case
+
+| Visualization | Component | Chart Type | Notes |
+|--------------|-----------|------------|-------|
+| Hiring trend over time | `<AreaChart>` | Line with area fill | 10-15% opacity fill, weekly aggregation default |
+| Department breakdown | `<BarList>` | Horizontal bars | Sorted by count desc, color-coded |
+| Comparison overlay | `<LineChart>` | Multi-line (no area) | One color per company, max 5 lines |
+| KPI sparkline | `<SparkAreaChart>` | Mini trend | Used in KPI cards, last 4 weeks |
+| WoW change indicator | Custom | Number + arrow | Green up, red down, gray zero |
 
 ---
 
