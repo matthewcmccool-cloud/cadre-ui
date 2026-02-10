@@ -345,6 +345,8 @@ function mapRecordToJob(record: AirtableRecord, maps: LookupMaps): Job {
     jobUrl: record.fields['Job URL'] || '',
     applyUrl: record.fields['Apply URL'] || record.fields['Job URL'] || '',
     salary: record.fields['Salary'] || '',
+        departmentName: FUNCTION_TO_DEPARTMENT[funcName] || 'Operations & Admin',
+        firstSeenAt: record.createdTime || '',
   };
 }
 
