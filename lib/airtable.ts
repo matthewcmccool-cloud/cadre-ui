@@ -192,6 +192,11 @@ export interface Job {
   description?: string;
 }
 
+export interface CompanyTickerItem {
+  name: string;
+  url?: string;
+}
+
 export interface FilterOptions {
   functions: string[];
   departments: string[];
@@ -199,6 +204,7 @@ export interface FilterOptions {
   investors: string[];
   industries: string[];
   companies: string[];
+  companyData: CompanyTickerItem[];
 }
 
 export interface JobsResult {
@@ -536,7 +542,7 @@ export async function getFilterOptions(): Promise<FilterOptions> {
       fetchAirtable(TABLES.functions, { fields: ['Function', 'Department (Primary)'] }).catch(() => ({ records: [] })),
     fetchAllAirtable(TABLES.investors, { fields: ['Firm Name'] }),
     fetchAirtable(TABLES.industries, { fields: ['Industry Name'] }),
-    fetchAllAirtable(TABLES.companies, { fields: ['Company'] }),
+    fetchAllAirtable(TABLES.companies, { fields: ['Company', 'URL'] }),
   ]);
 
   const functions = functionRecords.records
@@ -560,10 +566,14 @@ export async function getFilterOptions(): Promise<FilterOptions> {
     .filter(Boolean)
     .sort();
 
-  const companies = companyRecords
-    .map(r => r.fields['Company'] as string)
-    .filter(Boolean)
-    .sort();
+  const companyData: CompanyTickerItem[] = companyRecords
+    .map(r => ({
+      name: r.fields['Company'] as string || '',
+      url: r.fields['URL'] as string || undefined,
+    }))
+    .filter(c => c.name);
+
+  const companies = companyData.map(c => c.name).sort();
 
   const jobRecords = await fetchAirtable(TABLES.jobs, {
     fields: ['Location'],
@@ -578,7 +588,7 @@ export async function getFilterOptions(): Promise<FilterOptions> {
 
   const locations = Array.from(locationSet).sort();
 
-  return { functions, departments, locations, investors, industries, companies };
+  return { functions, departments, locations, investors, industries, companies, companyData };
 }
 
 // Fetch a single job by its Airtable record ID

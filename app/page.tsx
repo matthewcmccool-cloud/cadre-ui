@@ -1,12 +1,10 @@
-import Link from 'next/link';
 import { getJobs, getFilterOptions, getRecentCompanies } from '@/lib/airtable';
 import JobTable from '@/components/JobTable';
 import Pagination from '@/components/Pagination';
 import SearchFilters from '@/components/SearchFilters';
 import RecentRounds from '@/components/RecentRounds';
 import FundingRoundsFeed from '@/components/FundingRoundsFeed';
-import InvestorTicker from '@/components/InvestorTicker';
-import EmailCapture from '@/components/EmailCapture';
+import CompanyTicker from '@/components/CompanyTicker';
 
 // ISR: regenerate page every 60 minutes in the background
 export const revalidate = 3600;
@@ -116,18 +114,15 @@ export default async function Home({ searchParams }: PageProps) {
               <div className="text-xl sm:text-2xl font-bold text-white">{filterOptions.companies.length.toLocaleString()}</div>
               <div className="text-[11px] font-semibold text-[#999] uppercase tracking-wider">COMPANIES</div>
             </div>
-            <Link href="/for-investors" className="bg-[#1a1a1b] hover:bg-[#252526] rounded-lg px-4 py-3 border border-[#252526] transition-colors">
+            <div className="bg-[#1a1a1b] rounded-lg px-4 py-3 border border-[#252526]">
               <div className="text-xl sm:text-2xl font-bold text-white">{filterOptions.investors.length}</div>
               <div className="text-[11px] font-semibold text-[#999] uppercase tracking-wider">INVESTORS</div>
-            </Link>
+            </div>
           </div>
         </div>
 
-        {/* ── Investor Ticker ────────────────────────────── */}
-        <InvestorTicker investors={filterOptions.investors} />
-
-        {/* ── Email Capture ────────────────────────────────── */}
-        <EmailCapture />
+        {/* ── Company Ticker ─────────────────────────────── */}
+        <CompanyTicker companies={filterOptions.companyData} />
 
         {/* ── Recent Fundraises (AI-powered) ─────────────── */}
         <FundingRoundsFeed companyNames={filterOptions.companies} />
@@ -158,13 +153,10 @@ export default async function Home({ searchParams }: PageProps) {
           searchParams={searchParams}
         />
 
-        {/* ── Footer CTA ───────────────────────────────────── */}
+        {/* ── Footer ───────────────────────────────────────── */}
         <div className="mt-6 pt-4 border-t border-[#1a1a1b] flex items-center justify-between">
           <p className="text-xs text-[#555]">
-            Are you an investor?{' '}
-            <Link href="/for-investors" className="text-[#5e6ad2] hover:text-[#7b83e0] transition-colors">
-              Learn about Cadre for Investors
-            </Link>
+            Cadre · VC-backed startup jobs, updated daily
           </p>
           <p className="text-xs text-[#444]">
             Page {jobsResult.page} of {jobsResult.totalPages}
