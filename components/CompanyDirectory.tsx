@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useMemo } from 'react';
 import { CompanyDirectoryItem } from '@/lib/airtable';
+import FilterDropdown, { type FilterOption } from './FilterDropdown';
 
 interface CompanyDirectoryProps {
   companies: CompanyDirectoryItem[];
@@ -21,12 +22,12 @@ function getDomain(url: string | undefined): string | null {
 
 export default function CompanyDirectory({ companies }: CompanyDirectoryProps) {
   const [search, setSearch] = useState('');
-  const [stageFilter, setStageFilter] = useState('');
-  const [investorFilter, setInvestorFilter] = useState('');
-  const [industryFilter, setIndustryFilter] = useState('');
+  const [stageFilter, setStageFilter] = useState<string[]>([]);
+  const [investorFilter, setInvestorFilter] = useState<string[]>([]);
+  const [industryFilter, setIndustryFilter] = useState<string[]>([]);
 
   // Build investor options from data
-  const investorOptions = useMemo(() => {
+  const investorOptions = useMemo((): FilterOption[] => {
     const counts = new Map<string, number>();
     for (const c of companies) {
       for (const inv of c.investors) {
@@ -36,11 +37,11 @@ export default function CompanyDirectory({ companies }: CompanyDirectoryProps) {
     return Array.from(counts.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 50)
-      .map(([name, count]) => ({ name, count }));
+      .map(([name, count]) => ({ value: name, label: name, count }));
   }, [companies]);
 
   // Build industry options from data
-  const industryOptions = useMemo(() => {
+  const industryOptions = useMemo((): FilterOption[] => {
     const counts = new Map<string, number>();
     for (const c of companies) {
       if (c.industry) {
@@ -49,8 +50,12 @@ export default function CompanyDirectory({ companies }: CompanyDirectoryProps) {
     }
     return Array.from(counts.entries())
       .sort((a, b) => b[1] - a[1])
-      .map(([name, count]) => ({ name, count }));
+      .map(([name, count]) => ({ value: name, label: name, count }));
   }, [companies]);
+
+  const stageOptions = useMemo((): FilterOption[] =>
+    STAGES.map(s => ({ value: s, label: s })),
+  []);
 
   const filtered = useMemo(() => {
     return companies.filter(c => {
@@ -62,14 +67,14 @@ export default function CompanyDirectory({ companies }: CompanyDirectoryProps) {
           return false;
         }
       }
-      if (stageFilter && c.stage !== stageFilter) return false;
-      if (investorFilter && !c.investors.includes(investorFilter)) return false;
-      if (industryFilter && c.industry !== industryFilter) return false;
+      if (stageFilter.length > 0 && (!c.stage || !stageFilter.includes(c.stage))) return false;
+      if (investorFilter.length > 0 && !c.investors.some(inv => investorFilter.includes(inv))) return false;
+      if (industryFilter.length > 0 && (!c.industry || !industryFilter.includes(c.industry))) return false;
       return true;
     });
   }, [companies, search, stageFilter, investorFilter, industryFilter]);
 
-  const hasActiveFilters = stageFilter || investorFilter || industryFilter;
+  const hasActiveFilters = stageFilter.length > 0 || investorFilter.length > 0 || industryFilter.length > 0;
 
   return (
     <>
@@ -81,9 +86,9 @@ export default function CompanyDirectory({ companies }: CompanyDirectoryProps) {
         </p>
       </div>
 
-      {/* Search + Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        <div className="relative flex-1">
+      {/* Search */}
+      <div className="mb-3">
+        <div className="relative">
           <svg
             className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#999]"
             fill="none"
@@ -111,73 +116,50 @@ export default function CompanyDirectory({ companies }: CompanyDirectoryProps) {
             </button>
           )}
         </div>
-
-        <select
-          value={industryFilter}
-          onChange={(e) => setIndustryFilter(e.target.value)}
-          className="px-3 py-2.5 bg-[#1a1a1b] text-[#e8e8e8] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#5e6ad2]/50 border-none appearance-none cursor-pointer"
-        >
-          <option value="">All Industries</option>
-          {industryOptions.map(({ name, count }) => (
-            <option key={name} value={name}>{name} ({count})</option>
-          ))}
-        </select>
-
-        <select
-          value={stageFilter}
-          onChange={(e) => setStageFilter(e.target.value)}
-          className="px-3 py-2.5 bg-[#1a1a1b] text-[#e8e8e8] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#5e6ad2]/50 border-none appearance-none cursor-pointer"
-        >
-          <option value="">All Stages</option>
-          {STAGES.map(s => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
-
-        <select
-          value={investorFilter}
-          onChange={(e) => setInvestorFilter(e.target.value)}
-          className="px-3 py-2.5 bg-[#1a1a1b] text-[#e8e8e8] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#5e6ad2]/50 border-none appearance-none cursor-pointer"
-        >
-          <option value="">All Investors</option>
-          {investorOptions.map(({ name, count }) => (
-            <option key={name} value={name}>{name} ({count})</option>
-          ))}
-        </select>
       </div>
 
-      {/* Active filters */}
+      {/* Filter chips */}
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <FilterDropdown label="Industry" options={industryOptions} selected={industryFilter} onChange={setIndustryFilter} multiSelect={false} searchable />
+        <FilterDropdown label="Stage" options={stageOptions} selected={stageFilter} onChange={setStageFilter} multiSelect={false} />
+        <FilterDropdown label="Backed By" options={investorOptions} selected={investorFilter} onChange={setInvestorFilter} multiSelect={false} searchable />
+      </div>
+
+      {/* Active filter chips */}
       {hasActiveFilters && (
-        <div className="flex flex-wrap gap-2 mb-4">
-          {industryFilter && (
+        <div className="flex flex-wrap gap-2 mb-3">
+          {industryFilter.map(f => (
             <button
-              onClick={() => setIndustryFilter('')}
+              key={f}
+              onClick={() => setIndustryFilter([])}
               className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#5e6ad2]/10 rounded text-xs text-[#5e6ad2]"
             >
-              {industryFilter}
+              {f}
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
-          )}
-          {stageFilter && (
+          ))}
+          {stageFilter.map(f => (
             <button
-              onClick={() => setStageFilter('')}
+              key={f}
+              onClick={() => setStageFilter([])}
               className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#5e6ad2]/10 rounded text-xs text-[#5e6ad2]"
             >
-              {stageFilter}
+              {f}
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
-          )}
-          {investorFilter && (
+          ))}
+          {investorFilter.map(f => (
             <button
-              onClick={() => setInvestorFilter('')}
+              key={f}
+              onClick={() => setInvestorFilter([])}
               className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#5e6ad2]/10 rounded text-xs text-[#5e6ad2]"
             >
-              {investorFilter}
+              {f}
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
-          )}
+          ))}
           <button
-            onClick={() => { setStageFilter(''); setInvestorFilter(''); setIndustryFilter(''); }}
+            onClick={() => { setStageFilter([]); setInvestorFilter([]); setIndustryFilter([]); }}
             className="text-xs text-[#555] hover:text-[#888] transition-colors"
           >
             Clear all

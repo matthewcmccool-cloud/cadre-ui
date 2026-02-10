@@ -320,25 +320,6 @@ export default function SearchFilters({
         onClearAll={handleClearAll}
       />
 
-      {/* ── Sort Toggle ─────────────────────────────────────── */}
-      <div className="flex items-center gap-0.5">
-        {[
-          { key: 'featured', label: 'Featured' },
-          { key: 'recent', label: 'Most recent' },
-        ].map((opt) => (
-          <button
-            key={opt.key}
-            onClick={() => setSort(opt.key)}
-            className={`px-2.5 py-1 rounded text-xs font-medium transition-all ${
-              currentSort === opt.key
-                ? 'bg-[#252526] text-[#e8e8e8]'
-                : 'text-[#555] hover:text-[#888]'
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
     </div>
   );
 }

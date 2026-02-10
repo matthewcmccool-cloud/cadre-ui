@@ -110,10 +110,10 @@ export default async function Home({ searchParams }: PageProps) {
         {activeTab === 'jobs' && (
           <div className="mb-6">
             <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight tracking-tight">
-              Every open role at VC-backed startups
+              Curated roles at exceptional technology companies.
             </h1>
             <p className="text-sm text-[#888] mt-1.5">
-              Discover jobs at companies backed by the world&apos;s top investors. Updated daily.
+              Curated by the investors who back them.
             </p>
           </div>
         )}

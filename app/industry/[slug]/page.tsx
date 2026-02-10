@@ -17,10 +17,13 @@ export async function generateMetadata({ params }: IndustryPageProps): Promise<M
   const title = `${industry.name} Startup Jobs — ${industry.companies.length} Companies | Cadre`;
   const description = `${industry.companies.length} VC-backed ${industry.name.toLowerCase()} companies with open roles. Browse jobs at venture-funded startups in ${industry.name} on Cadre.`;
 
+  const url = `https://cadre-ui-psi.vercel.app/industry/${params.slug}`;
+
   return {
     title,
     description,
-    openGraph: { title, description, type: 'website', siteName: 'Cadre' },
+    alternates: { canonical: url },
+    openGraph: { title, description, type: 'website', siteName: 'Cadre', url },
     twitter: { card: 'summary', title, description },
   };
 }

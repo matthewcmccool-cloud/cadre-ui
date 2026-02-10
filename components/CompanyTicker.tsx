@@ -48,11 +48,27 @@ export default function CompanyTicker({ companies }: CompanyTickerProps) {
     return a.name.localeCompare(b.name);
   });
 
-  // Use ALL companies, duplicate for seamless infinite scroll
-  const doubled = [...sorted, ...sorted];
+  // Show featured companies + a random sample of others (cap at ~80 total)
+  const TICKER_CAP = 80;
+  let tickerCompanies: CompanyTickerItem[];
+  if (sorted.length <= TICKER_CAP) {
+    tickerCompanies = sorted;
+  } else {
+    // Keep all featured, randomly sample the rest
+    const featured = sorted.filter(c => featuredLower.has(c.name.toLowerCase()));
+    const rest = sorted.filter(c => !featuredLower.has(c.name.toLowerCase()));
+    // Deterministic-ish shuffle using index-based selection
+    const sampleSize = TICKER_CAP - featured.length;
+    const step = Math.max(1, Math.floor(rest.length / sampleSize));
+    const sampled = rest.filter((_, i) => i % step === 0).slice(0, sampleSize);
+    tickerCompanies = [...featured, ...sampled];
+  }
+
+  // Duplicate for seamless infinite scroll
+  const doubled = [...tickerCompanies, ...tickerCompanies];
 
   // Scale animation duration: ~0.5s per company for readable scroll speed
-  const duration = Math.max(30, sorted.length * 0.5);
+  const duration = Math.max(30, tickerCompanies.length * 0.5);
 
   return (
     <div className="mb-5 overflow-hidden relative">

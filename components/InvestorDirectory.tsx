@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useMemo } from 'react';
 import { InvestorDirectoryItem } from '@/lib/airtable';
+import FilterDropdown, { type FilterOption } from './FilterDropdown';
 
 interface InvestorDirectoryProps {
   investors: InvestorDirectoryItem[];
@@ -10,9 +11,45 @@ interface InvestorDirectoryProps {
 
 type SortMode = 'portfolio' | 'alpha';
 
+function getDomain(url: string | undefined): string | null {
+  if (!url) return null;
+  try {
+    return new URL(url).hostname.replace('www.', '');
+  } catch {
+    return null;
+  }
+}
+
 export default function InvestorDirectory({ investors }: InvestorDirectoryProps) {
   const [search, setSearch] = useState('');
   const [sortMode, setSortMode] = useState<SortMode>('portfolio');
+  const [industryFilter, setIndustryFilter] = useState<string[]>([]);
+  const [stageFilter, setStageFilter] = useState<string[]>([]);
+
+  // Build filter options from investor data
+  const industryOptions = useMemo((): FilterOption[] => {
+    const counts = new Map<string, number>();
+    for (const inv of investors) {
+      for (const ind of inv.industries) {
+        counts.set(ind, (counts.get(ind) || 0) + 1);
+      }
+    }
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, count]) => ({ value: name, label: name, count }));
+  }, [investors]);
+
+  const stageOptions = useMemo((): FilterOption[] => {
+    const counts = new Map<string, number>();
+    for (const inv of investors) {
+      for (const st of inv.stages) {
+        counts.set(st, (counts.get(st) || 0) + 1);
+      }
+    }
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, count]) => ({ value: name, label: name, count }));
+  }, [investors]);
 
   const filtered = useMemo(() => {
     let result = investors;
@@ -20,12 +57,23 @@ export default function InvestorDirectory({ investors }: InvestorDirectoryProps)
       const q = search.toLowerCase();
       result = result.filter(inv => inv.name.toLowerCase().includes(q));
     }
+    if (industryFilter.length > 0) {
+      result = result.filter(inv =>
+        inv.industries.some(ind => industryFilter.includes(ind))
+      );
+    }
+    if (stageFilter.length > 0) {
+      result = result.filter(inv =>
+        inv.stages.some(st => stageFilter.includes(st))
+      );
+    }
     if (sortMode === 'alpha') {
       result = [...result].sort((a, b) => a.name.localeCompare(b.name));
     }
-    // 'portfolio' is already the default sort from the server
     return result;
-  }, [investors, search, sortMode]);
+  }, [investors, search, sortMode, industryFilter, stageFilter]);
+
+  const hasActiveFilters = industryFilter.length > 0 || stageFilter.length > 0;
 
   return (
     <>
@@ -37,9 +85,9 @@ export default function InvestorDirectory({ investors }: InvestorDirectoryProps)
         </p>
       </div>
 
-      {/* Search + Sort */}
-      <div className="flex gap-3 mb-4">
-        <div className="relative flex-1">
+      {/* Search */}
+      <div className="mb-3">
+        <div className="relative">
           <svg
             className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#999]"
             fill="none"
@@ -69,17 +117,15 @@ export default function InvestorDirectory({ investors }: InvestorDirectoryProps)
         </div>
       </div>
 
-      {/* Sort toggle + count */}
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-xs text-[#555]">
-          {filtered.length === investors.length
-            ? `${investors.length} investors`
-            : `${filtered.length} of ${investors.length} investors`}
-        </p>
-        <div className="flex items-center gap-0.5">
+      {/* Filter chips + sort */}
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <FilterDropdown label="Industry" options={industryOptions} selected={industryFilter} onChange={setIndustryFilter} multiSelect={false} searchable />
+        <FilterDropdown label="Stage" options={stageOptions} selected={stageFilter} onChange={setStageFilter} multiSelect={false} />
+
+        <div className="ml-auto flex items-center gap-0.5">
           {([
             { key: 'portfolio' as SortMode, label: 'By portfolio size' },
-            { key: 'alpha' as SortMode, label: 'A–Z' },
+            { key: 'alpha' as SortMode, label: 'A\u2013Z' },
           ]).map((opt) => (
             <button
               key={opt.key}
@@ -96,22 +142,75 @@ export default function InvestorDirectory({ investors }: InvestorDirectoryProps)
         </div>
       </div>
 
+      {/* Active filter chips */}
+      {hasActiveFilters && (
+        <div className="flex flex-wrap gap-2 mb-3">
+          {industryFilter.map(f => (
+            <button
+              key={f}
+              onClick={() => setIndustryFilter([])}
+              className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#5e6ad2]/10 rounded text-xs text-[#5e6ad2]"
+            >
+              {f}
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          ))}
+          {stageFilter.map(f => (
+            <button
+              key={f}
+              onClick={() => setStageFilter([])}
+              className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#5e6ad2]/10 rounded text-xs text-[#5e6ad2]"
+            >
+              {f}
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          ))}
+          <button
+            onClick={() => { setIndustryFilter([]); setStageFilter([]); }}
+            className="text-xs text-[#555] hover:text-[#888] transition-colors"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
+
+      {/* Result count */}
+      <p className="text-xs text-[#555] mb-4">
+        {filtered.length === investors.length
+          ? `${investors.length} investors`
+          : `${filtered.length} of ${investors.length} investors`}
+      </p>
+
       {/* Investor grid */}
       <div className="flex flex-wrap gap-2">
-        {filtered.map((investor) => (
-          <Link
-            key={investor.slug}
-            href={`/investors/${investor.slug}`}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-[#1a1a1b] hover:bg-[#252526] rounded-lg text-sm text-[#e8e8e8] transition-colors group"
-          >
-            <span className="whitespace-nowrap">{investor.name}</span>
-            {investor.companyCount > 0 && (
-              <span className="text-[10px] text-[#555] font-medium">
-                {investor.companyCount} {investor.companyCount === 1 ? 'co' : 'cos'}
-              </span>
-            )}
-          </Link>
-        ))}
+        {filtered.map((investor) => {
+          const domain = getDomain(investor.url);
+          return (
+            <Link
+              key={investor.slug}
+              href={`/investors/${investor.slug}`}
+              className="inline-flex items-center gap-2 px-3 py-2 bg-[#1a1a1b] hover:bg-[#252526] rounded-lg text-sm text-[#e8e8e8] transition-colors group"
+            >
+              {domain ? (
+                <img
+                  src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`}
+                  alt=""
+                  className="w-4 h-4 rounded-sm opacity-70 group-hover:opacity-100 transition-opacity"
+                />
+              ) : (
+                <div className="w-4 h-4 rounded-sm bg-[#252526] flex items-center justify-center text-[8px] font-bold text-[#555]">
+                  {investor.name.charAt(0)}
+                </div>
+              )}
+              <span className="whitespace-nowrap">{investor.name}</span>
+              {investor.companyCount > 0 && (
+                <span className="text-[10px] text-[#555] font-medium">
+                  {investor.companyCount} {investor.companyCount === 1 ? 'co' : 'cos'}
+                </span>
+              )}
+            </Link>
+          );
+        })}
       </div>
 
       {filtered.length === 0 && (

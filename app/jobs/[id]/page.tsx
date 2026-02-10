@@ -131,21 +131,14 @@ export async function generateMetadata({ params }: JobDetailPageProps): Promise<
     ? stripHtml(job.description).slice(0, 160)
     : `${job.title} at ${job.company}. Find jobs at VC-backed companies on Cadre.`;
 
+  const url = `https://cadre-ui-psi.vercel.app/jobs/${encodeURIComponent(params.id)}`;
+
   return {
     title,
     description,
-    openGraph: {
-      title,
-      description,
-      type: 'website',
-      siteName: 'Cadre',
-      url: `https://cadre-ui-psi.vercel.app/jobs/${encodeURIComponent(params.id)}`,
-    },
-    twitter: {
-      card: 'summary',
-      title,
-      description,
-    },
+    alternates: { canonical: url },
+    openGraph: { title, description, type: 'website', siteName: 'Cadre', url },
+    twitter: { card: 'summary', title, description },
   };
 }
 

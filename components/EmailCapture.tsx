@@ -16,9 +16,12 @@ export default function EmailCapture() {
 
     setStatus('loading');
     try {
-      // TODO: Wire to Loops.so API when key is configured
-      // For now, just simulate success
-      await new Promise(r => setTimeout(r, 500));
+      const res = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) throw new Error();
       setStatus('success');
       setEmail('');
     } catch {
@@ -34,7 +37,7 @@ export default function EmailCapture() {
             GET CADRE DELIVERED
           </h3>
           <p className="text-xs text-[#999] mt-1">
-            Weekly hiring data from top VC portfolios. No spam.
+            The hiring signal from 330+ VC portfolios. Weekly.
           </p>
         </div>
         <form onSubmit={handleSubmit} className="flex gap-2 sm:w-auto w-full">

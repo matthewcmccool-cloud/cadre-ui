@@ -21,10 +21,13 @@ export async function generateMetadata({ params }: CompanyPageProps): Promise<Me
   const title = `${company.name} Jobs — ${company.jobCount} Open Roles | Cadre`;
   const description = parts.join(' ');
 
+  const url = `https://cadre-ui-psi.vercel.app/companies/${params.slug}`;
+
   return {
     title,
     description,
-    openGraph: { title, description, type: 'website', siteName: 'Cadre' },
+    alternates: { canonical: url },
+    openGraph: { title, description, type: 'website', siteName: 'Cadre', url },
     twitter: { card: 'summary', title, description },
   };
 }

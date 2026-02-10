@@ -982,35 +982,64 @@ export async function getAllCompaniesForDirectory(): Promise<CompanyDirectoryIte
 export interface InvestorDirectoryItem {
   name: string;
   slug: string;
+  url?: string;
   companyCount: number;
+  industries: string[];
+  stages: string[];
 }
 
 export async function getAllInvestorsForDirectory(): Promise<InvestorDirectoryItem[]> {
-  const [investorRecords, companyRecords] = await Promise.all([
+  const [investorRecords, companyRecords, industryRecords] = await Promise.all([
     fetchAllAirtable(TABLES.investors, {
-      fields: ['Firm Name'],
+      fields: ['Firm Name', 'Website'],
     }),
     fetchAllAirtable(TABLES.companies, {
-      fields: ['VCs'],
+      fields: ['VCs', 'Stage', 'Industry'],
     }),
+    fetchAirtable(TABLES.industries, { fields: ['Industry Name'] }),
   ]);
 
-  // Count portfolio companies per investor
+  // Build industry name lookup
+  const industryMap = new Map<string, string>();
+  industryRecords.records.forEach(r => {
+    industryMap.set(r.id, r.fields['Industry Name'] as string || '');
+  });
+
+  // Count portfolio companies and collect industries/stages per investor
   const portfolioCounts = new Map<string, number>();
+  const investorIndustries = new Map<string, Set<string>>();
+  const investorStages = new Map<string, Set<string>>();
+
   companyRecords.forEach(r => {
     const vcIds = (r.fields['VCs'] || []) as string[];
+    const stage = r.fields['Stage'] as string || '';
+    const industryIds = (r.fields['Industry'] || []) as string[];
+    const industryNames = industryIds.map(id => industryMap.get(id) || '').filter(Boolean);
+
     for (const id of vcIds) {
       portfolioCounts.set(id, (portfolioCounts.get(id) || 0) + 1);
+
+      if (!investorIndustries.has(id)) investorIndustries.set(id, new Set());
+      for (const ind of industryNames) investorIndustries.get(id)!.add(ind);
+
+      if (stage) {
+        if (!investorStages.has(id)) investorStages.set(id, new Set());
+        investorStages.get(id)!.add(stage);
+      }
     }
   });
 
   return investorRecords
     .map(r => {
       const name = r.fields['Firm Name'] as string || '';
+      const url = r.fields['Website'] as string || undefined;
       return {
         name,
         slug: toSlug(name),
+        url,
         companyCount: portfolioCounts.get(r.id) || 0,
+        industries: Array.from(investorIndustries.get(r.id) || []),
+        stages: Array.from(investorStages.get(r.id) || []),
       };
     })
     .filter(i => i.name)
