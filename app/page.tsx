@@ -107,22 +107,27 @@ export default async function Home({ searchParams }: PageProps) {
           {/* Stat cards — TBPN-style color blocks */}
           <div className="grid grid-cols-3 gap-2 mt-4">
             <div className="bg-[#5e6ad2] rounded-lg px-4 py-3">
-              <div className="text-xl sm:text-2xl font-bold text-white">{jobsResult.totalCount.toLocaleString()}</div>
+              <div className="text-xl sm:text-2xl font-bold text-white">
+                {jobsResult.totalCount > 0 ? jobsResult.totalCount.toLocaleString() + '+' : '0'}
+              </div>
               <div className="text-[11px] font-semibold text-white/70 uppercase tracking-wider">LIVE ROLES</div>
             </div>
             <div className="bg-[#1a1a1b] rounded-lg px-4 py-3 border border-[#252526]">
               <div className="text-xl sm:text-2xl font-bold text-white">{filterOptions.companies.length.toLocaleString()}</div>
               <div className="text-[11px] font-semibold text-[#999] uppercase tracking-wider">COMPANIES</div>
             </div>
-            <div className="bg-[#1a1a1b] rounded-lg px-4 py-3 border border-[#252526]">
+            <Link href="/for-investors" className="bg-[#1a1a1b] hover:bg-[#252526] rounded-lg px-4 py-3 border border-[#252526] transition-colors">
               <div className="text-xl sm:text-2xl font-bold text-white">{filterOptions.investors.length}</div>
               <div className="text-[11px] font-semibold text-[#999] uppercase tracking-wider">INVESTORS</div>
-            </div>
+            </Link>
           </div>
         </div>
 
         {/* ── Investor Ticker ────────────────────────────── */}
         <InvestorTicker investors={filterOptions.investors} />
+
+        {/* ── Email Capture ────────────────────────────────── */}
+        <EmailCapture />
 
         {/* ── Recent Fundraises (AI-powered) ─────────────── */}
         <FundingRoundsFeed companyNames={filterOptions.companies} />
@@ -152,9 +157,6 @@ export default async function Home({ searchParams }: PageProps) {
           totalPages={jobsResult.totalPages}
           searchParams={searchParams}
         />
-
-        {/* ── Email Capture ────────────────────────────────── */}
-        <EmailCapture />
 
         {/* ── Footer CTA ───────────────────────────────────── */}
         <div className="mt-6 pt-4 border-t border-[#1a1a1b] flex items-center justify-between">

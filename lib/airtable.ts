@@ -63,7 +63,7 @@ const TABLES = {
   jobs: 'Job Listings',
   companies: 'Companies',
   investors: 'Investors',
-  functions: 'tbl94EXkSIEmhqyYy',
+  functions: 'Function',
   industries: 'Industry',
 };
 

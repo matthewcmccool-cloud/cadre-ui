@@ -408,7 +408,7 @@ async function createJobsBatch(
         Title: job.title,
         'Job URL': job.jobUrl,
         'Apply URL': job.applyUrl,
-        'Date Posted': job.datePosted || undefined,
+        'First Seen': job.datePosted || undefined,
         Location: job.location,
         'Remote First': job.remoteFirst,
         Country: job.country || undefined,
