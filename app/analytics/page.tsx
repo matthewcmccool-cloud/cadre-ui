@@ -2,8 +2,8 @@ import AnalyticsLanding from '@/components/AnalyticsLanding';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Analytics | Cadre — VC Portfolio Hiring Intelligence',
-  description: 'Real-time hiring analytics across VC portfolios. Track headcount trends, talent flows, and competitive intelligence for your portfolio companies.',
+  title: 'Analytics | Cadre — Hiring Intelligence for Technology Companies',
+  description: 'Real-time hiring analytics across exceptional technology companies. Track headcount trends, talent flows, and competitive intelligence.',
 };
 
 export default function AnalyticsPage() {

@@ -66,7 +66,7 @@ export default function SearchFilters({
   const selectedWorkModes = getMulti('workMode');
   const selectedInvestors = getMulti('investor');
   const selectedPosted = getMulti('posted');
-  const currentSort = searchParams.get('sort') || 'featured';
+
 
   // ── Build URL and navigate ──────────────────────────────────────
   const updateParams = useCallback((key: string, values: string[]) => {
@@ -163,17 +163,6 @@ export default function SearchFilters({
     setSearch('');
     router.push(`/?${params.toString()}`);
   }, [searchParams, router]);
-
-  const setSort = (mode: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (mode === 'featured') {
-      params.delete('sort');
-    } else {
-      params.set('sort', mode);
-    }
-    params.delete('page');
-    router.push(`/?${params.toString()}`);
-  };
 
   // ── Active filters for chip row ─────────────────────────────────
   const activeFilters = useMemo(() => {

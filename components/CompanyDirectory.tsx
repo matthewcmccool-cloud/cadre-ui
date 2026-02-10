@@ -78,11 +78,11 @@ export default function CompanyDirectory({ companies }: CompanyDirectoryProps) {
 
   return (
     <>
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-white">Companies</h1>
-        <p className="text-sm text-[#888] mt-1">
-          {companies.length.toLocaleString()} VC-backed companies tracked on Cadre. Click any to see open roles.
+      {/* Descriptor */}
+      <div className="mb-4">
+        <p className="text-sm text-[#888]">
+          <span className="text-[#ccc] font-medium">{companies.length.toLocaleString()} exceptional technology companies</span>
+          {' '}&mdash; click any to see open roles.
         </p>
       </div>
 

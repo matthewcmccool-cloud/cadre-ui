@@ -5,8 +5,8 @@ import Header from '@/components/Header';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Cadre | Jobs at VC-Backed Companies',
-  description: 'Discover jobs at venture-backed startups. Filter by investor, funding stage, function, and more.',
+  title: 'Cadre | Curated Roles at Exceptional Technology Companies',
+  description: 'Curated roles at exceptional technology companies, by the investors who back them.',
 };
 
 const organizationSchema = {
@@ -14,7 +14,7 @@ const organizationSchema = {
   '@type': 'Organization',
   name: 'Cadre',
   url: 'https://cadre-ui-psi.vercel.app',
-  description: 'Job discovery platform for VC-backed companies. Filter by investor portfolio, funding stage, function, and industry.',
+  description: 'Curated roles at exceptional technology companies, by the investors who back them.',
 };
 
 export default function RootLayout({

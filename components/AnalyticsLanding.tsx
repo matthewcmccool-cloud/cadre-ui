@@ -51,10 +51,17 @@ export default function AnalyticsLanding() {
     if (!email) return;
 
     setLoading(true);
-    // TODO: Wire to Loops.so API
-    // For now, just simulate success
-    await new Promise(resolve => setTimeout(resolve, 500));
-    setSubmitted(true);
+    try {
+      const res = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) throw new Error();
+      setSubmitted(true);
+    } catch {
+      // Silently fail for now — user sees no change
+    }
     setLoading(false);
   };
 
@@ -66,11 +73,11 @@ export default function AnalyticsLanding() {
           Coming soon
         </div>
         <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight mb-4">
-          Hiring intelligence for<br />VC talent partners
+          Hiring intelligence across<br />exceptional technology companies
         </h1>
         <p className="text-[#888] text-lg max-w-xl mx-auto leading-relaxed">
-          Real-time analytics across {'>'}1,300 portfolio companies and {'>'}16,000 open roles.
-          Know what your portfolio is building before the board deck.
+          Real-time analytics across 1,300+ companies and 16,000+ open roles.
+          Know what the best teams are building before the board deck.
         </p>
       </div>
 

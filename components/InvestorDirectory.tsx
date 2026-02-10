@@ -77,11 +77,11 @@ export default function InvestorDirectory({ investors }: InvestorDirectoryProps)
 
   return (
     <>
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-white">Investors</h1>
-        <p className="text-sm text-[#888] mt-1">
-          {investors.length} VC firms tracked on Cadre. Click any to see their portfolio companies and open roles.
+      {/* Descriptor */}
+      <div className="mb-4">
+        <p className="text-sm text-[#888]">
+          <span className="text-[#ccc] font-medium">{investors.length} VC firms</span>
+          {' '}&mdash; click any to see portfolio companies and open roles.
         </p>
       </div>
 
