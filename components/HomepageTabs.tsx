@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 
 const TABS = [
   { key: 'jobs', label: 'Job Listings', href: '/' },
