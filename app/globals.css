@@ -127,3 +127,21 @@ h1, h2, h3, h4, h5, h6 {
 .job-description b {
   color: var(--text-body);
 }
+
+/* Investor ticker — infinite horizontal scroll */
+@keyframes ticker {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-ticker {
+  animation: ticker 60s linear infinite;
+}
+
+.animate-ticker:hover {
+  animation-play-state: paused;
+}

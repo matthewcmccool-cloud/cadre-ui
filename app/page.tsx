@@ -5,6 +5,8 @@ import Pagination from '@/components/Pagination';
 import SearchFilters from '@/components/SearchFilters';
 import RecentRounds from '@/components/RecentRounds';
 import FundingRoundsFeed from '@/components/FundingRoundsFeed';
+import InvestorTicker from '@/components/InvestorTicker';
+import EmailCapture from '@/components/EmailCapture';
 
 // ISR: regenerate page every 60 minutes in the background
 export const revalidate = 3600;
@@ -94,27 +96,33 @@ export default async function Home({ searchParams }: PageProps) {
       />
       <div className="max-w-6xl mx-auto px-4 pt-5 pb-6">
         {/* ── Hero ─────────────────────────────────────────── */}
-        <div className="mb-5">
-          <h1 className="text-lg sm:text-xl font-semibold text-white leading-tight">
+        <div className="mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight tracking-tight">
             Jobs at VC-backed startups
           </h1>
-          <p className="text-sm text-[#888] mt-1">
+          <p className="text-sm text-[#888] mt-1.5">
             Discover roles at companies backed by top investors. Updated daily.
           </p>
-          <div className="flex items-center gap-4 mt-2.5">
-            <span className="text-xs text-[#999]">
-              <span className="text-[#e8e8e8] font-medium">{jobsResult.totalCount.toLocaleString()}</span> live roles
-            </span>
-            <span className="text-[#333]">·</span>
-            <span className="text-xs text-[#999]">
-              <span className="text-[#e8e8e8] font-medium">{filterOptions.companies.length.toLocaleString()}</span> companies
-            </span>
-            <span className="text-[#333]">·</span>
-            <span className="text-xs text-[#999]">
-              <span className="text-[#e8e8e8] font-medium">{filterOptions.investors.length}</span> investors
-            </span>
+
+          {/* Stat cards — TBPN-style color blocks */}
+          <div className="grid grid-cols-3 gap-2 mt-4">
+            <div className="bg-[#5e6ad2] rounded-lg px-4 py-3">
+              <div className="text-xl sm:text-2xl font-bold text-white">{jobsResult.totalCount.toLocaleString()}</div>
+              <div className="text-[11px] font-semibold text-white/70 uppercase tracking-wider">LIVE ROLES</div>
+            </div>
+            <div className="bg-[#1a1a1b] rounded-lg px-4 py-3 border border-[#252526]">
+              <div className="text-xl sm:text-2xl font-bold text-white">{filterOptions.companies.length.toLocaleString()}</div>
+              <div className="text-[11px] font-semibold text-[#999] uppercase tracking-wider">COMPANIES</div>
+            </div>
+            <div className="bg-[#1a1a1b] rounded-lg px-4 py-3 border border-[#252526]">
+              <div className="text-xl sm:text-2xl font-bold text-white">{filterOptions.investors.length}</div>
+              <div className="text-[11px] font-semibold text-[#999] uppercase tracking-wider">INVESTORS</div>
+            </div>
           </div>
         </div>
+
+        {/* ── Investor Ticker ────────────────────────────── */}
+        <InvestorTicker investors={filterOptions.investors} />
 
         {/* ── Recent Fundraises (AI-powered) ─────────────── */}
         <FundingRoundsFeed companyNames={filterOptions.companies} />
@@ -144,6 +152,9 @@ export default async function Home({ searchParams }: PageProps) {
           totalPages={jobsResult.totalPages}
           searchParams={searchParams}
         />
+
+        {/* ── Email Capture ────────────────────────────────── */}
+        <EmailCapture />
 
         {/* ── Footer CTA ───────────────────────────────────── */}
         <div className="mt-6 pt-4 border-t border-[#1a1a1b] flex items-center justify-between">

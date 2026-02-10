@@ -30,7 +30,7 @@ export default function RecentRounds({ companies }: RecentRoundsProps) {
   return (
     <section className="mb-5">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-medium text-[#888]">Recently Added Companies</h2>
+        <h2 className="text-[11px] font-semibold text-white uppercase tracking-wider">RECENTLY ADDED</h2>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {companies.map((company) => {
