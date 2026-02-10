@@ -271,7 +271,7 @@ interface LookupMaps {
 // and investors (201) since both exceed Airtable's 100-record page limit.
 async function buildLookupMaps(): Promise<LookupMaps> {
   const [functionRecords, investorRecords, industryRecords, companyRecords] = await Promise.all([
-    fetchAirtable(TABLES.functions, { fields: ['Function'] }),
+      fetchAirtable(TABLES.functions, { fields: ['Function'] }).catch(() => ({ records: [] })),
     fetchAllAirtable(TABLES.investors, { fields: ['Firm Name'] }),
     fetchAirtable(TABLES.industries, { fields: ['Industry Name'] }),
     fetchAllAirtable(TABLES.companies, { fields: ['Company', 'URL'] }),
@@ -533,7 +533,7 @@ function diversifyAll(sorted: ScoredJob[]): Job[] {
 
 export async function getFilterOptions(): Promise<FilterOptions> {
   const [functionRecords, investorRecords, industryRecords, companyRecords] = await Promise.all([
-    fetchAirtable(TABLES.functions, { fields: ['Function', 'Department (Primary)'] }),
+      fetchAirtable(TABLES.functions, { fields: ['Function', 'Department (Primary)'] }).catch(() => ({ records: [] })),
     fetchAllAirtable(TABLES.investors, { fields: ['Firm Name'] }),
     fetchAirtable(TABLES.industries, { fields: ['Industry Name'] }),
     fetchAllAirtable(TABLES.companies, { fields: ['Company'] }),
@@ -681,7 +681,7 @@ export async function getCompanyBySlug(slug: string): Promise<Company | null> {
   if (Array.isArray(vcIds) && vcIds.length > 0) {
     // Fetch all investors to resolve IDs to names (>100 investors, must paginate)
     const investorRecords = await fetchAllAirtable(TABLES.investors, {
-      fields: ['Company'],
+              fields: ['Firm Name'],
     });
     const investorMap = new Map<string, string>();
     investorRecords.forEach(r => {
