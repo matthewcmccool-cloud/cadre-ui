@@ -4,6 +4,7 @@ import JobTable from '@/components/JobTable';
 import Pagination from '@/components/Pagination';
 import SearchFilters from '@/components/SearchFilters';
 import RecentRounds from '@/components/RecentRounds';
+import FundingRoundsFeed from '@/components/FundingRoundsFeed';
 
 // ISR: regenerate page every 60 minutes in the background
 export const revalidate = 3600;
@@ -114,6 +115,9 @@ export default async function Home({ searchParams }: PageProps) {
             </span>
           </div>
         </div>
+
+        {/* ── Recent Fundraises (AI-powered) ─────────────── */}
+        <FundingRoundsFeed companyNames={filterOptions.companies} />
 
         {/* ── Recently Added Companies ────────────────────── */}
         <RecentRounds companies={recentCompanies} />
