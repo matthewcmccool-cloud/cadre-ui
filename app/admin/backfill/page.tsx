@@ -11,6 +11,12 @@ interface Endpoint {
 
 const ENDPOINTS: Endpoint[] = [
   {
+    path: '/api/funding-rounds/ingest',
+    label: 'Ingest Fundraises',
+    description: 'AI-detect rounds → auto-create companies + link investors',
+    color: 'bg-[#dc2626]',
+  },
+  {
     path: '/api/backfill-jobs',
     label: 'Location / Country / Salary',
     description: 'Extract from Raw JSON (Greenhouse/Lever/Ashby)',
@@ -67,10 +73,13 @@ export default function BackfillPage() {
     let totalUpdated = 0;
     let calls = 0;
 
+    // Ingest endpoint uses POST; everything else uses GET
+    const isPost = path.includes('/ingest');
+
     while (!stopRef.current) {
       calls++;
       try {
-        const res = await fetch(path);
+        const res = isPost ? await fetch(path, { method: 'POST' }) : await fetch(path);
         const text = await res.text();
         const data = JSON.parse(text);
 
@@ -79,9 +88,11 @@ export default function BackfillPage() {
           return false;
         }
 
-        totalUpdated += data.updated || 0;
+        totalUpdated += data.updated || data.created || 0;
         const parts = [
-          `updated=${data.updated || 0}`,
+          data.updated !== undefined ? `updated=${data.updated}` : '',
+          data.created !== undefined ? `created=${data.created}` : '',
+          data.existing !== undefined ? `existing=${data.existing}` : '',
           data.processed !== undefined ? `processed=${data.processed}` : '',
           data.skipped !== undefined ? `skipped=${data.skipped}` : '',
           data.alreadyHadLocation ? `already=${data.alreadyHadLocation}` : '',
@@ -194,7 +205,7 @@ export default function BackfillPage() {
           disabled={running}
           className="px-4 py-2 bg-green-700 hover:bg-green-600 rounded text-sm font-bold disabled:opacity-50 transition"
         >
-          Run All (6 endpoints)
+          Run All (7 endpoints)
         </button>
         {running && (
           <button
