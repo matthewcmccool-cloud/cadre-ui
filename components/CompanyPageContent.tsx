@@ -58,7 +58,7 @@ export default function CompanyPageContent({ company, jobs }: CompanyPageContent
 
     const matchesTag = !activeTag ||
       job.title.toLowerCase().includes(tagLower) ||
-      (job.functionName && job.functionName.toLowerCase().includes(tagLower));
+      (job.departmentName && job.departmentName.toLowerCase().includes(tagLower));
 
     const matchesRemote = !isRemote ||
       job.remoteFirst ||
@@ -149,7 +149,7 @@ export default function CompanyPageContent({ company, jobs }: CompanyPageContent
         <form onSubmit={(e) => e.preventDefault()} className="flex-1">
           <div className="relative">
             <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#666]"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#999]"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -166,13 +166,13 @@ export default function CompanyPageContent({ company, jobs }: CompanyPageContent
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               placeholder="Search roles, skills..."
-              className="w-full pl-10 pr-10 py-2.5 bg-[#1a1a1b] text-[#e8e8e8] placeholder-[#666] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#5e6ad2]/50 transition-all"
+              className="w-full pl-10 pr-10 py-2.5 bg-[#1a1a1b] text-[#e8e8e8] placeholder-[#999] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#5e6ad2]/50 transition-all"
             />
             {search && (
               <button
                 type="button"
                 onClick={clearSearch}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#666] hover:text-[#e8e8e8] transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#999] hover:text-[#e8e8e8] transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -258,12 +258,12 @@ export default function CompanyPageContent({ company, jobs }: CompanyPageContent
 
                   {/* Function badge + Location — right side */}
                   <div className="flex-shrink-0 flex items-center gap-3">
-                    {job.functionName && (
+                    {job.departmentName && (
                       <span className="px-2 py-0.5 bg-[#252526] rounded text-xs text-[#aaa] hidden sm:inline-block">
-                        {job.functionName}
+                        {job.departmentName}
                       </span>
                     )}
-                    <span className="text-xs text-[#666] w-36 text-right truncate hidden sm:block">
+                    <span className="text-xs text-[#999] w-36 text-right truncate hidden sm:block">
                       {job.location || 'Remote'}
                     </span>
                   </div>
@@ -272,7 +272,7 @@ export default function CompanyPageContent({ company, jobs }: CompanyPageContent
             })}
           </div>
         ) : (
-          <p className="text-[#666] text-sm py-8 text-center">No jobs found matching your filters.</p>
+          <p className="text-[#999] text-sm py-8 text-center">No jobs found matching your filters.</p>
         )}
 
         {/* Pagination */}

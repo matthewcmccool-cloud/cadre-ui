@@ -1,0 +1,67 @@
+name: Daily Job Sync
+
+on:
+  schedule:
+    # Run every day at 9:00 AM UTC (4:00 AM ET / 1:00 AM PT)
+    - cron: '0 9 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Sync all companies
+        env:
+          SYNC_URL: ${{ secrets.SYNC_URL }}
+          SYNC_SECRET: ${{ secrets.SYNC_SECRET }}
+        run: |
+          # Loop through all company batches until done
+          OFFSET=""
+          BATCH=1
+          TOTAL_NEW=0
+
+          while true; do
+            echo "── Batch $BATCH ──"
+
+            URL="${SYNC_URL}/api/sync-jobs?secret=${SYNC_SECRET}"
+            if [ -n "$OFFSET" ]; then
+              URL="${URL}&offset=${OFFSET}"
+            fi
+
+            RESPONSE=$(curl -s -f "$URL" || echo '{"success":false,"error":"HTTP request failed"}')
+
+            # Parse response
+            SUCCESS=$(echo "$RESPONSE" | jq -r '.success // false')
+            HAS_MORE=$(echo "$RESPONSE" | jq -r '.batch.hasMore // false')
+            NEW_JOBS=$(echo "$RESPONSE" | jq -r '.batch.newJobsCreated // 0')
+            COMPANIES=$(echo "$RESPONSE" | jq -r '.batch.companiesProcessed // 0')
+            NEXT_OFFSET=$(echo "$RESPONSE" | jq -r '.batch.nextOffset // empty')
+            RUNTIME=$(echo "$RESPONSE" | jq -r '.runtime // "?"')
+
+            echo "  Companies: $COMPANIES | New jobs: $NEW_JOBS | Runtime: $RUNTIME"
+
+            if [ "$SUCCESS" != "true" ]; then
+              ERROR=$(echo "$RESPONSE" | jq -r '.error // "Unknown"')
+              echo "  ERROR: $ERROR"
+              echo "  Waiting 5s before retry..."
+              sleep 5
+              # Retry same batch
+              continue
+            fi
+
+            TOTAL_NEW=$((TOTAL_NEW + NEW_JOBS))
+
+            if [ "$HAS_MORE" != "true" ]; then
+              echo ""
+              echo "✓ Sync complete! Total new jobs: $TOTAL_NEW"
+              break
+            fi
+
+            OFFSET="$NEXT_OFFSET"
+            BATCH=$((BATCH + 1))
+
+            # Rate limit between batches
+            sleep 2
+          done

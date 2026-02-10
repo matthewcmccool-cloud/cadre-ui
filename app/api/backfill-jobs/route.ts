@@ -137,9 +137,9 @@ function extractCountry(location: string): string {
   if (usCities.test(loc)) return 'United States';
 
   // If it just says "Remote" with no other info, skip
-  if (/^remote$/i.test(loc)) return '';
+  if (/^remote$/i.test(loc)) return 'Remote';
 
-  return '';
+  return 'Other';
 }
 
 // ── Salary extraction ────────────────────────────────────────────────
@@ -182,18 +182,32 @@ function extractSalary(rawData: any): string {
   return '';
 }
 
-// ── Fetch one page of jobs needing backfill ──────────────────────────
+// ── Fetch one page of jobs with Raw JSON ─────────────────────────────
 
-async function fetchJobsNeedingBackfill(offset?: string) {
+async function fetchJobsWithRawJson(offset?: string) {
   const params = new URLSearchParams();
-  // Jobs where Location is blank AND Raw JSON exists
-  params.append('filterByFormula', "AND({Location} = BLANK(), {Raw JSON} != BLANK())");
+  // Only filter on Raw JSON existing — we skip already-populated records in code
+  params.append('filterByFormula', "{Raw JSON} != BLANK()");
   params.append('pageSize', '100');
   params.append('fields[]', 'Raw JSON');
   params.append('fields[]', 'Location');
-  params.append('fields[]', 'Remote First');
   params.append('fields[]', 'Country');
   params.append('fields[]', 'Salary');
+  if (offset) params.append('offset', offset);
+
+  return airtableFetch(
+    `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${JOB_LISTINGS_TABLE_ID}?${params.toString()}`
+  );
+}
+
+// ── Fetch a page of records with minimal fields for counting ─────────
+
+async function fetchRecordIds(filter: string, offset?: string) {
+  const params = new URLSearchParams();
+  if (filter) params.append('filterByFormula', filter);
+  params.append('pageSize', '100');
+  // Request no fields — just need record count
+  params.append('fields[]', 'Location');
   if (offset) params.append('offset', offset);
 
   return airtableFetch(
@@ -214,36 +228,90 @@ async function batchUpdateJobs(updates: Array<{ id: string; fields: Record<strin
 
 // ── Main endpoint ────────────────────────────────────────────────────
 
-export async function GET() {
-  const startTime = Date.now();
-  let processed = 0;
-  let updated = 0;
-  let skipped = 0;
-  let errors = 0;
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const mode = searchParams.get('mode') || 'backfill';
 
   if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
     return NextResponse.json({ success: false, error: 'Missing AIRTABLE_API_KEY or AIRTABLE_BASE_ID' }, { status: 500 });
   }
+
+  // ── Diagnose mode: count records by field state ───────────────────
+  if (mode === 'diagnose') {
+    const startTime = Date.now();
+    try {
+      // Count records with Raw JSON
+      let withRawJson = 0;
+      let withRawJsonAndLocation = 0;
+      let withRawJsonNoLocation = 0;
+      let offset: string | undefined;
+
+      do {
+        if (Date.now() - startTime > MAX_RUNTIME_MS) break;
+        const data = await fetchRecordIds("{Raw JSON} != BLANK()", offset);
+        const records = data.records || [];
+        offset = data.offset;
+
+        for (const r of records) {
+          withRawJson++;
+          if (r.fields?.['Location']) {
+            withRawJsonAndLocation++;
+          } else {
+            withRawJsonNoLocation++;
+          }
+        }
+        await delay(RATE_LIMIT_DELAY);
+      } while (offset && Date.now() - startTime < MAX_RUNTIME_MS);
+
+      return NextResponse.json({
+        success: true,
+        withRawJson,
+        withRawJsonAndLocation,
+        withRawJsonNoLocation,
+        complete: !offset,
+        runtime: `${Date.now() - startTime}ms`,
+        message: `Found ${withRawJson} records with Raw JSON (${withRawJsonAndLocation} already have Location, ${withRawJsonNoLocation} need backfill).${offset ? ' Timed out — more records exist.' : ''}`,
+      });
+    } catch (error) {
+      return NextResponse.json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        runtime: `${Date.now() - startTime}ms`,
+      }, { status: 500 });
+    }
+  }
+
+  // ── Backfill mode (default) ───────────────────────────────────────
+  const startTime = Date.now();
+  let processed = 0;
+  let updated = 0;
+  let skipped = 0;
+  let alreadyHadLocation = 0;
+  let errors = 0;
 
   try {
     let offset: string | undefined;
 
     do {
       if (Date.now() - startTime > MAX_RUNTIME_MS) {
-        console.log('Approaching timeout, stopping...');
         break;
       }
 
-      const data = await fetchJobsNeedingBackfill(offset);
+      const data = await fetchJobsWithRawJson(offset);
       const records = data.records || [];
       offset = data.offset;
 
       if (records.length === 0) break;
 
-      // Parse Raw JSON and build updates
       const updates: Array<{ id: string; fields: Record<string, unknown> }> = [];
 
       for (const record of records) {
+        // Skip records that already have Location populated
+        if (record.fields?.['Location']) {
+          alreadyHadLocation++;
+          continue;
+        }
+
         const rawJsonStr = record.fields?.['Raw JSON'];
         if (!rawJsonStr) {
           skipped++;
@@ -266,17 +334,12 @@ export async function GET() {
           continue;
         }
 
-        const remoteFirst = extractRemoteFirst(rawData, location);
         const country = extractCountry(location);
         const salary = extractSalary(rawData);
 
         const fields: Record<string, unknown> = {
           Location: location,
         };
-
-        if (remoteFirst) {
-          fields['Remote First'] = true;
-        }
 
         if (country) {
           fields['Country'] = country;
@@ -297,9 +360,8 @@ export async function GET() {
         try {
           await batchUpdateJobs(batch);
           updated += batch.length;
-        } catch (err) {
+        } catch (err: any) {
           errors += batch.length;
-          console.error('Batch update failed:', err);
         }
         await delay(RATE_LIMIT_DELAY);
       }
@@ -315,12 +377,13 @@ export async function GET() {
       processed,
       updated,
       skipped,
+      alreadyHadLocation,
       errors,
       hasMore,
       runtime: `${runtime}ms`,
       message: hasMore
-        ? `Processed ${updated} jobs in ${runtime}ms. More jobs remaining — call again to continue.`
-        : `Done! Backfilled ${updated} jobs in ${runtime}ms. No more jobs needing backfill.`,
+        ? `Updated ${updated} jobs in ${runtime}ms. More remaining — call again.`
+        : `Done! Backfilled ${updated} jobs in ${runtime}ms. (${alreadyHadLocation} already had Location)`,
     });
 
   } catch (error) {
@@ -328,10 +391,7 @@ export async function GET() {
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
-      processed,
-      updated,
-      skipped,
-      errors,
+      processed, updated, skipped, errors,
       runtime: `${Date.now() - startTime}ms`,
     }, { status: 500 });
   }

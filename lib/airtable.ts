@@ -1,6 +1,15 @@
+import { parseCountry, parseWorkMode, matchesPostedFilter } from './location-parser';
+import pLimit from 'p-limit';
+
+// Limit concurrent Airtable API requests to 4 (Airtable rate limit: 5 req/s)
+const airtableLimit = pLimit(4);
+
 // Infer function from job title when Function field is empty.
 // Categories MUST match the Airtable Function table exactly so the client-side
 // fallback produces the same labels as the /api/backfill-functions endpoint.
+// These are granular function names — the 10-segment analytics rollup
+// (Sales & GTM, Marketing, Engineering, etc.) lives in Airtable's
+// Department column on the Function table.
 // Order matters — specific roles first, broad catch-alls last.
 export function inferFunction(title: string): string {
   const rules: [RegExp, string][] = [
@@ -9,7 +18,7 @@ export function inferFunction(title: string): string {
     [/\brevenue op|rev\s?ops/i, 'Revenue Operations'],
     [/\bbusiness develop|partnerships?|partner manager|bd |strategic allianc/i, 'BD & Partnerships'],
     [/\bcustomer success|customer support|customer experience|support engineer|client success/i, 'Customer Success'],
-    [/\bproduct design|ux|ui designer|graphic design|brand design|creative director/i, 'Product Design / UX'],
+    [/\bproduct design|ux|ui designer|graphic design|brand design|creative director|ux research/i, 'Product Design / UX'],
     [/\bproduct manag|head of product|vp.*product|director.*product|product lead|product owner|product strateg/i, 'Product Management'],
     [/\bdata scien|machine learn|\bml\b|\bai\b|research scien|deep learn|nlp|computer vision|llm/i, 'AI & Research'],
     [/\bengineer|software|developer|sre|devops|infrastructure|platform|full.?stack|backend|frontend|ios\b|android|mobile dev|architect/i, 'Engineering'],
@@ -27,6 +36,28 @@ export function inferFunction(title: string): string {
   }
   return '';
 }
+
+// Maps granular Function names → 10 analytics Department segments.
+// Used as fallback when department isn't available from Airtable lookup
+// (e.g., when inferFunction() provides the function name client-side).
+const FUNCTION_TO_DEPARTMENT: Record<string, string> = {
+  'Sales': 'Sales & GTM',
+  'BD & Partnerships': 'Sales & GTM',
+  'Solutions Engineering': 'Sales & GTM',
+  'Revenue Operations': 'Sales & GTM',
+  'Marketing': 'Marketing',
+  'Developer Relations': 'Marketing',
+  'Engineering': 'Engineering',
+  'AI & Research': 'AI & Research',
+  'Product Management': 'Product',
+  'Product Design / UX': 'Design',
+  'Customer Success': 'Customer Success & Support',
+  'People': 'People & Talent',
+  'Finance & Accounting': 'Finance & Legal',
+  'Legal': 'Finance & Legal',
+  'Business Operations': 'Operations & Admin',
+  'Other': 'Operations & Admin',
+};
 
 const TABLES = {
   jobs: 'Job Listings',
@@ -122,12 +153,13 @@ async function fetchAirtable(
     ? `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${table}?${queryString}`
     : `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${table}`;
 
-  const response = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-    },
-        cache: 'no-store',
-  });
+  const response = await airtableLimit(() =>
+    fetch(url, {
+      headers: {
+        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
+      },
+    })
+  );
 
   // Read body only once to avoid Response.clone error
   const text = await response.text();
@@ -145,13 +177,15 @@ export interface Job {
   jobId: string;
   title: string;
   company: string;
-  companyUrl?: string;
+  companyUrl: string;
   investors: string[];
   location: string;
   remoteFirst: boolean;
   functionName: string;
+  departmentName: string;
   industry: string;
   datePosted: string;
+  firstSeenAt: string;
   jobUrl: string;
   applyUrl: string;
   salary: string;
@@ -160,6 +194,7 @@ export interface Job {
 
 export interface FilterOptions {
   functions: string[];
+  departments: string[];
   locations: string[];
   investors: string[];
   industries: string[];
@@ -410,10 +445,94 @@ export async function getJobs(filters?: {
   }
 }
 
+// ── Feed scoring helpers ───────────────────────────────────────────
+
+/** Freshness score (0–100) based on firstSeenAt, not ATS published date */
+function computeFreshness(job: Job, now: number): number {
+  const seen = job.firstSeenAt ? new Date(job.firstSeenAt).getTime() : 0;
+  if (!seen) return 10;
+  const daysOld = (now - seen) / (1000 * 60 * 60 * 24);
+  if (daysOld <= 1) return 100;
+  if (daysOld <= 3) return 85;
+  if (daysOld <= 7) return 70;
+  if (daysOld <= 14) return 50;
+  if (daysOld <= 30) return 30;
+  return 10;
+}
+
+/** High-interest departments get a boost */
+const DEPT_INTEREST: Record<string, number> = {
+  'Engineering': 15,
+  'AI & Research': 15,
+  'Product': 12,
+  'Sales & GTM': 10,
+  'Design': 8,
+  'Marketing': 8,
+  'Customer Success & Support': 5,
+  'People & Talent': 5,
+  'Finance & Legal': 3,
+  'Operations & Admin': 3,
+};
+
+/** Interest score (0–50) from brand strength + function + salary */
+function computeInterest(job: Job): number {
+  let score = 0;
+  // Brand proxy: more investors = stronger brand (capped at 20)
+  const investorCount = job.investors?.length || 0;
+  score += Math.min(investorCount * 5, 20);
+  // Department interest
+  score += DEPT_INTEREST[job.departmentName] || 5;
+  // Salary present is a signal of a well-structured listing
+  if (job.salary) score += 5;
+  return score;
+}
+
+interface ScoredJob {
+  job: Job;
+  freshness: number;
+  interest: number;
+  overall: number;
+}
+
+/**
+ * Interleave ALL jobs with diversity constraints.
+ * Multiple passes: each pass allows 1 per company. This round-robins
+ * through companies so the same company never appears back-to-back
+ * and is maximally spread across pages.
+ */
+function diversifyAll(sorted: ScoredJob[]): Job[] {
+  const MAX_PER_COMPANY_PER_PASS = 1;
+
+  const result: Job[] = [];
+  let remaining = [...sorted];
+
+  while (remaining.length > 0) {
+    const companyCounts = new Map<string, number>();
+    const deferred: ScoredJob[] = [];
+
+    for (const item of remaining) {
+      const co = item.job.company;
+      const count = companyCounts.get(co) || 0;
+
+      if (count >= MAX_PER_COMPANY_PER_PASS) {
+        deferred.push(item);
+        continue;
+      }
+
+      result.push(item.job);
+      companyCounts.set(co, count + 1);
+    }
+
+    remaining = deferred;
+  }
+
+  return result;
+}
+
 export async function getFilterOptions(): Promise<FilterOptions> {
   const [functionRecords, investorRecords, industryRecords, companyRecords] = await Promise.all([
-    fetchAirtable(TABLES.functions, { fields: ['Function'] }),
-    fetchAllAirtable(TABLES.investors, { fields: ['Company'] }),
+    fetchAirtable(TABLES.functions, { fields: ['Function', 'Department (Primary)'] }),
+    fetchAllAirtable(TABLES.investors, { fields: ['Firm Name'] }),
     fetchAirtable(TABLES.industries, { fields: ['Industry Name'] }),
     fetchAllAirtable(TABLES.companies, { fields: ['Company'] }),
   ]);
@@ -423,8 +542,14 @@ export async function getFilterOptions(): Promise<FilterOptions> {
     .filter(Boolean)
     .sort();
 
+  const departments = Array.from(new Set(
+    functionRecords.records
+      .map(r => r.fields['Department (Primary)'])
+      .filter(Boolean)
+  )).sort();
+
   const investors = investorRecords
-    .map(r => r.fields['Company'])
+    .map(r => r.fields['Firm Name'])
     .filter(Boolean)
     .sort();
 
@@ -451,7 +576,7 @@ export async function getFilterOptions(): Promise<FilterOptions> {
 
   const locations = Array.from(locationSet).sort();
 
-  return { functions, locations, investors, industries, companies };
+  return { functions, departments, locations, investors, industries, companies };
 }
 
 // Fetch a single job by its Airtable record ID
@@ -464,13 +589,14 @@ export async function getJobById(id: string): Promise<(Job & { description: stri
   }
 
   const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(TABLES.jobs)}/${id}`;
-  const response = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    next: { revalidate: 0 },
-  });
+  const response = await airtableLimit(() =>
+    fetch(url, {
+      headers: {
+        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+    })
+  );
 
   // Read body only once to avoid Response.clone error
   const text = await response.text();
@@ -490,13 +616,9 @@ export async function getJobById(id: string): Promise<(Job & { description: stri
 
   // Extract job description from multiple sources
   let description = '';
-
-  // 1. Direct content field (raw HTML from ATS)
   if (record.fields['content']) {
     description = record.fields['content'] as string;
   }
-
-  // 2. Raw JSON content/description
   if (!description && record.fields['Raw JSON']) {
     try {
       const rawData = JSON.parse(record.fields['Raw JSON'] as string);
@@ -505,8 +627,6 @@ export async function getJobById(id: string): Promise<(Job & { description: stri
       // Ignore parse errors
     }
   }
-
-  // 3. Job Description field
   if (!description) {
     description = (record.fields['Job Description'] as string) || '';
   }
@@ -534,25 +654,17 @@ export interface Company {
 }
 
 // Fetch a single company by slug
+// Uses Airtable Slug formula field for O(1) lookup instead of scanning all companies
 export async function getCompanyBySlug(slug: string): Promise<Company | null> {
-  const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
-  const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
-
-  if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
-    throw new Error('Missing Airtable environment variables');
-  }
-
-  // Fetch ALL companies with pagination — fetchAirtable only returns 100 per page
-  const companyRecords = await fetchAllAirtable(TABLES.companies, {
+  // Look up company directly by Slug formula field (1 API call instead of 14+)
+  const escaped = slug.replace(/'/g, "\\'");
+  const companyResults = await fetchAirtable(TABLES.companies, {
+    filterByFormula: `{Slug}='${escaped}'`,
+    maxRecords: 1,
     fields: ['Company', 'URL', 'VCs', 'About', 'Stage', 'Size', 'HQ Location', 'Total Raised', 'LinkedIn URL', 'Twitter URL'],
   });
 
-  const company = companyRecords.find(r => {
-    const name = r.fields['Company'] as string || '';
-    const companySlug = toSlug(name);
-    return companySlug === slug;
-  });
-
+  const company = companyResults.records[0];
   if (!company) {
     return null;
   }
@@ -633,11 +745,12 @@ export async function getInvestorBySlug(slug: string): Promise<Investor | null> 
     return investorSlug === slug;
   });
 
+  const investor = results.records[0];
   if (!investor) {
     return null;
   }
 
-  const investorName = investor.fields['Company'] as string || '';
+  const investorName = investor.fields['Firm Name'] as string || '';
   const investorBio = investor.fields['Bio'] as string || '';
   const investorLocation = investor.fields['Location'] as string || '';
   const investorWebsite = investor.fields['Website'] as string || '';
@@ -762,7 +875,6 @@ export async function getJobsForCompanyNames(companyNames: string[]): Promise<Jo
 
   for (let i = 0; i < companyNames.length; i += BATCH_SIZE) {
     const batch = companyNames.slice(i, i + BATCH_SIZE);
-    // Escape double quotes in company names for the Airtable formula
     const filterParts = batch.map(name => {
       const escaped = name.replace(/"/g, '\\"');
       return `FIND("${escaped}", ARRAYJOIN({Companies}, "||") & "")`;
@@ -788,6 +900,7 @@ export async function getJobsForCompanyNames(companyNames: string[]): Promise<Jo
   });
 
   const maps = await buildLookupMaps();
+
   return uniqueRecords.map(record => mapRecordToJob(record, maps));
 }
 
@@ -852,4 +965,55 @@ export async function getStats(): Promise<{ jobCount: number; companyCount: numb
     companyCount: companyRecords.length,
     investorCount: investorRecords.length,
   };
+}
+
+// ── Recently funded / recently added companies ──────────────────────
+// Returns companies sorted by most recently created in Airtable.
+// When we add a funding_rounds table, this will switch to use that.
+export interface RecentCompany {
+  id: string;
+  name: string;
+  slug: string;
+  stage?: string;
+  industry?: string;
+  investors: string[];
+  jobCount: number;
+  url?: string;
+}
+
+export async function getRecentCompanies(limit: number = 8): Promise<RecentCompany[]> {
+  // Lightweight: 2 API calls max (companies + investors). No job lookups.
+  const [companyResults, investorRecords] = await Promise.all([
+    fetchAirtable(TABLES.companies, {
+      sort: [{ field: 'Created Time', direction: 'desc' }],
+      maxRecords: limit,
+      fields: ['Company', 'URL', 'VCs', 'Stage', 'Slug'],
+    }),
+    fetchAirtable(TABLES.investors, {
+      fields: ['Firm Name'],
+    }),
+  ]);
+
+  const investorNameMap = new Map<string, string>();
+  investorRecords.records.forEach(r => {
+    investorNameMap.set(r.id, r.fields['Firm Name'] as string || '');
+  });
+
+  return companyResults.records
+    .map(r => {
+      const name = r.fields['Company'] as string || '';
+      const vcIds = (r.fields['VCs'] || []) as string[];
+      return {
+        id: r.id,
+        name,
+        slug: toSlug(name),
+        stage: r.fields['Stage'] as string || undefined,
+        industry: undefined,
+        investors: vcIds.map(id => investorNameMap.get(id) || '').filter(Boolean),
+        jobCount: 0, // Skip job counts to stay within Vercel timeout
+        url: r.fields['URL'] as string || undefined,
+      };
+    })
+    .filter(c => c.name)
+    .slice(0, limit);
 }

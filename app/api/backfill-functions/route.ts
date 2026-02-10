@@ -18,6 +18,9 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // ── Classification rules ─────────────────────────────────────────────
 // Categories MUST match the Function table in Airtable exactly.
+// These are granular function names — the 10-segment analytics rollup
+// (Sales & GTM, Marketing, Engineering, etc.) lives in Airtable's
+// Department column on the Function table.
 // Order matters — first match wins, so put more specific patterns first.
 function classifyFunction(title: string): string {
   const t = title.toLowerCase();
@@ -28,9 +31,10 @@ function classifyFunction(title: string): string {
     [/\brevenue op|rev\s?ops/i, 'Revenue Operations'],
     [/\bbusiness develop|partnerships?|partner manager|bd |strategic allianc/i, 'BD & Partnerships'],
     [/\bcustomer success|customer support|customer experience|support engineer|client success/i, 'Customer Success'],
-    [/\bproduct design|ux|ui designer|graphic design|brand design|creative director/i, 'Product Design / UX'],
+    [/\bproduct design|ux|ui designer|graphic design|brand design|creative director|ux research/i, 'Product Design / UX'],
     [/\bproduct manag|head of product|vp.*product|director.*product|product lead|product owner|product strateg/i, 'Product Management'],
     [/\bdata scien|machine learn|\bml\b|\bai\b|research scien|deep learn|nlp|computer vision|llm/i, 'AI & Research'],
+    // Broad catch-alls
     [/\bengineer|software|developer|sre|devops|infrastructure|platform|full.?stack|backend|frontend|ios\b|android|mobile dev|architect/i, 'Engineering'],
     [/\bsales|account exec|sdr\b|bdr\b|account manag|closing|quota/i, 'Sales'],
     [/\bmarketing|growth|demand gen|content market|seo\b|brand manag|comms\b|communications|social media|pr manager/i, 'Marketing'],
@@ -38,8 +42,8 @@ function classifyFunction(title: string): string {
     [/\bfinance|account(ant|ing)|controller|tax\b|treasury|financial|fp&a|cfo/i, 'Finance & Accounting'],
     [/\boperation|chief of staff|program manag|project manag|business ops|strategy|bizops/i, 'Business Operations'],
     [/\blegal|counsel|compliance|regulatory|policy/i, 'Legal'],
-    [/\bsecurity|infosec|cyber|penetration/i, 'Engineering'], // Security → Engineering in Airtable
-    [/\bdata analy|business intel|analytics/i, 'AI & Research'], // Analytics → AI & Research
+    [/\bsecurity|infosec|cyber|penetration/i, 'Engineering'],
+    [/\bdata analy|business intel|analytics/i, 'AI & Research'],
   ];
 
   for (const [pattern, label] of rules) {

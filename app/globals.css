@@ -12,7 +12,7 @@
  * --text-primary: #ffffff (headings only)
  * --text-body: #e8e8e8 (body text)
  * --text-muted: #888888 (subdued details)
- * --text-subtle: #666666 (placeholders)
+ * --text-subtle: #999999 (placeholders)
  *
  * ACCENT:
  * --accent: #5e6ad2 (interactive elements)
@@ -34,7 +34,7 @@
   --text-primary: #ffffff;
   --text-body: #e8e8e8;
   --text-muted: #888888;
-  --text-subtle: #666666;
+  --text-subtle: #999999;
 
   /* Accent */
   --accent: #5e6ad2;
