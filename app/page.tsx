@@ -52,7 +52,7 @@ export default async function Home({ searchParams }: PageProps) {
   const [jobsResult, filterOptions, recentCompanies] = await Promise.all([
     getJobs(filters),
     getFilterOptions(),
-    getRecentCompanies(8),
+    getRecentCompanies(8).catch(() => []),
   ]);
 
   // GEO: WebSite + ItemList structured data for LLM citation

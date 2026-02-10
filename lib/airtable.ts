@@ -1054,29 +1054,22 @@ export interface RecentCompany {
 }
 
 export async function getRecentCompanies(limit: number = 8): Promise<RecentCompany[]> {
-  // Fetch companies sorted by newest first
-  const companyResults = await fetchAirtable(TABLES.companies, {
-    sort: [{ field: 'Created Time', direction: 'desc' }],
-    maxRecords: limit * 2, // over-fetch in case some have no jobs
-    fields: ['Company', 'URL', 'VCs', 'Stage', 'Slug'],
-  });
+  // Lightweight: 2 API calls max (companies + investors). No job lookups.
+  const [companyResults, investorRecords] = await Promise.all([
+    fetchAirtable(TABLES.companies, {
+      sort: [{ field: 'Created Time', direction: 'desc' }],
+      maxRecords: limit,
+      fields: ['Company', 'URL', 'VCs', 'Stage', 'Slug'],
+    }),
+    fetchAirtable(TABLES.investors, {
+      fields: ['Firm Name'],
+    }),
+  ]);
 
-  // Resolve investor names
-  const investorRecords = await fetchAirtable(TABLES.investors, {
-    fields: ['Firm Name'],
-  });
   const investorNameMap = new Map<string, string>();
   investorRecords.records.forEach(r => {
     investorNameMap.set(r.id, r.fields['Firm Name'] as string || '');
   });
-
-  // Get job counts for these companies
-  const companyNames = companyResults.records.map(r => r.fields['Company'] as string).filter(Boolean);
-  const jobs = await getJobsForCompanyNames(companyNames);
-  const jobCountMap = new Map<string, number>();
-  for (const job of jobs) {
-    jobCountMap.set(job.company, (jobCountMap.get(job.company) || 0) + 1);
-  }
 
   return companyResults.records
     .map(r => {
@@ -1087,12 +1080,12 @@ export async function getRecentCompanies(limit: number = 8): Promise<RecentCompa
         name,
         slug: toSlug(name),
         stage: r.fields['Stage'] as string || undefined,
-        industry: undefined, // Industry is a linked record — skip for now to avoid extra calls
+        industry: undefined,
         investors: vcIds.map(id => investorNameMap.get(id) || '').filter(Boolean),
-        jobCount: jobCountMap.get(name) || 0,
+        jobCount: 0, // Skip job counts to stay within Vercel timeout
         url: r.fields['URL'] as string || undefined,
       };
     })
-    .filter(c => c.name && c.jobCount > 0)
+    .filter(c => c.name)
     .slice(0, limit);
 }

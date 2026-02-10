@@ -65,9 +65,11 @@ export default function RecentRounds({ companies }: RecentRoundsProps) {
                     {company.stage}
                   </span>
                 )}
-                <span className="text-[11px] text-[#888]">
-                  {company.jobCount} {company.jobCount === 1 ? 'role' : 'roles'}
-                </span>
+                {company.jobCount > 0 && (
+                  <span className="text-[11px] text-[#888]">
+                    {company.jobCount} {company.jobCount === 1 ? 'role' : 'roles'}
+                  </span>
+                )}
                 {company.investors.length > 0 && (
                   <>
                     <span className="text-[#333]">·</span>
