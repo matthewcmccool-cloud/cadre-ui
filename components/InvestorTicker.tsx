@@ -1,8 +1,11 @@
 'use client';
 
+import Link from 'next/link';
+
 /**
  * Auto-scrolling investor logo ticker — TBPN-inspired.
  * Displays VC firm names in a continuous horizontal scroll.
+ * Each name links to its investor page.
  * Pure CSS animation, no JS needed for the scroll.
  */
 
@@ -19,6 +22,14 @@ const FEATURED_ORDER = [
   'Ribbit Capital', 'Tiger Global', 'Coatue', 'Lux Capital',
   'Insight Partners', 'GV', 'Y Combinator', 'First Round',
 ];
+
+function toSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
 
 export default function InvestorTicker({ investors }: InvestorTickerProps) {
   if (investors.length === 0) return null;
@@ -43,12 +54,13 @@ export default function InvestorTicker({ investors }: InvestorTickerProps) {
     <div className="mb-6 overflow-hidden">
       <div className="flex items-center gap-6 animate-ticker">
         {doubled.map((name, i) => (
-          <span
+          <Link
             key={`${name}-${i}`}
-            className="text-[11px] font-medium text-[#555] whitespace-nowrap uppercase tracking-wider hover:text-[#999] transition-colors shrink-0"
+            href={`/investors/${toSlug(name)}`}
+            className="text-[11px] font-medium text-[#555] whitespace-nowrap uppercase tracking-wider hover:text-[#5e6ad2] transition-colors shrink-0"
           >
             {name}
-          </span>
+          </Link>
         ))}
       </div>
     </div>
