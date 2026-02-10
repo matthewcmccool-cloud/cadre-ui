@@ -3,13 +3,6 @@
 import Link from 'next/link';
 import { CompanyTickerItem } from '@/lib/airtable';
 
-/**
- * Auto-scrolling company logo ticker — shows favicons + names
- * of well-known companies in the Cadre database.
- * Each item links to its company page.
- * Pure CSS animation, no JS needed for the scroll.
- */
-
 interface CompanyTickerProps {
   companies: CompanyTickerItem[];
 }
@@ -55,11 +48,11 @@ export default function CompanyTicker({ companies }: CompanyTickerProps) {
     return a.name.localeCompare(b.name);
   });
 
-  // Take top ~40 for the ticker
-  const tickerItems = sorted.slice(0, 40);
+  // Use ALL companies, duplicate for seamless infinite scroll
+  const doubled = [...sorted, ...sorted];
 
-  // Duplicate for seamless infinite scroll
-  const doubled = [...tickerItems, ...tickerItems];
+  // Scale animation duration: ~0.5s per company for readable scroll speed
+  const duration = Math.max(30, sorted.length * 0.5);
 
   return (
     <div className="mb-5 overflow-hidden relative">
@@ -67,7 +60,10 @@ export default function CompanyTicker({ companies }: CompanyTickerProps) {
       <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-[#0e0e0f] to-transparent z-10 pointer-events-none" />
       <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#0e0e0f] to-transparent z-10 pointer-events-none" />
 
-      <div className="flex items-center gap-6 animate-ticker">
+      <div
+        className="flex items-center gap-6 animate-ticker"
+        style={{ animationDuration: `${duration}s` }}
+      >
         {doubled.map((company, i) => {
           const domain = getDomain(company.url);
           return (

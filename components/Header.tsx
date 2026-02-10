@@ -4,9 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const NAV_ITEMS = [
-  { href: '/', label: 'Jobs' },
-  { href: '/companies', label: 'Companies' },
-  { href: '/investors', label: 'Investors' },
+  { href: '/', label: 'Job Listings' },
+  { href: '/fundraises', label: 'Fundraises' },
   { href: '/analytics', label: 'Analytics' },
 ];
 
