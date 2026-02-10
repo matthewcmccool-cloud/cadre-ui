@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getInvestorBySlug, getJobsForCompanyNames } from '@/lib/airtable';
+import { getInvestorBySlug, getJobsForCompanyNames, toSlug } from '@/lib/airtable';
 import InvestorPageContent from '@/components/InvestorPageContent';
 import type { Metadata } from 'next';
 
@@ -36,6 +36,43 @@ export default async function InvestorPage({ params }: InvestorPageProps) {
   const companyNames = investor.companies.map(c => c.name);
   const jobs = await getJobsForCompanyNames(companyNames);
 
+  // ── Compute portfolio stats server-side ───────────────────────
+  const companiesWithJobs = new Map<string, number>();
+  const departmentCounts = new Map<string, number>();
+  let remoteCount = 0;
+
+  for (const job of jobs) {
+    // Count jobs per company
+    companiesWithJobs.set(job.company, (companiesWithJobs.get(job.company) || 0) + 1);
+    // Count departments
+    const dept = job.departmentName || job.functionName;
+    if (dept) departmentCounts.set(dept, (departmentCounts.get(dept) || 0) + 1);
+    // Count remote
+    if (job.remoteFirst || /remote/i.test(job.location)) remoteCount++;
+  }
+
+  const topDepartment = Array.from(departmentCounts.entries())
+    .sort((a, b) => b[1] - a[1])[0];
+
+  const topCompanies = Array.from(companiesWithJobs.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([name, count]) => {
+      const company = investor.companies.find(c => c.name === name);
+      return { name, slug: company?.slug || toSlug(name), roleCount: count };
+    });
+
+  const stats = {
+    totalRoles: jobs.length,
+    companiesHiring: companiesWithJobs.size,
+    totalCompanies: investor.companies.length,
+    topDepartment: topDepartment
+      ? { name: topDepartment[0], count: topDepartment[1], pct: Math.round((topDepartment[1] / jobs.length) * 100) }
+      : null,
+    remotePct: jobs.length > 0 ? Math.round((remoteCount / jobs.length) * 100) : 0,
+    topCompanies,
+  };
+
   // GEO: Investor structured data for LLM citation
   const investorSchema = {
     '@context': 'https://schema.org',
@@ -63,7 +100,12 @@ export default async function InvestorPage({ params }: InvestorPageProps) {
           ← Back to jobs
         </Link>
 
-        <InvestorPageContent investor={investor} jobs={jobs} />
+        <InvestorPageContent
+          investor={investor}
+          jobs={jobs}
+          stats={stats}
+          investorSlug={params.slug}
+        />
       </div>
     </main>
   );
