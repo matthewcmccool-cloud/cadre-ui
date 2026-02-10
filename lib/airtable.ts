@@ -681,7 +681,7 @@ export async function getCompanyBySlug(slug: string): Promise<Company | null> {
   if (Array.isArray(vcIds) && vcIds.length > 0) {
     // Fetch all investors to resolve IDs to names (>100 investors, must paginate)
     const investorRecords = await fetchAllAirtable(TABLES.investors, {
-      fields: ['Company'],
+      fields: ['Firm Name'],
     });
     const investorMap = new Map<string, string>();
     investorRecords.forEach(r => {
@@ -990,13 +990,13 @@ export async function getRecentCompanies(limit: number = 8): Promise<RecentCompa
       maxRecords: limit,
       fields: ['Company', 'URL', 'VCs', 'Stage', 'Slug'],
     }),
-    fetchAirtable(TABLES.investors, {
+    fetchAllAirtable(TABLES.investors, {
       fields: ['Firm Name'],
     }),
   ]);
 
   const investorNameMap = new Map<string, string>();
-  investorRecords.records.forEach(r => {
+  investorRecords.forEach(r => {
     investorNameMap.set(r.id, r.fields['Firm Name'] as string || '');
   });
 

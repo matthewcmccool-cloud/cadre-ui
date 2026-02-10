@@ -81,7 +81,10 @@ export default function FundingRoundsFeed({ companyNames }: FundingRoundsFeedPro
 
   useEffect(() => {
     fetch('/api/funding-rounds?days=14')
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then(data => {
         if (data.rounds) {
           setRounds(data.rounds);
