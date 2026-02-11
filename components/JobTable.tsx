@@ -37,19 +37,6 @@ const toSlug = (name: string): string => {
     .replace(/^-+|-+$/g, '');
 };
 
-function formatSalary(salary: string): string {
-  if (!salary) return '';
-  if (salary.length < 20) return salary;
-  const match = salary.match(/(\d[\d,]+)\s*-\s*(\d[\d,]+)/);
-  if (match) {
-    const low = parseInt(match[1].replace(/,/g, ''), 10);
-    const high = parseInt(match[2].replace(/,/g, ''), 10);
-    if (low >= 1000 && high >= 1000) {
-      return `$${Math.round(low / 1000)}K - $${Math.round(high / 1000)}K`;
-    }
-  }
-  return salary.length > 25 ? salary.substring(0, 22) + '...' : salary;
-}
 
 const AVATAR_COLORS = [
   'bg-blue-500/20 text-blue-400',
@@ -122,7 +109,6 @@ export default function JobTable({ jobs }: JobTableProps) {
       {jobs.map((job) => {
         const companyDomain = getDomain(job.companyUrl);
         const { text: dateText, isNew } = formatDate(job.datePosted);
-        const salary = formatSalary(job.salary);
         const fnStyle = FUNCTION_COLORS[job.functionName] || 'text-[#888] border-[#333]';
 
         return (
@@ -183,39 +169,31 @@ export default function JobTable({ jobs }: JobTableProps) {
                     <span className="text-xs text-[#555] truncate">{job.location}</span>
                   </>
                 )}
+                {job.functionName && (
+                  <>
+                    <span className="hidden md:inline text-[#333]">·</span>
+                    <span className={`hidden md:inline px-1.5 py-0 rounded text-[10px] border ${fnStyle}`}>
+                      {job.functionName}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
 
-            {/* Function Badge */}
-            <div className="hidden md:flex items-center flex-shrink-0">
-              {job.functionName && (
-                <span className={`px-2 py-0.5 rounded text-[11px] border ${fnStyle} truncate max-w-[140px]`}>
-                  {job.functionName}
-                </span>
-              )}
-            </div>
-
-            {/* Salary */}
-            <div className="hidden sm:flex items-center flex-shrink-0 w-36 justify-end">
-              {salary && (
-                <span className="text-xs text-green-400/80 font-medium">{salary}</span>
-              )}
-            </div>
-
-            {/* Investors (compact) */}
-            <div className="hidden lg:flex items-center gap-1 flex-shrink-0 justify-end w-40">
-              {job.investors && job.investors.slice(0, 1).map((investor) => (
+            {/* Investors */}
+            <div className="hidden lg:flex items-center gap-1.5 flex-shrink-0 justify-end">
+              {job.investors && job.investors.slice(0, 3).map((investor) => (
                 <Link
                   key={investor}
                   href={`/investors/${toSlug(investor)}`}
-                  className="px-2 py-0.5 rounded text-xs bg-[#1a1a1b] text-[#999] hover:bg-[#252526] hover:text-[#e8e8e8] transition-colors truncate max-w-[110px]"
+                  className="px-2 py-0.5 rounded-md text-[11px] bg-[#5e6ad2]/8 text-[#8b93e6] hover:bg-[#5e6ad2]/15 transition-colors whitespace-nowrap"
                 >
                   {investor}
                 </Link>
               ))}
-              {job.investors && job.investors.length > 1 && (
-                <span className="px-1 py-0.5 rounded text-[11px] text-[#555]">
-                  +{job.investors.length - 1}
+              {job.investors && job.investors.length > 3 && (
+                <span className="px-1.5 py-0.5 rounded-md text-[10px] text-[#555] bg-[#1a1a1b]">
+                  +{job.investors.length - 3}
                 </span>
               )}
             </div>
