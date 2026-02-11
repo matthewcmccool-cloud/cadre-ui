@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: IndustryPageProps): Promise<M
   if (!industry) return {};
 
   const title = `${industry.name} Startup Jobs — ${industry.companies.length} Companies | Cadre`;
-  const description = `${industry.companies.length} VC-backed ${industry.name.toLowerCase()} companies with open roles. Browse jobs at venture-funded startups in ${industry.name} on Cadre.`;
+  const description = `${industry.companies.length} ${industry.name.toLowerCase()} companies with open roles. Browse jobs at exceptional technology companies in ${industry.name} on Cadre.`;
 
   const url = `https://cadre-ui-psi.vercel.app/industry/${params.slug}`;
 
@@ -47,7 +47,7 @@ export default async function IndustryPage({ params }: IndustryPageProps) {
           '@context': 'https://schema.org',
           '@type': 'CollectionPage',
           name: `${industry.name} Startup Jobs`,
-          description: `${industry.companies.length} VC-backed ${industry.name.toLowerCase()} companies with ${jobs.length} open roles on Cadre.`,
+          description: `${industry.companies.length} ${industry.name.toLowerCase()} companies with ${jobs.length} open roles on Cadre.`,
           url: `https://cadre-ui-psi.vercel.app/industry/${params.slug}`,
           numberOfItems: jobs.length,
         }) }}

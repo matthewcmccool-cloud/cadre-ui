@@ -46,7 +46,7 @@ export default async function CompanyPage({ params }: CompanyPageProps) {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: company.name,
-    description: company.about || `${company.name} is a${company.stage ? ' ' + company.stage : ''} VC-backed startup${company.industry ? ' in ' + company.industry : ''} with ${jobs.length} open roles.`,
+    description: company.about || `${company.name} is a${company.stage ? ' ' + company.stage : ''} technology company${company.industry ? ' in ' + company.industry : ''} with ${jobs.length} open roles.`,
     url: `https://cadre-ui-psi.vercel.app/companies/${params.slug}`,
     ...(company.url && { sameAs: company.url }),
     ...(company.hqLocation && { location: { '@type': 'Place', name: company.hqLocation } }),

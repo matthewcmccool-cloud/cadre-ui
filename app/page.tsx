@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { getJobs, getFilterOptions, getRecentCompanies, getAllCompaniesForDirectory, getAllInvestorsForDirectory } from '@/lib/airtable';
 import JobTable from '@/components/JobTable';
 import Pagination from '@/components/Pagination';
@@ -8,6 +9,10 @@ import EmailCapture from '@/components/EmailCapture';
 import HomepageTabs from '@/components/HomepageTabs';
 import CompanyDirectory from '@/components/CompanyDirectory';
 import InvestorDirectory from '@/components/InvestorDirectory';
+
+export const metadata: Metadata = {
+  alternates: { canonical: 'https://cadre-ui-psi.vercel.app' },
+};
 
 // ISR: regenerate page every 60 minutes in the background
 export const revalidate = 3600;
