@@ -5,7 +5,7 @@ import { inferFunction } from '@/lib/data';
 // ---------------------------------------------------------------------------
 
 const COMPANIES_TABLE = 'tbl4dA7iDr7mjF6Gt';
-const JOBS_TABLE = 'Jobs';
+const JOBS_TABLE = 'Job Listings';
 const FUNCTIONS_TABLE = 'tbl94EXkSIEmhqyYy';
 
 const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
