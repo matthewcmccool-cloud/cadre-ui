@@ -6,6 +6,35 @@ Track what ships, what breaks, what's next. Updated after every Claude Code sess
 
 ## February 11, 2026
 
+### Session: Prompt 16 — Polish Pass (Skeletons, Errors, Mobile, SEO)
+- **Shipped:**
+  - **Skeleton components** (`components/Skeletons.tsx` — new): CompanyChipSkeleton, FeedCardSkeleton, SparklineSkeleton, StatSkeleton
+  - **Discover loading** (`app/discover/loading.tsx` — new): View switcher + search + company chip skeletons via Next.js Suspense
+  - **Feed skeleton** (`components/FeedPageContent.tsx` — updated): Replaced spinner with 4 FeedCardSkeletons
+  - **Error page** (`app/error.tsx` — updated): Added "Go to homepage" link alongside "Try again", improved copy to match spec
+  - **Compare mobile** (`app/feed/compare/page.tsx` — updated): Shows "Comparison view is available on desktop" message on mobile
+  - **SEO: Discover meta** (`app/discover/page.tsx` — updated): Title → "Discover 1,300+ VC-Backed Companies & Their Open Roles", added OpenGraph
+  - **SEO: Fundraises meta** (`app/fundraises/page.tsx` — updated): Title → "Latest Venture Capital Fundraises & Who's Hiring"
+  - **SEO: Pricing meta** (`app/pricing/layout.tsx` — new): "Cadre Pro — Hiring Activity Intelligence | $79/month"
+  - **SEO: Sitemap** (`app/sitemap.ts` — updated): Added /discover, /pricing, updated /fundraises priority, replaced legacy tab URLs with /discover?view= URLs
+  - **Terms placeholder** (`app/terms/page.tsx` — new): "Coming soon" placeholder
+  - **Privacy placeholder** (`app/privacy/page.tsx` — new): "Coming soon" placeholder
+- **Already existed (no changes needed):**
+  - Footer with links, copyright, mailto — already in layout ✓
+  - robots.txt with sitemap reference ✓
+  - JSON-LD on all entity pages (company, investor, industry, job) ✓
+  - JobRowSkeleton ✓
+  - Header bottom tab bar for mobile ✓
+  - SearchFilters mobile filter button + bottom sheet ✓
+  - ManageFollowsPanel full-width on mobile ✓
+  - Settings mobile stacked tabs ✓
+  - Feed sidebar hidden on mobile ✓
+  - Empty states on CompanyDirectory, JobTable, FeedPageContent ✓
+- **Broke:** Nothing. Zero TypeScript errors.
+- **Files changed:** `components/Skeletons.tsx` (new), `app/discover/loading.tsx` (new), `components/FeedPageContent.tsx`, `app/error.tsx`, `app/feed/compare/page.tsx`, `app/discover/page.tsx`, `app/fundraises/page.tsx`, `app/pricing/layout.tsx` (new), `app/sitemap.ts`, `app/terms/page.tsx` (new), `app/privacy/page.tsx` (new), `docs/CHANGELOG.md`
+
+---
+
 ### Session: Prompt 15 — Settings Page
 - **Shipped:**
   - **Settings layout** (`app/settings/layout.tsx` — new): Desktop left sidebar tabs + mobile stacked tabs, URL-routed (/settings, /settings/alerts, /settings/billing)

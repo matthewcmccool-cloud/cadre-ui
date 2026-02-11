@@ -8,9 +8,14 @@ import InvestorDirectory from '@/components/InvestorDirectory';
 import ViewSwitcher from '@/components/ViewSwitcher';
 
 export const metadata: Metadata = {
-  title: 'Discover',
+  title: 'Discover 1,300+ VC-Backed Companies & Their Open Roles',
   description: 'Explore 1,300+ VC-backed companies, 200+ investors, and 16,000+ open roles.',
   alternates: { canonical: 'https://cadre-ui-psi.vercel.app/discover' },
+  openGraph: {
+    title: 'Discover 1,300+ VC-Backed Companies & Their Open Roles | Cadre',
+    description: 'Explore 1,300+ VC-backed companies, 200+ investors, and 16,000+ open roles.',
+    url: 'https://cadre-ui-psi.vercel.app/discover',
+  },
 };
 
 // ISR: regenerate every 60 minutes

@@ -48,13 +48,26 @@ export default function ComparePage() {
           <h1 className="text-xl font-semibold text-zinc-100">Compare Companies</h1>
         </div>
 
-        {isPro ? (
-          <CompareTablePlaceholder />
-        ) : (
-          <BlurredPlaceholder prompt="Unlock cross-company comparison → Start free trial">
+        {/* Mobile: desktop-only message */}
+        <div className="md:hidden bg-zinc-900 rounded-lg p-6 border border-zinc-800 text-center">
+          <p className="text-sm text-zinc-400">
+            Comparison view is available on desktop.
+          </p>
+          <Link href="/feed" className="mt-3 inline-block text-sm text-purple-400 hover:text-purple-300 transition-colors">
+            ← Back to feed
+          </Link>
+        </div>
+
+        {/* Desktop: comparison table */}
+        <div className="hidden md:block">
+          {isPro ? (
             <CompareTablePlaceholder />
-          </BlurredPlaceholder>
-        )}
+          ) : (
+            <BlurredPlaceholder prompt="Unlock cross-company comparison → Start free trial">
+              <CompareTablePlaceholder />
+            </BlurredPlaceholder>
+          )}
+        </div>
       </div>
     </main>
   );

@@ -3,11 +3,11 @@ import { getFundraises, getFilterOptions } from '@/lib/airtable';
 import FundraisesPageContent from '@/components/FundraisesPageContent';
 
 export const metadata: Metadata = {
-  title: 'Fundraises | Cadre',
+  title: 'Latest Venture Capital Fundraises & Who\'s Hiring',
   description: 'Track the latest funding rounds across the venture ecosystem. See who raised, who led, and who is hiring.',
   alternates: { canonical: 'https://cadre-ui-psi.vercel.app/fundraises' },
   openGraph: {
-    title: 'Fundraises | Cadre',
+    title: 'Latest Venture Capital Fundraises & Who\'s Hiring | Cadre',
     description: 'Track the latest funding rounds across the venture ecosystem.',
     url: 'https://cadre-ui-psi.vercel.app/fundraises',
   },

@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSubscription } from '@/hooks/useSubscription';
 import LiveTicker from '@/components/LiveTicker';
 import ManageFollowsPanel from '@/components/ManageFollowsPanel';
+import { FeedCardSkeleton } from '@/components/Skeletons';
 import type { FeedDataResult as FeedData, FeedCompanyItem as FeedCompany } from '@/lib/airtable';
 
 const PAGE_SIZE = 20;
@@ -365,9 +366,7 @@ export default function FeedPageContent({ stats }: { stats: StatsProps }) {
           {/* Feed */}
           <div className="flex-1 max-w-2xl">
             {loading ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="w-6 h-6 border-2 border-zinc-700 border-t-purple-500 rounded-full animate-spin" />
-              </div>
+              <FeedCardSkeleton count={4} />
             ) : data && data.companies.length === 0 ? (
               <div className="bg-zinc-900 rounded-lg p-8 border border-zinc-800 text-center">
                 <p className="text-sm text-zinc-400">You&apos;re not following any companies yet.</p>
