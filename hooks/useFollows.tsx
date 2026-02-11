@@ -158,10 +158,18 @@ export function FollowsProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// Safe default for components outside FollowsProvider (e.g. OnboardingModal in AuthProvider)
+const FALLBACK_FOLLOWS: FollowsContextValue = {
+  followedCompanyIds: new Set(),
+  followCount: 0,
+  isFollowing: () => false,
+  follow: async () => {},
+  unfollow: async () => {},
+  followPortfolio: async () => ({ newFollows: 0, investorName: '' }),
+  isLoaded: false,
+};
+
 export function useFollows(): FollowsContextValue {
   const context = useContext(FollowsContext);
-  if (!context) {
-    throw new Error('useFollows must be used within a FollowsProvider');
-  }
-  return context;
+  return context ?? FALLBACK_FOLLOWS;
 }
