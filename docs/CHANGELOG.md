@@ -6,6 +6,24 @@ Track what ships, what breaks, what's next. Updated after every Claude Code sess
 
 ## February 11, 2026
 
+### Session: Prompt 4 — Homepage Redesign
+- **Shipped:**
+  - Rewrote `app/page.tsx` — complete homepage redesign for anonymous visitors.
+  - Signed-in users redirect to `/discover` (will change to `/feed` after Prompt 10).
+  - **LiveTicker** (`components/LiveTicker.tsx` — new) — horizontal scrolling bar, `h-8 bg-zinc-900`, CSS infinite scroll animation. Uses existing `animate-ticker` keyframes from globals.css. Entries passed as props with real stats from Airtable.
+  - **Hero section** — `py-24`, centered. Headline: "Hiring intelligence for the venture ecosystem." Stats line uses real Airtable counts. Two CTAs: "Explore companies →" (`bg-purple-600`) links to `/discover`, "Get weekly intel →" (outlined) scrolls to `#newsletter`.
+  - **This Week's Signal** card — `bg-zinc-900 rounded-xl p-8 border border-zinc-800`, hardcoded insight text for MVP. Links to `/fundraises`.
+  - **Three entry cards** — `grid grid-cols-1 sm:grid-cols-3 gap-4`. Companies (links to `/discover?view=companies`), Investors (to `/discover?view=investors`), Fundraises (to `/fundraises`). Real counts from Airtable. Arrow icons with hover effect.
+  - **NewsletterCTA** (`components/NewsletterCTA.tsx` — new) — "The Cadre Hiring Signal" with email input + subscribe button. Wired to existing `/api/subscribe` endpoint. Success/error states.
+  - **Footer** (`components/Footer.tsx` — new) — `py-16 border-t border-zinc-800`. Brand line, nav links (Discover, Fundraises, Pricing, Newsletter), copyright with Terms/Privacy/Contact. Added to root `layout.tsx` so it appears on every page.
+  - Updated `app/layout.tsx` — imported and rendered `<Footer />` below `{children}`.
+  - JSON-LD structured data (WebSite schema) with real stats.
+- **Broke:** Nothing. Zero TypeScript errors. Old homepage content (jobs/companies/investors tabs) will move to `/discover` in Prompt 5.
+- **Next:** Prompt 5 (Discover Page with View Mode Switching)
+- **Files changed:** `app/page.tsx`, `app/layout.tsx`, `components/LiveTicker.tsx` (new), `components/NewsletterCTA.tsx` (new), `components/Footer.tsx` (new)
+
+---
+
 ### Session: Prompt 3 — Navigation Redesign
 - **Shipped:**
   - Rewrote `Header.tsx` — complete navigation redesign per spec.

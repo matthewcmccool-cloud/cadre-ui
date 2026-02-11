@@ -3,6 +3,7 @@ import { ClerkProvider } from '@clerk/nextjs';
 import { dark } from '@clerk/themes';
 import Providers from '@/components/Providers';
 import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import './globals.css';
 
 const BASE_URL = 'https://cadre-ui-psi.vercel.app';
@@ -48,6 +49,7 @@ export default function RootLayout({
           <Providers>
             <Header />
             {children}
+            <Footer />
           </Providers>
         </body>
       </html>
