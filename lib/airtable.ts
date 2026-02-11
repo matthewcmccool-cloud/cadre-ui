@@ -66,7 +66,7 @@ const FUNCTION_TO_DEPARTMENT: Record<string, string> = {
 };
 
 const TABLES = {
-  jobs: 'Jobs',
+  jobs: 'Job Listings',
   companies: 'Companies',
   investors: 'Investors',
   functions: 'Function',
