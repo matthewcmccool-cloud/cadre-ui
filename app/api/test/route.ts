@@ -22,8 +22,8 @@ export async function GET() {
     const functionText = await functionResponse.text();
     const functionData = JSON.parse(functionText);
 
-    // Test Job Listings with Function field
-    const jobUrl = `https://api.airtable.com/v0/${baseId}/Job%20Listings?maxRecords=5&fields%5B%5D=Title&fields%5B%5D=Function&fields%5B%5D=Company`;
+    // Test Jobs with Function field
+    const jobUrl = `https://api.airtable.com/v0/${baseId}/Jobs?maxRecords=5&fields%5B%5D=Title&fields%5B%5D=Function&fields%5B%5D=Company`;
     const jobResponse = await fetch(jobUrl, {
       headers: {
         'Authorization': `Bearer ${apiKey}`,
