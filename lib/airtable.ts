@@ -66,7 +66,7 @@ const FUNCTION_TO_DEPARTMENT: Record<string, string> = {
 };
 
 const TABLES = {
-  jobs: 'Job Listings',
+  jobs: 'Jobs',
   companies: 'Companies',
   investors: 'Investors',
   functions: 'Function',
@@ -944,7 +944,7 @@ export interface CompanyDirectoryItem {
 export async function getAllCompaniesForDirectory(): Promise<CompanyDirectoryItem[]> {
   const [companyRecords, investorRecords, industryRecords] = await Promise.all([
     fetchAllAirtable(TABLES.companies, {
-      fields: ['Company', 'URL', 'VCs', 'Stage', 'Industry', 'Job Listings'],
+      fields: ['Company', 'URL', 'VCs', 'Stage', 'Industry', 'Jobs'],
     }),
     fetchAllAirtable(TABLES.investors, {
       fields: ['Firm Name'],
@@ -967,7 +967,7 @@ export async function getAllCompaniesForDirectory(): Promise<CompanyDirectoryIte
       const name = r.fields['Company'] as string || '';
       const vcIds = (r.fields['VCs'] || []) as string[];
       const industryIds = (r.fields['Industry'] || []) as string[];
-      const jobIds = (r.fields['Job Listings'] || []) as string[];
+      const jobIds = (r.fields['Jobs'] || []) as string[];
       return {
         name,
         slug: toSlug(name),
@@ -1236,7 +1236,7 @@ export async function getFundraises(): Promise<FundraiseItem[]> {
   // Fetch companies that have a Stage value (indicates a funding round)
   const [companyRecords, investorRecords, industryRecords] = await Promise.all([
     fetchAllAirtable(TABLES.companies, {
-      fields: ['Company', 'URL', 'Stage', 'Total Raised', 'VCs', 'Industry', 'Job Listings', 'Slug'],
+      fields: ['Company', 'URL', 'Stage', 'Total Raised', 'VCs', 'Industry', 'Jobs', 'Slug'],
     }),
     fetchAllAirtable(TABLES.investors, {
       fields: ['Firm Name'],
@@ -1269,7 +1269,7 @@ export async function getFundraises(): Promise<FundraiseItem[]> {
       const investors = vcIds.map(id => investorMap.get(id) || '').filter(Boolean);
       const industryIds = (r.fields['Industry'] || []) as string[];
       const industry = industryIds.length > 0 ? industryMap.get(industryIds[0]) : undefined;
-      const jobListings = (r.fields['Job Listings'] || []) as string[];
+      const jobListings = (r.fields['Jobs'] || []) as string[];
 
       return {
         companyId: r.id,
@@ -1335,7 +1335,7 @@ export interface OnboardingData {
 export async function getOnboardingData(): Promise<OnboardingData> {
   const [companyRecords, investorRecords, industryRecords] = await Promise.all([
     fetchAllAirtable(TABLES.companies, {
-      fields: ['Company', 'URL', 'VCs', 'Industry', 'Job Listings', 'Slug'],
+      fields: ['Company', 'URL', 'VCs', 'Industry', 'Jobs', 'Slug'],
     }),
     fetchAllAirtable(TABLES.investors, {
       fields: ['Firm Name'],
@@ -1362,7 +1362,7 @@ export async function getOnboardingData(): Promise<OnboardingData> {
     .map(r => {
       const name = r.fields['Company'] as string || '';
       const industryIds = (r.fields['Industry'] || []) as string[];
-      const jobIds = (r.fields['Job Listings'] || []) as string[];
+      const jobIds = (r.fields['Jobs'] || []) as string[];
       return {
         id: r.id,
         name,
@@ -1425,7 +1425,7 @@ export async function getFeedDataForCompanyIds(companyIds: string[]): Promise<Fe
 
   const [companyRecords, investorRecords, industryRecords] = await Promise.all([
     fetchAllAirtable(TABLES.companies, {
-      fields: ['Company', 'URL', 'VCs', 'Stage', 'Industry', 'Job Listings', 'Slug'],
+      fields: ['Company', 'URL', 'VCs', 'Stage', 'Industry', 'Jobs', 'Slug'],
     }),
     fetchAllAirtable(TABLES.investors, {
       fields: ['Firm Name'],
@@ -1449,7 +1449,7 @@ export async function getFeedDataForCompanyIds(companyIds: string[]): Promise<Fe
   const allJobIds: string[] = [];
   const companyJobIdsMap = new Map<string, string[]>();
   for (const r of followed) {
-    const jobIds = (r.fields['Job Listings'] || []) as string[];
+    const jobIds = (r.fields['Jobs'] || []) as string[];
     companyJobIdsMap.set(r.id, jobIds.slice(0, 10));
     allJobIds.push(...jobIds.slice(0, 10));
   }
@@ -1482,7 +1482,7 @@ export async function getFeedDataForCompanyIds(companyIds: string[]): Promise<Fe
       const name = r.fields['Company'] as string || '';
       const vcIds = (r.fields['VCs'] || []) as string[];
       const industryIds = (r.fields['Industry'] || []) as string[];
-      const allJobsCount = ((r.fields['Job Listings'] || []) as string[]).length;
+      const allJobsCount = ((r.fields['Jobs'] || []) as string[]).length;
       const jobIds = companyJobIdsMap.get(r.id) || [];
 
       totalRoles += allJobsCount;
