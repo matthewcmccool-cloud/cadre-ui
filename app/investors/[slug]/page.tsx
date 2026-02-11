@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: InvestorPageProps): Promise<M
   if (!investor) return {};
 
   const title = `${investor.name} Portfolio Jobs | Cadre`;
-  const description = `Browse ${investor.jobCount} open roles across ${investor.companies.length} ${investor.name} portfolio companies. Find jobs at VC-backed startups on Cadre.`;
+  const description = `Browse ${investor.jobCount} open roles across ${investor.companies.length} ${investor.name} portfolio companies. Find jobs at exceptional technology companies on Cadre.`;
 
   const url = `https://cadre-ui-psi.vercel.app/investors/${params.slug}`;
 

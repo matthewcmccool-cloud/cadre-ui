@@ -129,7 +129,7 @@ export async function generateMetadata({ params }: JobDetailPageProps): Promise<
   const title = `${job.title} at ${job.company} | Cadre`;
   const description = job.description
     ? stripHtml(job.description).slice(0, 160)
-    : `${job.title} at ${job.company}. Find jobs at VC-backed companies on Cadre.`;
+    : `${job.title} at ${job.company}. Find jobs at exceptional technology companies on Cadre.`;
 
   const url = `https://cadre-ui-psi.vercel.app/jobs/${encodeURIComponent(params.id)}`;
 

@@ -1,13 +1,14 @@
 import { MetadataRoute } from 'next';
-import { getAllCompaniesForDirectory, getAllInvestorsForDirectory, getFilterOptions } from '@/lib/airtable';
+import { getAllCompaniesForDirectory, getAllInvestorsForDirectory, getFilterOptions, getJobs } from '@/lib/airtable';
 
 const BASE_URL = 'https://cadre-ui-psi.vercel.app';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [companies, investors, filterOptions] = await Promise.all([
+  const [companies, investors, filterOptions, jobsResult] = await Promise.all([
     getAllCompaniesForDirectory(),
     getAllInvestorsForDirectory(),
     getFilterOptions(),
+    getJobs({ page: 1 }).catch(() => null),
   ]);
 
   const now = new Date().toISOString();
@@ -22,6 +23,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/fundraises`, lastModified: now, changeFrequency: 'monthly', priority: 0.3 },
     { url: `${BASE_URL}/analytics`, lastModified: now, changeFrequency: 'monthly', priority: 0.3 },
   ];
+
+  // Job detail pages (most recent page of results)
+  const jobPages: MetadataRoute.Sitemap = jobsResult
+    ? jobsResult.jobs.map(j => ({
+        url: `${BASE_URL}/jobs/${j.id}`,
+        lastModified: j.datePosted || now,
+        changeFrequency: 'daily' as const,
+        priority: 0.8,
+      }))
+    : [];
 
   // Company pages
   const companyPages: MetadataRoute.Sitemap = companies.map(c => ({
@@ -47,5 +58,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticPages, ...companyPages, ...investorPages, ...industryPages];
+  return [...staticPages, ...jobPages, ...companyPages, ...investorPages, ...industryPages];
 }

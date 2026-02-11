@@ -2,8 +2,14 @@ import ComingSoon from '@/components/ComingSoon';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Fundraises | Cadre — Funding Rounds at Top Technology Companies',
+  title: 'Fundraises — Coming Soon',
   description: 'Track the latest funding rounds across exceptional technology companies. Coming soon to Cadre.',
+  alternates: { canonical: 'https://cadre-ui-psi.vercel.app/fundraises' },
+  openGraph: {
+    title: 'Fundraises — Coming Soon | Cadre',
+    description: 'Track the latest funding rounds across exceptional technology companies.',
+    url: 'https://cadre-ui-psi.vercel.app/fundraises',
+  },
 };
 
 export default function FundraisesPage() {

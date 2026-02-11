@@ -4,9 +4,23 @@ import { dark } from '@clerk/themes';
 import Header from '@/components/Header';
 import './globals.css';
 
+const BASE_URL = 'https://cadre-ui-psi.vercel.app';
+
 export const metadata: Metadata = {
-  title: 'Cadre | Curated Roles at Exceptional Technology Companies',
+  metadataBase: new URL(BASE_URL),
+  title: {
+    default: 'Cadre | Curated Roles at Exceptional Technology Companies',
+    template: '%s | Cadre',
+  },
   description: 'Curated roles at exceptional technology companies, by the investors who back them.',
+  openGraph: {
+    type: 'website',
+    siteName: 'Cadre',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary',
+  },
 };
 
 const organizationSchema = {
