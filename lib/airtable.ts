@@ -938,12 +938,13 @@ export interface CompanyDirectoryItem {
   stage?: string;
   industry?: string;
   investors: string[];
+  jobCount: number;
 }
 
 export async function getAllCompaniesForDirectory(): Promise<CompanyDirectoryItem[]> {
   const [companyRecords, investorRecords, industryRecords] = await Promise.all([
     fetchAllAirtable(TABLES.companies, {
-      fields: ['Company', 'URL', 'VCs', 'Stage', 'Industry'],
+      fields: ['Company', 'URL', 'VCs', 'Stage', 'Industry', 'Job Listings'],
     }),
     fetchAllAirtable(TABLES.investors, {
       fields: ['Firm Name'],
@@ -966,6 +967,7 @@ export async function getAllCompaniesForDirectory(): Promise<CompanyDirectoryIte
       const name = r.fields['Company'] as string || '';
       const vcIds = (r.fields['VCs'] || []) as string[];
       const industryIds = (r.fields['Industry'] || []) as string[];
+      const jobIds = (r.fields['Job Listings'] || []) as string[];
       return {
         name,
         slug: toSlug(name),
@@ -973,10 +975,11 @@ export async function getAllCompaniesForDirectory(): Promise<CompanyDirectoryIte
         stage: r.fields['Stage'] as string || undefined,
         industry: industryIds.length > 0 ? industryMap.get(industryIds[0]) || undefined : undefined,
         investors: vcIds.map(id => investorMap.get(id) || '').filter(Boolean),
+        jobCount: jobIds.length,
       };
     })
     .filter(c => c.name)
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => b.jobCount - a.jobCount || a.name.localeCompare(b.name));
 }
 
 export interface InvestorDirectoryItem {

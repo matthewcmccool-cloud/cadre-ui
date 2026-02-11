@@ -200,8 +200,10 @@ export default function CompanyDirectory({ companies }: CompanyDirectoryProps) {
                 </div>
               )}
               <span className="whitespace-nowrap">{company.name}</span>
-              {company.stage && (
-                <span className="text-[10px] text-[#555] font-medium">{company.stage}</span>
+              {company.jobCount > 0 && (
+                <span className="text-[10px] text-[#555] font-medium">
+                  {company.jobCount} {company.jobCount === 1 ? 'job' : 'jobs'}
+                </span>
               )}
             </Link>
           );
