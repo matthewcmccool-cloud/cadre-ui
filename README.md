@@ -61,7 +61,7 @@ cadre-ui/
 ├── components/
 │   ├── Header.tsx      # Navigation + search
 │   ├── Filters.tsx     # Filter dropdowns
-│   └── JobTable.tsx    # Job listings table
+│   └── JobTable.tsx    # Jobs table
 ├── lib/
 │   └── airtable.ts     # Airtable API client
 └── public/
@@ -71,7 +71,7 @@ cadre-ui/
 
 ### Current
 
-- [x] Job listings table (date, title, company, investors, location)
+- [x] Jobs table (date, title, company, investors, location)
 - [x] Search by title/company
 - [x] Filter by function
 - [x] Filter by location
