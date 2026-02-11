@@ -1,14 +1,7 @@
 import { Webhook } from 'svix';
 import { headers } from 'next/headers';
 import { WebhookEvent } from '@clerk/nextjs/server';
-import { createClient } from '@supabase/supabase-js';
-
-function getSupabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+import { createSupabaseAdmin } from '@/lib/supabase';
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
@@ -57,7 +50,10 @@ export async function POST(req: Request) {
     );
 
     if (primaryEmail) {
-      const { error } = await getSupabaseAdmin()
+      const supabase = createSupabaseAdmin();
+
+      // Create user record
+      const { error } = await supabase
         .from('users')
         .insert({
           clerk_id: id,
@@ -70,7 +66,12 @@ export async function POST(req: Request) {
         return new Response('Error creating user', { status: 500 });
       }
 
-      console.log(`User ${id} created in Supabase`);
+      // Create default alert preferences
+      await supabase
+        .from('alert_preferences')
+        .upsert({ user_id: id }, { onConflict: 'user_id' });
+
+      console.log(`User ${id} created in Supabase with default preferences`);
     }
   }
 
