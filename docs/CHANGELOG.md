@@ -6,6 +6,26 @@ Track what ships, what breaks, what's next. Updated after every Claude Code sess
 
 ## February 11, 2026
 
+### Session: Prompt 8 — Fundraises Page
+- **Shipped:**
+  - Replaced "Coming Soon" placeholder with full Fundraises page (`app/fundraises/page.tsx`).
+  - **FundraisesPageContent** (`components/FundraisesPageContent.tsx` — new) — client component with:
+    - Page title "Fundraises" + subtitle
+    - Time filter pills (All / This Week / This Month) — same pill toggle style as Discover `ViewSwitcher`
+    - Industry dropdown filter populated from Airtable industries
+    - Result count ("N fundraises")
+    - Fundraise cards: `bg-zinc-900 rounded-lg p-5 border border-zinc-800`, left accent `border-l-2 border-l-emerald-500/30`, company logo (favicon), company name + "raised $X Stage", investor links (lead + co-investors), industry badge, "Now hiring N roles →" link, `FollowButton` on right
+    - "Load more" pagination (20 per page)
+    - Empty state with link to clear filters
+  - **`getFundraises()`** added to `lib/airtable.ts` — synthesizes fundraise entries from Companies table (Stage + Total Raised + VCs fields). Filters for companies with recognizable funding stages (Seed, Series A-D, Growth, Pre-Seed). Sorts by stage (later stages first). Ready to swap to dedicated Fundraises table when available.
+  - Server page fetches fundraises + filter options in parallel. ISR at 60 minutes.
+- **Broke:** Nothing. Zero TypeScript errors.
+- **Note:** No dedicated Fundraises table exists yet in Airtable. Data is synthesized from Companies table fields. When a Fundraises table is added, only `getFundraises()` in `airtable.ts` needs updating.
+- **Next:** Prompt 9 (Onboarding Flow)
+- **Files changed:** `app/fundraises/page.tsx`, `components/FundraisesPageContent.tsx` (new), `lib/airtable.ts`
+
+---
+
 ### Session: Prompt 7 — Investor Detail Page Redesign
 - **Shipped:**
   - Rewrote `InvestorPageContent.tsx` — complete investor page redesign with new layout matching company page style.

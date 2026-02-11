@@ -1214,3 +1214,96 @@ export async function getSimilarCompanies(
 
   return scored.map(({ sharedCount, ...rest }) => rest);
 }
+
+// ── Fundraises ──
+// Synthesize fundraise entries from Companies table until a dedicated
+// Fundraises table is added in Airtable.
+
+export interface FundraiseItem {
+  companyId: string;
+  companyName: string;
+  companySlug: string;
+  companyUrl?: string;
+  stage: string;
+  totalRaised?: string;
+  industry?: string;
+  leadInvestors: string[];
+  coInvestors: string[];
+  jobCount: number;
+}
+
+export async function getFundraises(): Promise<FundraiseItem[]> {
+  // Fetch companies that have a Stage value (indicates a funding round)
+  const [companyRecords, investorRecords, industryRecords] = await Promise.all([
+    fetchAllAirtable(TABLES.companies, {
+      fields: ['Company', 'URL', 'Stage', 'Total Raised', 'VCs', 'Industry', 'Job Listings', 'Slug'],
+    }),
+    fetchAllAirtable(TABLES.investors, {
+      fields: ['Firm Name'],
+    }),
+    fetchAirtable(TABLES.industries, {
+      fields: ['Industry Name'],
+    }),
+  ]);
+
+  // Build lookup maps
+  const investorMap = new Map<string, string>();
+  investorRecords.forEach(r => {
+    investorMap.set(r.id, r.fields['Firm Name'] as string || '');
+  });
+
+  const industryMap = new Map<string, string>();
+  industryRecords.records.forEach((r: { id: string; fields: Record<string, unknown> }) => {
+    industryMap.set(r.id, r.fields['Industry Name'] as string || '');
+  });
+
+  const fundraises: FundraiseItem[] = companyRecords
+    .filter(r => {
+      const stage = r.fields['Stage'] as string || '';
+      // Only include companies with a recognizable funding stage
+      return stage && /seed|series|pre-seed|growth|late/i.test(stage);
+    })
+    .map(r => {
+      const name = r.fields['Company'] as string || '';
+      const vcIds = (r.fields['VCs'] || []) as string[];
+      const investors = vcIds.map(id => investorMap.get(id) || '').filter(Boolean);
+      const industryIds = (r.fields['Industry'] || []) as string[];
+      const industry = industryIds.length > 0 ? industryMap.get(industryIds[0]) : undefined;
+      const jobListings = (r.fields['Job Listings'] || []) as string[];
+
+      return {
+        companyId: r.id,
+        companyName: name,
+        companySlug: r.fields['Slug'] as string || toSlug(name),
+        companyUrl: r.fields['URL'] as string || undefined,
+        stage: r.fields['Stage'] as string || '',
+        totalRaised: r.fields['Total Raised'] as string || undefined,
+        industry: industry || undefined,
+        leadInvestors: investors.slice(0, 1),
+        coInvestors: investors.slice(1),
+        jobCount: jobListings.length,
+      };
+    })
+    .filter(f => f.companyName);
+
+  // Sort by stage (later stages first as proxy for recency)
+  const stageOrder: Record<string, number> = {
+    'Late Stage': 0,
+    'Growth': 1,
+    'Series D': 2,
+    'Series C': 3,
+    'Series B': 4,
+    'Series A': 5,
+    'Seed': 6,
+    'Pre-Seed': 7,
+  };
+
+  fundraises.sort((a, b) => {
+    const aOrder = stageOrder[a.stage] ?? 10;
+    const bOrder = stageOrder[b.stage] ?? 10;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return b.jobCount - aOrder;
+  });
+
+  return fundraises;
+}
