@@ -1,4 +1,4 @@
-import { getAllCompaniesForDirectory } from '@/lib/airtable';
+import { getAllCompaniesForDirectory } from '@/lib/data';
 import CompanyDirectory from '@/components/CompanyDirectory';
 import type { Metadata } from 'next';
 

@@ -44,7 +44,7 @@ export default function SignInModal({ isOpen, onClose, companyName }: SignInModa
       await signIn.authenticateWithRedirect({
         strategy: 'oauth_google',
         redirectUrl: '/sign-up/sso-callback',
-        redirectUrlComplete: '/',
+        redirectUrlComplete: '/?onboarding=true',
       });
     } catch {
       setError('Could not connect to Google. Try again.');
@@ -62,7 +62,7 @@ export default function SignInModal({ isOpen, onClose, companyName }: SignInModa
       });
       await signUp.prepareEmailAddressVerification({
         strategy: 'email_link',
-        redirectUrl: `${window.location.origin}/`,
+        redirectUrl: `${window.location.origin}/?onboarding=true`,
       });
       setEmailSent(true);
     } catch (err: unknown) {
@@ -79,7 +79,7 @@ export default function SignInModal({ isOpen, onClose, companyName }: SignInModa
             await signIn.prepareFirstFactor({
               strategy: 'email_link',
               emailAddressId: emailFactor.emailAddressId as string,
-              redirectUrl: `${window.location.origin}/`,
+              redirectUrl: `${window.location.origin}/?onboarding=true`,
             });
             setEmailSent(true);
           } else {

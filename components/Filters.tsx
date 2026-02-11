@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FilterOptions } from '@/lib/airtable';
+import { FilterOptions } from '@/lib/data';
 import { useState, useRef, useEffect } from 'react';
 
 interface FiltersProps {

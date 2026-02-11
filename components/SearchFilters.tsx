@@ -1,11 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useState, useMemo, useCallback } from 'react';
 import FilterDropdown, { type FilterOption } from './FilterDropdown';
 import ActiveFilters from './ActiveFilters';
 import { parseCountry, parseWorkMode } from '@/lib/location-parser';
+import { useSubscription } from '@/hooks/useSubscription';
+import { trackSearch, trackUpgradePromptShown, trackUpgradePromptClicked } from '@/lib/analytics';
 
 const DEPARTMENTS = [
   'Sales & GTM', 'Marketing', 'Engineering', 'AI & Research', 'Product',
@@ -18,6 +20,13 @@ const POSTED_OPTIONS: FilterOption[] = [
   { value: '7d', label: 'Last 7 days' },
   { value: '30d', label: 'Last 30 days' },
   { value: 'all', label: 'All time' },
+];
+
+const HIRING_ACTIVITY_OPTIONS: FilterOption[] = [
+  { value: 'surging', label: 'Surging (3x+ rate)' },
+  { value: 'ramping', label: 'Ramping up' },
+  { value: 'steady', label: 'Steady' },
+  { value: 'stalling', label: 'Stalling (60d+ quiet)' },
 ];
 
 const WORK_MODE_OPTIONS: FilterOption[] = [
@@ -50,6 +59,8 @@ export default function SearchFilters({
   totalCount = 0,
 }: SearchFiltersProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const { isPro } = useSubscription();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -77,7 +88,7 @@ export default function SearchFilters({
       params.delete(key);
     }
     params.delete('page');
-    router.push(`/?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`);
   }, [searchParams, router]);
 
   // ── Build dropdown options with counts from job data ────────────
@@ -149,11 +160,12 @@ export default function SearchFilters({
     const params = new URLSearchParams(searchParams.toString());
     if (search) {
       params.set('search', search);
+      trackSearch(search);
     } else {
       params.delete('search');
     }
     params.delete('page');
-    router.push(`/?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`);
   };
 
   const clearSearch = useCallback(() => {
@@ -161,7 +173,7 @@ export default function SearchFilters({
     params.delete('search');
     params.delete('page');
     setSearch('');
-    router.push(`/?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`);
   }, [searchParams, router]);
 
   // ── Active filters for chip row ─────────────────────────────────
@@ -196,8 +208,8 @@ export default function SearchFilters({
 
   const handleClearAll = useCallback(() => {
     setSearch('');
-    router.push('/');
-  }, [router]);
+    router.push(pathname);
+  }, [router, pathname]);
 
   // ── Count active filters for mobile button ──────────────────────
   const activeCount = activeFilters.length;
@@ -211,6 +223,21 @@ export default function SearchFilters({
       <FilterDropdown label="Work Mode" options={WORK_MODE_OPTIONS} selected={selectedWorkModes} onChange={v => updateParams('workMode', v)} />
       <FilterDropdown label="Backed By" options={investorOptions} selected={selectedInvestors} onChange={v => updateParams('investor', v)} searchable />
       <FilterDropdown label="Posted" options={POSTED_OPTIONS} selected={selectedPosted} onChange={v => updateParams('posted', v)} multiSelect={false} />
+      <FilterDropdown
+        label="Hiring Activity"
+        options={HIRING_ACTIVITY_OPTIONS}
+        selected={[]}
+        onChange={() => {}}
+        disabled={!isPro}
+        disabledFooter={
+          !isPro ? (
+            <Link href="/pricing" className="text-xs text-purple-400 hover:text-purple-300 transition-colors" onClick={() => trackUpgradePromptClicked()}>
+              Start free trial to unlock →
+            </Link>
+          ) : undefined
+        }
+        onDisabledOpen={() => { if (!isPro) trackUpgradePromptShown(); }}
+      />
     </>
   );
 
@@ -267,6 +294,19 @@ export default function SearchFilters({
       {/* ── Filter Dropdowns — Desktop ──────────────────────── */}
       <div className="hidden sm:flex flex-wrap items-center gap-2 mb-2">
         {filterDropdowns}
+        {isPro && (
+          <button
+            onClick={() => {
+              window.location.href = `/api/export/csv?${searchParams.toString()}`;
+            }}
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-100 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Export CSV
+          </button>
+        )}
       </div>
 
       {/* ── Filter Button — Mobile ──────────────────────────── */}

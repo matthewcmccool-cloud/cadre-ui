@@ -1,9 +1,10 @@
-import { getJobById, toSlug } from '@/lib/airtable';
+import { getJobById, toSlug } from '@/lib/data';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import type { Metadata } from 'next';
 import CompanyLogo from '@/components/CompanyLogo';
+import ApplyButton from '@/components/ApplyButton';
 
 
 export const revalidate = 3600;
@@ -258,17 +259,17 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
 
         {/* Apply button */}
         {job.applyUrl && (
-          <a
+          <ApplyButton
             href={job.applyUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            jobId={job.id}
+            company={job.company}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#5e6ad2] hover:bg-[#6e7ae2] text-white text-sm font-medium rounded-lg transition-colors mb-8"
           >
             Apply Now
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
-          </a>
+          </ApplyButton>
         )}
 
         {/* Job description */}
@@ -285,17 +286,17 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
         {/* Bottom apply CTA */}
         {job.applyUrl && job.description && stripHtml(job.description).trim().length > 0 && (
           <div className="mt-10 pt-6 border-t border-[#1a1a1b]">
-            <a
+            <ApplyButton
               href={job.applyUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+              jobId={job.id}
+              company={job.company}
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#5e6ad2] hover:bg-[#6e7ae2] text-white text-sm font-medium rounded-lg transition-colors"
             >
               Apply for this role
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
               </svg>
-            </a>
+            </ApplyButton>
           </div>
         )}
       </div>

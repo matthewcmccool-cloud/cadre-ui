@@ -2,18 +2,18 @@
 
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
-import { Job } from '@/lib/airtable';
-
-const POPULAR_TAGS = [
-  'engineering', 'product', 'design', 'sales', 'marketing',
-  'data science', 'ai', 'machine learning', 'backend', 'frontend',
-  'full stack', 'devops', 'mobile', 'product manager', 'analyst',
-  'operations', 'finance', 'growth', 'customer success', 'recruiting',
-];
+import { Job } from '@/lib/data';
+import Favicon from '@/components/Favicon';
+import FollowPortfolioButton from '@/components/FollowPortfolioButton';
+import { useFollows } from '@/hooks/useFollows';
+import { useSubscription } from '@/hooks/useSubscription';
+import { trackViewInvestor } from '@/lib/analytics';
 
 interface InvestorPageContentProps {
   investor: {
+    id: string;
     name: string;
+    slug: string;
     bio: string;
     location: string;
     website?: string;
@@ -33,17 +33,19 @@ const getDomain = (url: string | null | undefined) => {
   }
 };
 
-const PAGE_SIZE = 25;
-const COLLAPSED_HEIGHT = 80; // ~2 rows of chips
+const COLLAPSED_HEIGHT = 80;
 
 export default function InvestorPageContent({ investor, jobs }: InvestorPageContentProps) {
   const [search, setSearch] = useState('');
-  const [isRemote, setIsRemote] = useState(false);
-  const [activeTag, setActiveTag] = useState('');
-  const [page, setPage] = useState(1);
   const [companiesExpanded, setCompaniesExpanded] = useState(false);
+
+  useEffect(() => {
+    trackViewInvestor(investor.slug);
+  }, [investor.slug]);
   const [needsExpand, setNeedsExpand] = useState(false);
   const companiesRef = useRef<HTMLDivElement>(null);
+  const { isFollowing } = useFollows();
+  const { isPro } = useSubscription();
 
   useEffect(() => {
     if (companiesRef.current) {
@@ -51,114 +53,205 @@ export default function InvestorPageContent({ investor, jobs }: InvestorPageCont
     }
   }, [investor.companies]);
 
-  // Filter jobs based on search, remote, and tag
+  // Count new roles this week
+  const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const newThisWeek = jobs.filter(j => j.datePosted && new Date(j.datePosted).getTime() > oneWeekAgo).length;
+
+  // Filter jobs by search
   const filteredJobs = jobs.filter((job) => {
-    const searchLower = search.toLowerCase();
-    const tagLower = activeTag.toLowerCase();
-
-    const matchesSearch = !search ||
-      job.title.toLowerCase().includes(searchLower) ||
-      job.company.toLowerCase().includes(searchLower) ||
-      (job.location && job.location.toLowerCase().includes(searchLower));
-
-    const matchesTag = !activeTag ||
-      job.title.toLowerCase().includes(tagLower) ||
-      (job.departmentName && job.departmentName.toLowerCase().includes(tagLower));
-
-    const matchesRemote = !isRemote ||
-      job.remoteFirst ||
-      (job.location && job.location.toLowerCase().includes('remote'));
-
-    return matchesSearch && matchesTag && matchesRemote;
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      job.title.toLowerCase().includes(q) ||
+      job.company.toLowerCase().includes(q) ||
+      (job.location && job.location.toLowerCase().includes(q)) ||
+      (job.departmentName && job.departmentName.toLowerCase().includes(q))
+    );
   });
 
-  // Pagination
-  const totalPages = Math.ceil(filteredJobs.length / PAGE_SIZE);
-  const paginatedJobs = filteredJobs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  // Sort portfolio companies by job count (descending)
+  const sortedCompanies = [...investor.companies].sort((a, b) => {
+    const aJobs = jobs.filter(j => j.company === a.name).length;
+    const bJobs = jobs.filter(j => j.company === b.name).length;
+    return bJobs - aJobs;
+  });
 
-  const handleTagClick = (tag: string) => {
-    setPage(1);
-    if (activeTag === tag) {
-      setActiveTag('');
-    } else {
-      setActiveTag(tag);
-    }
-  };
-
-  const clearSearch = () => {
-    setSearch('');
-    setPage(1);
-  };
+  const portfolioCompanyIds = investor.companies.map((c) => c.id);
 
   return (
     <>
-      {/* Investor header */}
-      <div className="mt-8 mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">{investor.name}</h1>
+      {/* ── Top Section ── */}
+      <div className="mt-6 mb-8">
+        {/* Name + Follow Portfolio */}
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-100">{investor.name}</h1>
+          <FollowPortfolioButton
+            investorSlug={investor.slug}
+            investorName={investor.name}
+            companyCount={investor.companies.length}
+            portfolioCompanyIds={portfolioCompanyIds}
+          />
+        </div>
+
+        {/* Subtitle */}
+        <p className="mt-1 text-sm text-zinc-400">
+          Venture Capital{investor.location ? ` · ${investor.location}` : ''}
+        </p>
+
+        {/* Links */}
         {(investor.website || investor.linkedinUrl) && (
-          <div className="flex gap-3 mt-1">
+          <div className="flex gap-3 mt-2">
             {investor.website && (
-              <a href={investor.website} target="_blank" rel="noopener noreferrer" className="text-xs text-[#888] hover:text-[#e8e8e8] transition-colors">
-                Website
+              <a href={investor.website} target="_blank" rel="noopener noreferrer" className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
+                Website ↗
               </a>
             )}
             {investor.linkedinUrl && (
-              <a href={investor.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#888] hover:text-[#e8e8e8] transition-colors">
-                LinkedIn
+              <a href={investor.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
+                LinkedIn ↗
               </a>
             )}
           </div>
         )}
-        <div className="flex flex-wrap gap-2 mt-3">
-          <span className="px-2.5 py-1 bg-[#252526] rounded text-xs text-[#888]">
-            {filteredJobs.length} open positions
-          </span>
-          <span className="px-2.5 py-1 bg-[#252526] rounded text-xs text-[#888]">
-            {investor.companies.length} portfolio companies
-          </span>
-          {investor.location && (
-            <span className="px-2.5 py-1 bg-[#252526] rounded text-xs text-[#888]">
-              {investor.location}
-            </span>
-          )}
-        </div>
 
+        {/* Bio */}
         {investor.bio && (
-          <p className="mt-3 text-sm text-[#999] leading-relaxed max-w-2xl">
+          <p className="mt-3 text-sm text-zinc-400 leading-relaxed max-w-2xl">
             {investor.bio}
           </p>
         )}
       </div>
 
-      {/* Search Bar + Remote Toggle */}
-      <div className="flex gap-3 mb-5">
-        <form onSubmit={(e) => e.preventDefault()} className="flex-1">
+      {/* ── Portfolio Overview ── */}
+      <div className="flex flex-wrap gap-4 mb-8">
+        <div className="bg-zinc-900 rounded-lg px-4 py-3 border border-zinc-800">
+          <div className="text-xl font-semibold text-zinc-100">{investor.companies.length}</div>
+          <div className="text-xs text-zinc-500 mt-0.5">portfolio companies</div>
+        </div>
+        <div className="bg-zinc-900 rounded-lg px-4 py-3 border border-zinc-800">
+          <div className="text-xl font-semibold text-zinc-100">{jobs.length.toLocaleString()}</div>
+          <div className="text-xs text-zinc-500 mt-0.5">open roles</div>
+        </div>
+        <div className="bg-zinc-900 rounded-lg px-4 py-3 border border-zinc-800">
+          <div className="text-xl font-semibold text-zinc-100">{newThisWeek}</div>
+          <div className="text-xs text-zinc-500 mt-0.5">new roles this week</div>
+        </div>
+      </div>
+
+      {/* ── Portfolio Companies ── */}
+      <section className="mb-10">
+        <h2 className="text-lg font-medium text-zinc-100 mb-4">Portfolio Companies</h2>
+        {sortedCompanies.length > 0 ? (
           <div className="relative">
-            <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#999]"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+            <div
+              ref={companiesRef}
+              className="flex flex-wrap gap-2 overflow-hidden transition-all duration-300"
+              style={{ maxHeight: companiesExpanded ? companiesRef.current?.scrollHeight : COLLAPSED_HEIGHT }}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
+              {sortedCompanies.map((company) => {
+                const followed = isFollowing(company.id);
+                const companyJobCount = jobs.filter(j => j.company === company.name).length;
+                return (
+                  <Link
+                    key={company.id}
+                    href={`/companies/${company.slug}`}
+                    className={`inline-flex items-center gap-2 px-3 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-lg text-sm text-zinc-200 border transition-colors ${
+                      followed
+                        ? 'border-l-2 border-l-purple-500 border-t-zinc-800 border-r-zinc-800 border-b-zinc-800'
+                        : 'border-zinc-800'
+                    }`}
+                  >
+                    <span>{company.name}</span>
+                    {companyJobCount > 0 && (
+                      <span className="text-xs text-zinc-500">{companyJobCount} roles</span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+            {needsExpand && (
+              <button
+                onClick={() => setCompaniesExpanded(!companiesExpanded)}
+                className="mt-3 text-sm text-purple-400 hover:text-purple-300 transition-colors"
+              >
+                {companiesExpanded ? 'Show less' : `Show all ${investor.companies.length} companies`}
+              </button>
+            )}
+          </div>
+        ) : (
+          <p className="text-zinc-500 text-sm">No portfolio companies listed.</p>
+        )}
+      </section>
+
+      {/* ── Portfolio Hiring Activity (Pro-gated) ── */}
+      <section className="mb-10">
+        <h2 className="text-lg font-medium text-zinc-100 mb-4">Portfolio Hiring Activity</h2>
+        {isPro ? (
+          <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
+            <p className="text-sm text-zinc-400">Portfolio analytics coming soon.</p>
+          </div>
+        ) : (
+          <div className="relative">
+            {/* Blurred placeholder content */}
+            <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800 select-none pointer-events-none blur-sm">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-zinc-800 rounded-lg p-4 h-32">
+                  <div className="h-3 w-24 bg-zinc-700 rounded mb-2" />
+                  <div className="h-6 w-16 bg-zinc-700 rounded" />
+                </div>
+                <div className="bg-zinc-800 rounded-lg p-4 h-32">
+                  <div className="h-3 w-20 bg-zinc-700 rounded mb-2" />
+                  <div className="h-6 w-12 bg-zinc-700 rounded" />
+                </div>
+              </div>
+              <div className="mt-4 bg-zinc-800 rounded-lg p-4 h-48">
+                <div className="h-3 w-32 bg-zinc-700 rounded mb-3" />
+                <div className="h-full w-full bg-zinc-700/30 rounded" />
+              </div>
+            </div>
+            {/* Overlay CTA */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/60 backdrop-blur-[1px] rounded-xl">
+              <p className="text-sm font-medium text-zinc-200 mb-1">Unlock portfolio hiring intelligence</p>
+              <Link
+                href="/pricing"
+                className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
+              >
+                Start free trial →
+              </Link>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* ── Open Roles ── */}
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-medium text-zinc-100">
+            Open Roles
+            <span className="ml-2 text-sm font-normal text-zinc-500">{filteredJobs.length}</span>
+          </h2>
+        </div>
+
+        {/* Search */}
+        {jobs.length > 5 && (
+          <div className="relative mb-4">
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500"
+              fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
               type="text"
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              placeholder="Search roles, companies, skills..."
-              className="w-full pl-10 pr-10 py-2.5 bg-[#1a1a1b] text-[#e8e8e8] placeholder-[#999] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#5e6ad2]/50 transition-all"
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Filter roles, companies..."
+              className="w-full pl-10 pr-10 py-2 bg-zinc-900 text-zinc-100 placeholder-zinc-500 rounded-lg text-sm border border-zinc-800 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all"
             />
             {search && (
               <button
-                type="button"
-                onClick={clearSearch}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#999] hover:text-[#e8e8e8] transition-colors"
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -166,180 +259,59 @@ export default function InvestorPageContent({ investor, jobs }: InvestorPageCont
               </button>
             )}
           </div>
-        </form>
-
-        {/* Remote Toggle */}
-        <button
-          onClick={() => { setIsRemote(!isRemote); setPage(1); }}
-          className={`flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-            isRemote
-              ? 'bg-[#5e6ad2]/20 text-[#5e6ad2]'
-              : 'bg-[#1a1a1b] text-[#888] hover:text-[#e8e8e8] hover:bg-[#252526]'
-          }`}
-        >
-          <div className={`w-8 h-5 rounded-full relative transition-colors ${isRemote ? 'bg-[#5e6ad2]' : 'bg-[#333]'}`}>
-            <div
-              className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
-                isRemote ? 'translate-x-3.5' : 'translate-x-0.5'
-              }`}
-            />
-          </div>
-          <span>Remote</span>
-        </button>
-      </div>
-
-      {/* Popular Tags */}
-      <div className="flex flex-wrap gap-1.5 mb-6">
-        {POPULAR_TAGS.map((tag) => (
-          <button
-            key={tag}
-            onClick={() => handleTagClick(tag)}
-            className={`px-2.5 py-1 rounded text-xs font-medium transition-all ${
-              activeTag === tag
-                ? 'bg-[#5e6ad2] text-white'
-                : 'bg-[#1a1a1b] text-[#888] hover:bg-[#252526] hover:text-[#e8e8e8]'
-            }`}
-          >
-            {tag}
-          </button>
-        ))}
-      </div>
-
-      {/* Portfolio Companies — collapsible to 2 rows */}
-      <section className="mb-8">
-        <h2 className="text-sm font-medium text-[#888] uppercase tracking-wide mb-3">Portfolio Companies</h2>
-        {investor.companies.length > 0 ? (
-          <div className="relative">
-            <div
-              ref={companiesRef}
-              className="flex flex-wrap gap-2 overflow-hidden transition-all duration-300"
-              style={{ maxHeight: companiesExpanded ? companiesRef.current?.scrollHeight : COLLAPSED_HEIGHT }}
-            >
-              {investor.companies.map((company) => (
-                <Link
-                  key={company.id}
-                  href={`/companies/${company.slug}`}
-                  className="px-3 py-1.5 bg-[#1a1a1b] hover:bg-[#252526] rounded text-sm text-[#e8e8e8] transition-colors"
-                >
-                  {company.name}
-                </Link>
-              ))}
-            </div>
-            {needsExpand && (
-              <button
-                onClick={() => setCompaniesExpanded(!companiesExpanded)}
-                className="mt-2 px-3 py-1.5 bg-[#1a1a1b] hover:bg-[#252526] rounded text-sm text-[#5e6ad2] transition-colors"
-              >
-                {companiesExpanded ? 'Show less' : `+${investor.companies.length - Math.floor(investor.companies.length * (COLLAPSED_HEIGHT / (companiesRef.current?.scrollHeight || 1)))} more`}
-              </button>
-            )}
-          </div>
-        ) : (
-          <p className="text-[#999] text-sm">No portfolio companies listed.</p>
         )}
-      </section>
 
-      {/* Open Positions */}
-      <section>
-        <h2 className="text-sm font-medium text-[#888] uppercase tracking-wide mb-3">Open Positions</h2>
-        {paginatedJobs.length > 0 ? (
-          <div className="space-y-0.5">
-            {paginatedJobs.map((job, index) => {
+        {/* Role list */}
+        {filteredJobs.length > 0 ? (
+          <div className="divide-y divide-zinc-800/50">
+            {filteredJobs.map((job) => {
               const companyDomain = getDomain(job.companyUrl);
               return (
                 <Link
                   key={job.id}
                   href={`/jobs/${job.id}`}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#252526] transition-colors ${
-                    index % 2 === 0 ? 'bg-[#1a1a1b]' : 'bg-[#151516]'
-                  }`}
+                  className="flex items-center gap-3 py-3 hover:bg-zinc-900/50 -mx-2 px-2 rounded transition-colors"
                 >
                   {/* Company Logo */}
                   <div className="flex-shrink-0">
                     {companyDomain ? (
-                      <img
-                        src={`https://www.google.com/s2/favicons?domain=${companyDomain}&sz=32`}
-                        alt=""
-                        className="w-8 h-8 rounded"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
+                      <Favicon domain={companyDomain} size={32} className="w-6 h-6 rounded" />
                     ) : (
-                      <div className="w-8 h-8 rounded bg-[#252526]" />
+                      <div className="w-6 h-6 rounded bg-zinc-800" />
                     )}
                   </div>
 
-                  {/* Job Info — left side */}
+                  {/* Job Info */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium text-white truncate">{job.title}</h3>
-                    <p className="text-xs text-[#888] mt-0.5">{job.company}</p>
+                    <span className="text-sm font-medium text-zinc-100">{job.title}</span>
+                    <div className="flex items-center gap-2 mt-0.5 text-xs text-zinc-500">
+                      <span>{job.company}</span>
+                      {job.location && (
+                        <>
+                          <span>·</span>
+                          <span>{job.location}</span>
+                        </>
+                      )}
+                      {job.departmentName && (
+                        <>
+                          <span>·</span>
+                          <span>{job.departmentName}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Function badge + Location — right side */}
-                  <div className="flex-shrink-0 flex items-center gap-3">
-                    {job.departmentName && (
-                      <span className="px-2 py-0.5 bg-[#252526] rounded text-xs text-[#aaa] hidden sm:inline-block">
-                        {job.departmentName}
-                      </span>
-                    )}
-                    <span className="text-xs text-[#999] w-36 text-right truncate hidden sm:block">
-                      {job.location || 'Remote'}
-                    </span>
-                  </div>
+                  <svg className="w-4 h-4 text-zinc-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </Link>
               );
             })}
           </div>
         ) : (
-          <p className="text-[#999] text-sm py-8 text-center">No jobs found matching your filters.</p>
-        )}
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="mt-8 flex items-center justify-center gap-1">
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="px-3 py-1.5 text-sm text-[#888] hover:text-[#e8e8e8] hover:bg-[#1a1a1b] rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >
-              Previous
-            </button>
-            <div className="flex items-center gap-0.5">
-              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                let pageNum: number;
-                if (totalPages <= 7) {
-                  pageNum = i + 1;
-                } else if (page <= 4) {
-                  pageNum = i + 1;
-                } else if (page >= totalPages - 3) {
-                  pageNum = totalPages - 6 + i;
-                } else {
-                  pageNum = page - 3 + i;
-                }
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => setPage(pageNum)}
-                    className={`w-8 h-8 text-sm rounded transition-colors ${
-                      pageNum === page
-                        ? 'bg-[#5e6ad2] text-white'
-                        : 'text-[#888] hover:text-[#e8e8e8] hover:bg-[#1a1a1b]'
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
-            </div>
-            <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="px-3 py-1.5 text-sm text-[#888] hover:text-[#e8e8e8] hover:bg-[#1a1a1b] rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >
-              Next
-            </button>
-          </div>
+          <p className="text-zinc-500 text-sm py-8 text-center">
+            {search ? 'No roles match your search.' : 'No open roles at this time.'}
+          </p>
         )}
       </section>
     </>

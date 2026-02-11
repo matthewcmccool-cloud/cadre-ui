@@ -1,20 +1,26 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
-import { Job, toSlug } from '@/lib/airtable';
+import { useState, useEffect } from 'react';
+import { Job, toSlug } from '@/lib/data';
+import Favicon from '@/components/Favicon';
+import { trackViewCompany } from '@/lib/analytics';
 import CompanyLogo from '@/components/CompanyLogo';
+import FollowButton from '@/components/FollowButton';
+import HiringActivity from '@/components/HiringActivity';
 
-const POPULAR_TAGS = [
-  'engineering', 'product', 'design', 'sales', 'marketing',
-  'data science', 'ai', 'machine learning', 'backend', 'frontend',
-  'full stack', 'devops', 'mobile', 'product manager', 'analyst',
-  'operations', 'finance', 'growth', 'customer success', 'recruiting',
-];
+interface SimilarCompany {
+  name: string;
+  slug: string;
+  url?: string;
+  jobCount: number;
+}
 
 interface CompanyPageContentProps {
   company: {
+    id: string;
     name: string;
+    slug: string;
     url?: string;
     about?: string;
     stage?: string;
@@ -23,9 +29,12 @@ interface CompanyPageContentProps {
     totalRaised?: string;
     linkedinUrl?: string;
     twitterUrl?: string;
+    industry?: string;
     investors: string[];
+    jobCount: number;
   };
   jobs: Job[];
+  similarCompanies?: SimilarCompany[];
 }
 
 const getDomain = (url: string | null | undefined) => {
@@ -37,162 +46,183 @@ const getDomain = (url: string | null | undefined) => {
   }
 };
 
-const PAGE_SIZE = 25;
+function formatDate(dateString: string): string {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+  const diffDays = Math.floor(diffHours / 24);
 
-export default function CompanyPageContent({ company, jobs }: CompanyPageContentProps) {
+  if (diffHours < 1) return 'Just now';
+  if (diffHours < 24) return `${Math.floor(diffHours)}h ago`;
+  if (diffDays <= 7) return `${diffDays}d ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+export default function CompanyPageContent({ company, jobs, similarCompanies = [] }: CompanyPageContentProps) {
   const [search, setSearch] = useState('');
-  const [isRemote, setIsRemote] = useState(false);
-  const [activeTag, setActiveTag] = useState('');
-  const [page, setPage] = useState(1);
-
   const companyDomain = getDomain(company.url);
 
-  // Filter jobs
+  useEffect(() => {
+    trackViewCompany(company.id);
+  }, [company.id]);
+
   const filteredJobs = jobs.filter((job) => {
-    const searchLower = search.toLowerCase();
-    const tagLower = activeTag.toLowerCase();
-
-    const matchesSearch = !search ||
-      job.title.toLowerCase().includes(searchLower) ||
-      (job.location && job.location.toLowerCase().includes(searchLower));
-
-    const matchesTag = !activeTag ||
-      job.title.toLowerCase().includes(tagLower) ||
-      (job.departmentName && job.departmentName.toLowerCase().includes(tagLower));
-
-    const matchesRemote = !isRemote ||
-      job.remoteFirst ||
-      (job.location && job.location.toLowerCase().includes('remote'));
-
-    return matchesSearch && matchesTag && matchesRemote;
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      job.title.toLowerCase().includes(q) ||
+      (job.location && job.location.toLowerCase().includes(q)) ||
+      (job.departmentName && job.departmentName.toLowerCase().includes(q))
+    );
   });
 
-  // Pagination
-  const totalPages = Math.ceil(filteredJobs.length / PAGE_SIZE);
-  const paginatedJobs = filteredJobs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  const handleTagClick = (tag: string) => {
-    setPage(1);
-    if (activeTag === tag) {
-      setActiveTag('');
-    } else {
-      setActiveTag(tag);
-    }
-  };
-
-  const clearSearch = () => {
-    setSearch('');
-    setPage(1);
-  };
+  // Count new roles this week
+  const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const newThisWeek = jobs.filter(j => j.datePosted && new Date(j.datePosted).getTime() > oneWeekAgo).length;
 
   return (
     <>
       {/* Breadcrumbs */}
-      <nav className="flex items-center gap-1.5 text-sm text-[#555] mt-8">
-        <Link href="/" className="text-[#888] hover:text-white transition-colors">Jobs</Link>
+      <nav className="flex items-center gap-1.5 text-sm text-zinc-600 mt-6">
+        <Link href="/discover" className="text-zinc-500 hover:text-zinc-300 transition-colors">Discover</Link>
         <span>/</span>
-        <Link href="/companies" className="text-[#888] hover:text-white transition-colors">Companies</Link>
+        <Link href="/discover?view=companies" className="text-zinc-500 hover:text-zinc-300 transition-colors">Companies</Link>
         <span>/</span>
-        <span className="text-[#999]">{company.name}</span>
+        <span className="text-zinc-400">{company.name}</span>
       </nav>
 
-      {/* Company header */}
-      <div className="mt-4 mb-6">
-        <div className="flex items-center gap-4 mb-3">
-          {companyDomain && (
+      {/* ── Top Section ── */}
+      <div className="mt-6 mb-8">
+        {/* Logo */}
+        {companyDomain && (
+          <div className="mb-4">
             <CompanyLogo
               src={`https://www.google.com/s2/favicons?domain=${companyDomain}&sz=64`}
               alt={company.name}
               className="w-12 h-12 rounded-lg"
             />
-          )}
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">{company.name}</h1>
-            {(company.url || company.linkedinUrl || company.twitterUrl) && (
-              <div className="flex gap-3 mt-1">
-                {company.url && (
-                  <a href={company.url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#888] hover:text-[#e8e8e8] transition-colors">
-                    Website
-                  </a>
-                )}
-                {company.linkedinUrl && (
-                  <a href={company.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#888] hover:text-[#e8e8e8] transition-colors">
-                    LinkedIn
-                  </a>
-                )}
-                {company.twitterUrl && (
-                  <a href={company.twitterUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#888] hover:text-[#e8e8e8] transition-colors">
-                    X / Twitter
-                  </a>
-                )}
-              </div>
-            )}
           </div>
-        </div>
-        <div className="flex flex-wrap gap-2 mt-3">
-          <span className="px-2.5 py-1 bg-[#252526] rounded text-xs text-[#888]">
-            {filteredJobs.length} open positions
-          </span>
-          {company.hqLocation && (
-            <span className="px-2.5 py-1 bg-[#252526] rounded text-xs text-[#888]">
-              {company.hqLocation}
-            </span>
-          )}
-          {company.investors.length > 0 && (
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-xs text-[#555]">Backed by</span>
-              {company.investors.slice(0, 4).map((inv) => (
-                <Link
-                  key={inv}
-                  href={`/investors/${toSlug(inv)}`}
-                  className="px-2 py-0.5 bg-[#1a1a1b] hover:bg-[#252526] rounded text-xs text-[#e8e8e8] transition-colors"
-                >
-                  {inv}
-                </Link>
-              ))}
-              {company.investors.length > 4 && (
-                <span className="text-xs text-[#555]">+{company.investors.length - 4} more</span>
-              )}
-            </div>
-          )}
+        )}
+
+        {/* Name + Follow */}
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-100">{company.name}</h1>
+          <FollowButton companyId={company.id} companyName={company.name} />
         </div>
 
+        {/* Description */}
         {company.about && (
-          <p className="mt-3 text-sm text-[#999] leading-relaxed max-w-2xl">
+          <p className="mt-2 text-sm text-zinc-400 leading-relaxed max-w-2xl">
             {company.about}
           </p>
         )}
+
+        {/* Metadata chips */}
+        <div className="flex flex-wrap gap-2 mt-4">
+          {company.industry && (
+            <Link
+              href={`/industry/${toSlug(company.industry)}`}
+              className="bg-zinc-800 rounded-full px-3 py-1 text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+            >
+              {company.industry}
+            </Link>
+          )}
+          {company.stage && (
+            <span className="bg-zinc-800 rounded-full px-3 py-1 text-xs text-zinc-400">
+              {company.stage}
+            </span>
+          )}
+          {company.hqLocation && (
+            <span className="bg-zinc-800 rounded-full px-3 py-1 text-xs text-zinc-400">
+              {company.hqLocation}
+            </span>
+          )}
+          {company.size && (
+            <span className="bg-zinc-800 rounded-full px-3 py-1 text-xs text-zinc-400">
+              {company.size}
+            </span>
+          )}
+        </div>
+
+        {/* External links */}
+        {(company.url || company.linkedinUrl || company.twitterUrl) && (
+          <div className="flex gap-3 mt-3">
+            {company.url && (
+              <a href={company.url} target="_blank" rel="noopener noreferrer" className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
+                Website ↗
+              </a>
+            )}
+            {company.linkedinUrl && (
+              <a href={company.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
+                LinkedIn ↗
+              </a>
+            )}
+            {company.twitterUrl && (
+              <a href={company.twitterUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
+                X ↗
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* Backed by */}
+        {company.investors.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap mt-4">
+            <span className="text-xs text-zinc-600">Backed by</span>
+            {company.investors.slice(0, 4).map((inv) => (
+              <Link
+                key={inv}
+                href={`/investors/${toSlug(inv)}`}
+                className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-md px-2.5 py-1 text-xs text-zinc-300 transition-colors"
+              >
+                {inv}
+              </Link>
+            ))}
+            {company.investors.length > 4 && (
+              <span className="text-xs text-zinc-600">+{company.investors.length - 4}</span>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Search Bar + Remote Toggle */}
-      <div className="flex gap-3 mb-5">
-        <form onSubmit={(e) => e.preventDefault()} className="flex-1">
-          <div className="relative">
+      {/* ── Hiring Activity ── */}
+      <HiringActivity
+        totalRoles={jobs.length}
+        newThisWeek={newThisWeek}
+        dailyData={[]}
+      />
+
+      {/* ── Open Roles ── */}
+      <section className="mt-10">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-medium text-zinc-100">
+            Open Roles
+            <span className="ml-2 text-sm font-normal text-zinc-500">{filteredJobs.length}</span>
+          </h2>
+        </div>
+
+        {/* Search */}
+        {jobs.length > 5 && (
+          <div className="relative mb-4">
             <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#999]"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500"
+              fill="none" stroke="currentColor" viewBox="0 0 24 24"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
               type="text"
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              placeholder="Search roles, skills..."
-              className="w-full pl-10 pr-10 py-2.5 bg-[#1a1a1b] text-[#e8e8e8] placeholder-[#999] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#5e6ad2]/50 transition-all"
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Filter roles..."
+              className="w-full pl-10 pr-10 py-2 bg-zinc-900 text-zinc-100 placeholder-zinc-500 rounded-lg text-sm border border-zinc-800 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all"
             />
             {search && (
               <button
-                type="button"
-                onClick={clearSearch}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#999] hover:text-[#e8e8e8] transition-colors"
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -200,148 +230,74 @@ export default function CompanyPageContent({ company, jobs }: CompanyPageContent
               </button>
             )}
           </div>
-        </form>
+        )}
 
-        {/* Remote Toggle */}
-        <button
-          onClick={() => { setIsRemote(!isRemote); setPage(1); }}
-          className={`flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-            isRemote
-              ? 'bg-[#5e6ad2]/20 text-[#5e6ad2]'
-              : 'bg-[#1a1a1b] text-[#888] hover:text-[#e8e8e8] hover:bg-[#252526]'
-          }`}
-        >
-          <div className={`w-8 h-5 rounded-full relative transition-colors ${isRemote ? 'bg-[#5e6ad2]' : 'bg-[#333]'}`}>
-            <div
-              className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
-                isRemote ? 'translate-x-3.5' : 'translate-x-0.5'
-              }`}
-            />
-          </div>
-          <span>Remote</span>
-        </button>
-      </div>
-
-      {/* Popular Tags */}
-      <div className="flex flex-wrap gap-1.5 mb-6">
-        {POPULAR_TAGS.map((tag) => (
-          <button
-            key={tag}
-            onClick={() => handleTagClick(tag)}
-            className={`px-2.5 py-1 rounded text-xs font-medium transition-all ${
-              activeTag === tag
-                ? 'bg-[#5e6ad2] text-white'
-                : 'bg-[#1a1a1b] text-[#888] hover:bg-[#252526] hover:text-[#e8e8e8]'
-            }`}
-          >
-            {tag}
-          </button>
-        ))}
-      </div>
-
-      {/* Open Positions */}
-      <section>
-        <h2 className="text-sm font-medium text-[#888] uppercase tracking-wide mb-3">Open Positions</h2>
-        {paginatedJobs.length > 0 ? (
-          <div className="space-y-0.5">
-            {paginatedJobs.map((job, index) => {
-              const jobCompanyDomain = getDomain(job.companyUrl);
+        {/* Role list */}
+        {filteredJobs.length > 0 ? (
+          <div className="divide-y divide-zinc-800/50">
+            {filteredJobs.map((job) => {
+              const dateText = formatDate(job.datePosted);
               return (
                 <Link
                   key={job.id}
                   href={`/jobs/${job.id}`}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#252526] transition-colors ${
-                    index % 2 === 0 ? 'bg-[#1a1a1b]' : 'bg-[#151516]'
-                  }`}
+                  className="flex items-center gap-4 py-3 hover:bg-zinc-900/50 -mx-2 px-2 rounded transition-colors"
                 >
-                  {/* Company Logo */}
-                  <div className="flex-shrink-0">
-                    {jobCompanyDomain ? (
-                      <img
-                        src={`https://www.google.com/s2/favicons?domain=${jobCompanyDomain}&sz=32`}
-                        alt=""
-                        className="w-8 h-8 rounded"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <div className="w-8 h-8 rounded bg-[#252526]" />
-                    )}
-                  </div>
-
-                  {/* Job Info — left side */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium text-white truncate">{job.title}</h3>
-                    <p className="text-xs text-[#888] mt-0.5">{job.company}</p>
+                    <span className="text-sm font-medium text-zinc-100">{job.title}</span>
+                    <div className="flex items-center gap-2 mt-0.5 text-xs text-zinc-500">
+                      {job.location && <span>{job.location}</span>}
+                      {job.location && job.departmentName && <span>·</span>}
+                      {job.departmentName && <span>{job.departmentName}</span>}
+                    </div>
                   </div>
-
-                  {/* Function badge + Location — right side */}
-                  <div className="flex-shrink-0 flex items-center gap-3">
-                    {job.departmentName && (
-                      <span className="px-2 py-0.5 bg-[#252526] rounded text-xs text-[#aaa] hidden sm:inline-block">
-                        {job.departmentName}
-                      </span>
-                    )}
-                    <span className="text-xs text-[#999] w-36 text-right truncate hidden sm:block">
-                      {job.location || 'Remote'}
-                    </span>
-                  </div>
+                  {dateText && (
+                    <span className="text-xs text-zinc-600 shrink-0">{dateText}</span>
+                  )}
+                  <svg className="w-4 h-4 text-zinc-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </Link>
               );
             })}
           </div>
         ) : (
-          <p className="text-[#999] text-sm py-8 text-center">No jobs found matching your filters.</p>
-        )}
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="mt-8 flex items-center justify-center gap-1">
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="px-3 py-1.5 text-sm text-[#888] hover:text-[#e8e8e8] hover:bg-[#1a1a1b] rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >
-              Previous
-            </button>
-            <div className="flex items-center gap-0.5">
-              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                let pageNum: number;
-                if (totalPages <= 7) {
-                  pageNum = i + 1;
-                } else if (page <= 4) {
-                  pageNum = i + 1;
-                } else if (page >= totalPages - 3) {
-                  pageNum = totalPages - 6 + i;
-                } else {
-                  pageNum = page - 3 + i;
-                }
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => setPage(pageNum)}
-                    className={`w-8 h-8 text-sm rounded transition-colors ${
-                      pageNum === page
-                        ? 'bg-[#5e6ad2] text-white'
-                        : 'text-[#888] hover:text-[#e8e8e8] hover:bg-[#1a1a1b]'
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
-            </div>
-            <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="px-3 py-1.5 text-sm text-[#888] hover:text-[#e8e8e8] hover:bg-[#1a1a1b] rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >
-              Next
-            </button>
-          </div>
+          <p className="text-zinc-500 text-sm py-8 text-center">
+            {search ? 'No roles match your search.' : 'No open roles at this time.'}
+          </p>
         )}
       </section>
+
+      {/* ── Similar Companies ── */}
+      {similarCompanies.length > 0 && (
+        <section className="mt-10 mb-8">
+          <h2 className="text-lg font-medium text-zinc-100 mb-4">Similar Companies</h2>
+          <div className="flex flex-wrap gap-2">
+            {similarCompanies.map((sc) => {
+              const domain = getDomain(sc.url);
+              return (
+                <Link
+                  key={sc.slug}
+                  href={`/companies/${sc.slug}`}
+                  className="inline-flex items-center gap-2 px-3 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-lg text-sm text-zinc-200 border border-zinc-800 transition-colors"
+                >
+                  {domain ? (
+                    <Favicon domain={domain} size={32} className="w-4 h-4 rounded-sm" />
+                  ) : (
+                    <div className="w-4 h-4 rounded-sm bg-zinc-700 flex items-center justify-center text-[8px] font-bold text-zinc-400">
+                      {sc.name.charAt(0)}
+                    </div>
+                  )}
+                  <span>{sc.name}</span>
+                  {sc.jobCount > 0 && (
+                    <span className="text-xs text-zinc-500">{sc.jobCount} roles</span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </>
   );
 }

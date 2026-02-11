@@ -15,6 +15,9 @@ interface FilterDropdownProps {
   onChange: (selected: string[]) => void;
   searchable?: boolean;
   multiSelect?: boolean;
+  disabled?: boolean;
+  disabledFooter?: React.ReactNode;
+  onDisabledOpen?: () => void;
 }
 
 export default function FilterDropdown({
@@ -24,6 +27,9 @@ export default function FilterDropdown({
   onChange,
   searchable = false,
   multiSelect = true,
+  disabled = false,
+  disabledFooter,
+  onDisabledOpen,
 }: FilterDropdownProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -77,7 +83,11 @@ export default function FilterDropdown({
     <div ref={ref} className="relative">
       {/* Trigger button */}
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          const opening = !open;
+          setOpen(opening);
+          if (opening && disabled && onDisabledOpen) onDisabledOpen();
+        }}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
           activeCount > 0
             ? 'bg-[#5e6ad2]/15 text-[#5e6ad2] border border-[#5e6ad2]/30'
@@ -127,11 +137,13 @@ export default function FilterDropdown({
                 return (
                   <button
                     key={option.value}
-                    onClick={() => toggle(option.value)}
+                    onClick={() => !disabled && toggle(option.value)}
                     className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-xs transition-colors ${
-                      isSelected
-                        ? 'bg-[#5e6ad2]/10 text-[#e8e8e8]'
-                        : 'text-[#999] hover:bg-[#252526] hover:text-[#e8e8e8]'
+                      disabled
+                        ? 'text-zinc-600 cursor-not-allowed'
+                        : isSelected
+                          ? 'bg-[#5e6ad2]/10 text-[#e8e8e8]'
+                          : 'text-[#999] hover:bg-[#252526] hover:text-[#e8e8e8]'
                     }`}
                   >
                     {multiSelect && (
@@ -171,6 +183,11 @@ export default function FilterDropdown({
               })
             )}
           </div>
+          {disabled && disabledFooter && (
+            <div className="border-t border-[#252526] px-3 py-2">
+              {disabledFooter}
+            </div>
+          )}
         </div>
       )}
     </div>

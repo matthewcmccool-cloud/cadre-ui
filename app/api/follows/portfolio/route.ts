@@ -1,7 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { createSupabaseAdmin } from '@/lib/supabase';
-import { getInvestorBySlug, toSlug } from '@/lib/airtable';
+import { getInvestorBySlug, toSlug } from '@/lib/data';
 
 // POST /api/follows/portfolio — body: { investorId }
 // Looks up all companies for that investor in Airtable,

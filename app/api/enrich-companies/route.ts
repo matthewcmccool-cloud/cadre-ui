@@ -257,7 +257,6 @@ export async function GET(req: NextRequest) {
         try {
           await updateAirtableRecord(record.id, fields);
           summary.updated += 1;
-          console.log(`Updated ${companyName}: Stage=${fields.Stage}, Size=${fields.Size}`);
         } catch (err) {
           summary.errors.push({
             id: record.id,

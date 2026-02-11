@@ -26,21 +26,3 @@ export function serializeFilters(filters: FilterObject): string {
   return params.toString();
 }
 
-/**
- * Converts a URL query string to a filter object
- * @param queryString - URL query string (e.g., "investor=Sequoia&industry=Fintech")
- * @returns Object containing filter key-value pairs
- * @example
- * parseFilters("investor=Sequoia&industry=Fintech")
- * // Returns: { investor: "Sequoia", industry: "Fintech" }
- */
-export function parseFilters(queryString: string): FilterObject {
-  const params = new URLSearchParams(queryString);
-  const filters: FilterObject = {};
-  
-  params.forEach((value, key) => {
-    filters[key] = value;
-  });
-  
-  return filters;
-}

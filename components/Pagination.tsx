@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { serializeFilters } from '@/lib/filters';
 
 interface PaginationProps {
@@ -11,6 +11,7 @@ interface PaginationProps {
 
 export default function Pagination({ currentPage, totalPages, searchParams }: PaginationProps) {
   const router = useRouter();
+  const pathname = usePathname();
 
   if (totalPages <= 1) return null;
 
@@ -19,9 +20,9 @@ export default function Pagination({ currentPage, totalPages, searchParams }: Pa
     if (page > 1) {
       const newParams = new URLSearchParams(params);
       newParams.set('page', String(page));
-      router.push('/?' + newParams.toString());
+      router.push(pathname + '?' + newParams.toString());
     } else {
-      router.push('/' + (params ? '?' + params : ''));
+      router.push(pathname + (params ? '?' + params : ''));
     }
   };
 

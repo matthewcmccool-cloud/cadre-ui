@@ -1,4 +1,4 @@
-import { getAllInvestorsForDirectory } from '@/lib/airtable';
+import { getAllInvestorsForDirectory } from '@/lib/data';
 import InvestorDirectory from '@/components/InvestorDirectory';
 import type { Metadata } from 'next';
 

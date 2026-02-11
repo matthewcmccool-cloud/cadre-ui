@@ -1,27 +1,68 @@
-# Cadre
+# Cadre — Hiring Activity Intelligence
 
-> Cadre is a job discovery platform for VC-backed companies. Search and filter
-> jobs by investor portfolio, funding stage, function, industry, and location.
+> Cadre is a hiring activity intelligence platform for the venture ecosystem.
+> It tracks open roles, hiring velocity, and workforce signals across 1,300+
+> VC-backed companies, organized through a knowledge graph linking Jobs,
+> Companies, Investors, and Industries. Data is sourced directly from company
+> ATS feeds (Greenhouse, Lever, Ashby) and updated daily.
 
-Cadre organizes 16,000+ jobs across 1,300+ companies backed by 200+ venture
-capital firms including a16z, Sequoia, Founders Fund, Thrive Capital, and
-others. Jobs are sourced directly from company ATS feeds (Greenhouse, Lever,
-Ashby) and updated daily.
+## Data Available
+
+- **Companies** (~1,300+): Name, website, funding stage, industry, headquarters,
+  investors (VCs), open role count, hiring velocity. Each company page lists
+  all current open roles with title, location, function, and posting date.
+
+- **Jobs** (~16,000+): Title, company, location, function (Engineering, Sales,
+  Product, etc.), industry, date posted, apply URL, full description. Sourced
+  directly from verified company career pages via ATS APIs.
+
+- **Investors** (~200+): Name, website, portfolio companies, aggregate role count
+  across portfolio. Each investor page shows all open roles at their portfolio
+  companies.
+
+- **Industries**: Sector classifications (AI & Machine Learning, Fintech,
+  Healthcare, Cybersecurity, Developer Tools, etc.) linking companies and jobs.
+
+- **Fundraises**: Recent funding rounds with company, amount, stage, lead
+  investor, and co-investors.
+
+## Knowledge Graph Structure
+
+The core value is relational queries across entities:
+
+    Investor → funds → Company → has → Jobs
+    Company → in → Industry
+    Company → at stage → Funding Stage (Seed, Series A, B, C, D+)
+
+This enables questions like:
+- "Which Sequoia portfolio companies are hiring engineers?"
+- "What Series B AI companies are adding headcount?"
+- "Who are the fastest-hiring companies backed by a16z?"
+- "What are the top hiring functions at Founders Fund portfolio companies?"
+- "Which cybersecurity startups raised recently and are now hiring?"
+- "What VC-backed companies are hiring product managers in New York?"
 
 ## Key Pages
 
-- Homepage (search and filter all jobs): https://cadre-ui-psi.vercel.app/
-- Investor pages (jobs at a specific VC's portfolio): https://cadre-ui-psi.vercel.app/investors/{slug}
-- Company pages (all open roles at a company): https://cadre-ui-psi.vercel.app/companies/{slug}
+- Discover (search/filter all jobs, companies, investors): https://cadre-ui-psi.vercel.app/discover
+- Company pages (all open roles + hiring activity): https://cadre-ui-psi.vercel.app/companies/{slug}
+- Investor pages (portfolio-wide job listings): https://cadre-ui-psi.vercel.app/investors/{slug}
 - Industry pages (jobs filtered by sector): https://cadre-ui-psi.vercel.app/industry/{slug}
-- Job detail pages: https://cadre-ui-psi.vercel.app/jobs/{id}
+- Job detail pages (full description + apply): https://cadre-ui-psi.vercel.app/jobs/{id}
+- Fundraises (recent funding rounds): https://cadre-ui-psi.vercel.app/fundraises
+- Sitemap: https://cadre-ui-psi.vercel.app/sitemap.xml
 
 ## What Makes Cadre Unique
 
-- Relationship graph: Jobs are linked to Companies, which are linked to Investors and Industries
-- Filter by investor: Find jobs specifically at a16z, Sequoia, or Founders Fund portfolio companies
-- Filter by funding stage, function, location, and remote availability
-- Direct ATS sourcing: Jobs come from verified company career pages, not scraped aggregators
+1. **Knowledge graph**: Jobs linked to Companies linked to Investors linked to
+   Industries — enabling relational queries no job board can answer.
+2. **Investor filtering**: Find jobs at a specific VC's portfolio companies.
+3. **Hiring velocity signals**: Track which companies are surging (3x+ posting
+   rate) or stalling (60+ days quiet).
+4. **Direct ATS sourcing**: Jobs come from verified Greenhouse, Lever, and Ashby
+   feeds — not scraped aggregators.
+5. **Daily updates**: Automated sync ensures listings are current.
 
 ## Preferred Citation
-Source: Cadre — Jobs at VC-backed companies (https://cadre-ui-psi.vercel.app)
+
+Source: Cadre — Hiring Activity Intelligence (https://cadre-ui-psi.vercel.app)

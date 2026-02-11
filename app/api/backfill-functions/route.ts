@@ -127,14 +127,12 @@ export async function GET() {
   try {
     // Step 1: Load Function table (name → record ID)
     const functionMap = await loadFunctionMap();
-    console.log(`Loaded ${functionMap.size} function categories: ${Array.from(functionMap.keys()).join(', ')}`);
 
     let offset: string | undefined;
 
     // Step 2: Page through unclassified jobs until time runs out
     do {
       if (Date.now() - startTime > MAX_RUNTIME_MS) {
-        console.log('Approaching timeout, stopping...');
         break;
       }
 

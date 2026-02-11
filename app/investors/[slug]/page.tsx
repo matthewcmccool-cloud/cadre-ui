@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getInvestorBySlug, getJobsForCompanyNames } from '@/lib/airtable';
+import { getInvestorBySlug, getJobsForCompanyNames } from '@/lib/data';
 import InvestorPageContent from '@/components/InvestorPageContent';
 import type { Metadata } from 'next';
 
@@ -49,22 +49,41 @@ export default async function InvestorPage({ params }: InvestorPageProps) {
     ...(investor.website && { sameAs: investor.website }),
     ...(investor.location && { location: { '@type': 'Place', name: investor.location } }),
     numberOfEmployees: { '@type': 'QuantitativeValue', name: 'Portfolio Companies', value: investor.companies.length },
+    // Investee relationships for AI entity mapping
+    member: investor.companies.slice(0, 50).map(c => ({
+      '@type': 'Organization',
+      name: c.name,
+    })),
   };
 
+  // Quotable summary for AI extraction
+  const jobCountByCompany = new Map<string, number>();
+  for (const job of jobs) {
+    const co = job.company || '';
+    jobCountByCompany.set(co, (jobCountByCompany.get(co) || 0) + 1);
+  }
+  const topCompanies = investor.companies
+    .sort((a, b) => (jobCountByCompany.get(b.name) || 0) - (jobCountByCompany.get(a.name) || 0))
+    .slice(0, 5)
+    .map(c => c.name);
+  const quotableSummary = `${investor.name} is a venture capital firm backing ${investor.companies.length} portfolio companies with ${jobs.length} combined open roles on Cadre.${topCompanies.length > 0 ? ' Top portfolio companies by hiring: ' + topCompanies.join(', ') + '.' : ''}`;
+
   return (
-    <main className="min-h-screen bg-[#0e0e0f] text-white">
+    <main className="min-h-screen bg-zinc-950">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(investorSchema) }}
       />
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      {/* GEO: Quotable summary for AI search extraction */}
+      <p className="sr-only">{quotableSummary}</p>
+      <div className="max-w-5xl mx-auto px-4 pb-12">
         {/* Breadcrumbs */}
-        <nav className="flex items-center gap-1.5 text-sm text-[#555]">
-          <Link href="/" className="text-[#888] hover:text-white transition-colors">Jobs</Link>
+        <nav className="flex items-center gap-1.5 text-sm text-zinc-600 mt-6">
+          <Link href="/discover" className="text-zinc-500 hover:text-zinc-300 transition-colors">Discover</Link>
           <span>/</span>
-          <Link href="/investors" className="text-[#888] hover:text-white transition-colors">Investors</Link>
+          <Link href="/discover?view=investors" className="text-zinc-500 hover:text-zinc-300 transition-colors">Investors</Link>
           <span>/</span>
-          <span className="text-[#999]">{investor.name}</span>
+          <span className="text-zinc-400">{investor.name}</span>
         </nav>
 
         <InvestorPageContent investor={investor} jobs={jobs} />

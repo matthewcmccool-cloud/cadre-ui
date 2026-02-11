@@ -11,30 +11,3 @@ export function createSupabaseAdmin() {
   );
 }
 
-/**
- * Creates a Supabase client configured with Clerk authentication.
- * Pass the Clerk session token to enable Row Level Security.
- */
-export function createClerkSupabaseClient(token: string) {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      global: {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    }
-  );
-}
-
-/**
- * Creates a standard Supabase client for public/anonymous operations.
- */
-export function createSupabaseClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-}

@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
-import { Job } from '@/lib/airtable';
+import { Job } from '@/lib/data';
+import Favicon from '@/components/Favicon';
 
 const POPULAR_TAGS = [
   'engineering', 'product', 'design', 'sales', 'marketing',
@@ -226,14 +227,7 @@ export default function IndustryPageContent({ industry, jobs }: IndustryPageCont
                   {/* Company Logo */}
                   <div className="flex-shrink-0">
                     {companyDomain ? (
-                      <img
-                        src={`https://www.google.com/s2/favicons?domain=${companyDomain}&sz=32`}
-                        alt=""
-                        className="w-8 h-8 rounded"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
+                      <Favicon domain={companyDomain} size={32} className="w-8 h-8 rounded" />
                     ) : (
                       <div className="w-8 h-8 rounded bg-[#252526]" />
                     )}

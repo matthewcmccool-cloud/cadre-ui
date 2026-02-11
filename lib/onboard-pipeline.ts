@@ -1,4 +1,4 @@
-import { inferFunction } from '@/lib/airtable';
+import { inferFunction } from '@/lib/data';
 
 // ---------------------------------------------------------------------------
 // Configuration (read env at call time, not module load, for serverless)

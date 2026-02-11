@@ -2,6 +2,7 @@ import { Webhook } from 'svix';
 import { headers } from 'next/headers';
 import { WebhookEvent } from '@clerk/nextjs/server';
 import { createSupabaseAdmin } from '@/lib/supabase';
+import { createContact, triggerEvent } from '@/lib/loops';
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
@@ -71,7 +72,16 @@ export async function POST(req: Request) {
         .from('alert_preferences')
         .upsert({ user_id: id }, { onConflict: 'user_id' });
 
-      console.log(`User ${id} created in Supabase with default preferences`);
+      // Create Loops contact and send welcome email
+      const firstName = evt.data.first_name || undefined;
+      await createContact(
+        primaryEmail.email_address,
+        { firstName, source: 'signup', plan: 'free', clerkId: id },
+        ['user_no_newsletter'],
+      );
+      await triggerEvent(primaryEmail.email_address, 'welcome', {
+        firstName: firstName || '',
+      });
     }
   }
 

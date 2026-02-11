@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useState, useMemo } from 'react';
-import { CompanyDirectoryItem } from '@/lib/airtable';
+import { CompanyDirectoryItem } from '@/lib/data';
+import Favicon from '@/components/Favicon';
 import FilterDropdown, { type FilterOption } from './FilterDropdown';
 
 interface CompanyDirectoryProps {
@@ -189,11 +190,7 @@ export default function CompanyDirectory({ companies }: CompanyDirectoryProps) {
               style={isRevealed ? { animationDelay: `${Math.min((i - INITIAL_DISPLAY_COUNT) * 8, 300)}ms` } : undefined}
             >
               {domain ? (
-                <img
-                  src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`}
-                  alt=""
-                  className="w-4 h-4 rounded-sm opacity-70 group-hover:opacity-100 transition-opacity"
-                />
+                <Favicon domain={domain} size={32} className="w-4 h-4 rounded-sm opacity-70 group-hover:opacity-100 transition-opacity" />
               ) : (
                 <div className="w-4 h-4 rounded-sm bg-[#252526] flex items-center justify-center text-[8px] font-bold text-[#555]">
                   {company.name.charAt(0)}

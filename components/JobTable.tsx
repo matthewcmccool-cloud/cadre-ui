@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Job } from '@/lib/airtable';
+import { Job } from '@/lib/data';
+import Favicon from '@/components/Favicon';
 
 interface JobTableProps {
   jobs: Job[];
@@ -123,14 +124,7 @@ export default function JobTable({ jobs }: JobTableProps) {
                   <div className="absolute inset-0">
                     <LetterAvatar name={job.company} />
                   </div>
-                  <img
-                    src={`https://www.google.com/s2/favicons?domain=${companyDomain}&sz=32`}
-                    alt=""
-                    className="w-7 h-7 rounded relative z-10"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
+                  <Favicon domain={companyDomain} size={32} className="w-7 h-7 rounded relative z-10" />
                 </>
               ) : (
                 <LetterAvatar name={job.company} />

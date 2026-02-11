@@ -1,4 +1,4 @@
-import { getFilterOptions } from '@/lib/airtable';
+import { getFilterOptions } from '@/lib/data';
 import LinkedInPostGenerator from '@/components/LinkedInPostGenerator';
 
 export const revalidate = 3600;

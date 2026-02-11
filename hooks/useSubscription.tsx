@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 
 type SubscriptionStatus = 'free' | 'trialing' | 'active' | 'canceled' | 'past_due';
 
@@ -13,18 +14,40 @@ interface SubscriptionContextValue {
 
 const SubscriptionContext = createContext<SubscriptionContextValue | null>(null);
 
-/**
- * SubscriptionProvider — stub for now.
- * Hardcoded to free tier. Prompt 13 wires this to Stripe.
- */
+const FREE_STATE: SubscriptionContextValue = {
+  status: 'free',
+  isPro: false,
+  isTrialing: false,
+  trialDaysRemaining: null,
+};
+
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
-  // TODO: Prompt 13 — fetch real subscription status from Stripe via API
-  const value: SubscriptionContextValue = {
-    status: 'free',
-    isPro: false,
-    isTrialing: false,
-    trialDaysRemaining: null,
-  };
+  const { isSignedIn, isLoaded } = useAuth();
+  const [value, setValue] = useState<SubscriptionContextValue>(FREE_STATE);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    if (!isSignedIn) {
+      setValue(FREE_STATE);
+      return;
+    }
+
+    // Fetch real subscription status from API
+    fetch('/api/subscription')
+      .then((res) => res.json())
+      .then((data) => {
+        setValue({
+          status: data.status || 'free',
+          isPro: data.isPro ?? false,
+          isTrialing: data.isTrialing ?? false,
+          trialDaysRemaining: data.trialDaysRemaining ?? null,
+        });
+      })
+      .catch(() => {
+        setValue(FREE_STATE);
+      });
+  }, [isSignedIn, isLoaded]);
 
   return (
     <SubscriptionContext.Provider value={value}>

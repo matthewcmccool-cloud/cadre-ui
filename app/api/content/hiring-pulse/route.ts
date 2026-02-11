@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getJobs, getFilterOptions } from '@/lib/airtable';
+import { getJobs, getFilterOptions } from '@/lib/data';
 
 export const revalidate = 3600;
 

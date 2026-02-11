@@ -8,12 +8,20 @@ export default function NotFound() {
         <p className="text-[#999] text-sm mb-6">
           This page doesn&apos;t exist or has been moved.
         </p>
-        <Link
-          href="/"
-          className="px-4 py-2 bg-[#5e6ad2] hover:bg-[#6e7ae2] text-white text-sm font-medium rounded-lg transition-colors inline-block"
-        >
-          Back to jobs
-        </Link>
+        <div className="flex items-center justify-center gap-3">
+          <Link
+            href="/discover"
+            className="px-4 py-2 bg-[#5e6ad2] hover:bg-[#6e7ae2] text-white text-sm font-medium rounded-lg transition-colors inline-block"
+          >
+            Browse jobs
+          </Link>
+          <Link
+            href="/"
+            className="px-4 py-2 bg-[#1a1a1b] hover:bg-[#252526] text-[#999] hover:text-white text-sm font-medium rounded-lg transition-colors inline-block"
+          >
+            Home
+          </Link>
+        </div>
       </div>
     </main>
   );

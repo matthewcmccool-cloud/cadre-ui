@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { trackFollowCompany, trackUnfollowCompany, trackFollowPortfolio } from '@/lib/analytics';
 
 interface FollowsContextValue {
   followedCompanyIds: Set<string>;
@@ -75,6 +76,7 @@ export function FollowsProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify({ companyId }),
         });
         if (!res.ok) throw new Error('Follow failed');
+        trackFollowCompany(companyId);
       } catch {
         // Revert on failure
         setFollowedIds((prev) => {
@@ -102,6 +104,7 @@ export function FollowsProvider({ children }: { children: ReactNode }) {
           method: 'DELETE',
         });
         if (!res.ok) throw new Error('Unfollow failed');
+        trackUnfollowCompany(companyId);
       } catch {
         // Revert on failure
         setFollowedIds((prev) => new Set([...prev, companyId]));
@@ -132,6 +135,7 @@ export function FollowsProvider({ children }: { children: ReactNode }) {
         }
       }
 
+      trackFollowPortfolio(investorSlug);
       return { newFollows: data.newFollows, investorName: data.investorName };
     },
     []
