@@ -10,6 +10,7 @@ interface CompanyDirectoryProps {
 }
 
 const STAGES = ['Seed', 'Series A', 'Series B', 'Series C', 'Series D', 'Series E+', 'Growth', 'Public'];
+const INITIAL_DISPLAY_COUNT = 54;
 
 function getDomain(url: string | undefined): string | null {
   if (!url) return null;
@@ -25,6 +26,7 @@ export default function CompanyDirectory({ companies }: CompanyDirectoryProps) {
   const [stageFilter, setStageFilter] = useState<string[]>([]);
   const [investorFilter, setInvestorFilter] = useState<string[]>([]);
   const [industryFilter, setIndustryFilter] = useState<string[]>([]);
+  const [expanded, setExpanded] = useState(false);
 
   // Build investor options from data
   const investorOptions = useMemo((): FilterOption[] => {
@@ -176,7 +178,7 @@ export default function CompanyDirectory({ companies }: CompanyDirectoryProps) {
 
       {/* Company grid */}
       <div className="flex flex-wrap gap-2">
-        {filtered.map((company) => {
+        {(expanded ? filtered : filtered.slice(0, INITIAL_DISPLAY_COUNT)).map((company) => {
           const domain = getDomain(company.url);
           return (
             <Link
@@ -202,6 +204,14 @@ export default function CompanyDirectory({ companies }: CompanyDirectoryProps) {
             </Link>
           );
         })}
+        {filtered.length > INITIAL_DISPLAY_COUNT && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors border border-[#5e6ad2]/40 bg-[#5e6ad2]/20 text-[#8b93e6] hover:bg-[#5e6ad2]/30"
+          >
+            {expanded ? 'Show less' : `View all ${filtered.length} \u2192`}
+          </button>
+        )}
       </div>
 
       {filtered.length === 0 && (
