@@ -11,12 +11,13 @@ function formatDate(dateString: string): { text: string; isNew: boolean } {
   if (!dateString) return { text: '', isNew: false };
   const date = new Date(dateString);
   const now = new Date();
-  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+  const diffHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+  const diffDays = Math.floor(diffHours / 24);
 
-  if (diffDays <= 2) return { text: 'New', isNew: true };
-  if (diffDays < 7) return { text: `${diffDays}d ago`, isNew: false };
+  if (diffHours < 24) return { text: 'New', isNew: true };
+  if (diffDays <= 7) return { text: `${diffDays}d ago`, isNew: false };
   if (diffDays < 30) return { text: `${Math.floor(diffDays / 7)}w ago`, isNew: false };
-  return { text: '', isNew: false }; // hide for 30+ day old jobs
+  return { text: '', isNew: false };
 }
 
 const getDomain = (url: string | null | undefined) => {
@@ -100,9 +101,18 @@ const FUNCTION_COLORS: Record<string, string> = {
 export default function JobTable({ jobs }: JobTableProps) {
   if (jobs.length === 0) {
     return (
-      <div className="text-center py-16">
-        <p className="text-[#888]">No jobs found matching your filters.</p>
-        <p className="text-[#999] text-sm mt-1">Try adjusting your search criteria.</p>
+      <div className="text-center py-20">
+        <svg className="mx-auto w-12 h-12 text-[#333] mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <p className="text-lg font-medium text-white mb-1">No jobs match your filters</p>
+        <p className="text-sm text-[#888] mb-5">Try adjusting your filters or search terms to find more opportunities.</p>
+        <a
+          href="/"
+          className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-[#5e6ad2] hover:bg-[#6e7ae2] text-white transition-colors"
+        >
+          Clear all filters
+        </a>
       </div>
     );
   }
@@ -118,7 +128,7 @@ export default function JobTable({ jobs }: JobTableProps) {
         return (
           <div
             key={job.id}
-            className="group flex items-center gap-3 px-3 py-2.5 bg-[#0e0e0f] hover:bg-[#141415] transition-colors"
+            className="group flex items-center gap-3 px-3 py-2.5 bg-[#0e0e0f] hover:bg-[#141415] transition-colors duration-150 cursor-pointer"
           >
             {/* Company Logo */}
             <div className="flex-shrink-0 relative">
@@ -146,7 +156,7 @@ export default function JobTable({ jobs }: JobTableProps) {
               <div className="flex items-baseline gap-2">
                 <Link
                   href={`/jobs/${toSlug(job.title)}-${toSlug(job.company)}-${job.id}`}
-                  className="text-sm font-medium text-white group-hover:text-[#5e6ad2] truncate transition-colors"
+                  className="text-[15px] font-semibold text-white group-hover:text-[#5e6ad2] truncate transition-colors"
                 >
                   {job.title}
                 </Link>
@@ -156,21 +166,21 @@ export default function JobTable({ jobs }: JobTableProps) {
                       New
                     </span>
                   ) : (
-                    <span className="flex-shrink-0 text-xs text-[#555]">{dateText}</span>
+                    <span className="flex-shrink-0 text-[11px] text-[#444]">{dateText}</span>
                   )
                 )}
               </div>
               <div className="flex items-center gap-2 mt-0.5">
                 <Link
                   href={`/companies/${toSlug(job.company)}`}
-                  className="text-xs text-[#888] hover:text-[#e8e8e8] transition-colors"
+                  className="text-xs text-[#666] hover:text-[#e8e8e8] transition-colors"
                 >
                   {job.company}
                 </Link>
                 {job.location && (
                   <>
                     <span className="text-[#333]">·</span>
-                    <span className="text-xs text-[#999] truncate">{job.location}</span>
+                    <span className="text-xs text-[#555] truncate">{job.location}</span>
                   </>
                 )}
               </div>
@@ -209,6 +219,11 @@ export default function JobTable({ jobs }: JobTableProps) {
                 </span>
               )}
             </div>
+
+            {/* Hover chevron */}
+            <svg className="w-4 h-4 text-[#333] opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </div>
         );
       })}

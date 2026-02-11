@@ -185,13 +185,15 @@ export default function InvestorDirectory({ investors }: InvestorDirectoryProps)
 
       {/* Investor grid */}
       <div className="flex flex-wrap gap-2">
-        {(expanded ? filtered : filtered.slice(0, INITIAL_DISPLAY_COUNT)).map((investor) => {
+        {(expanded ? filtered : filtered.slice(0, INITIAL_DISPLAY_COUNT)).map((investor, i) => {
           const domain = getDomain(investor.url);
+          const isRevealed = expanded && i >= INITIAL_DISPLAY_COUNT;
           return (
             <Link
               key={investor.slug}
               href={`/investors/${investor.slug}`}
-              className="inline-flex items-center gap-2 px-3 py-2 bg-[#1a1a1b] hover:bg-[#252526] rounded-lg text-sm text-[#e8e8e8] transition-colors group"
+              className={`inline-flex items-center gap-2 px-3 py-2 bg-[#1a1a1b] hover:bg-[#252526] rounded-lg text-sm text-[#e8e8e8] transition-colors group${isRevealed ? ' animate-chip-reveal' : ''}`}
+              style={isRevealed ? { animationDelay: `${Math.min((i - INITIAL_DISPLAY_COUNT) * 8, 300)}ms` } : undefined}
             >
               {domain ? (
                 <img
