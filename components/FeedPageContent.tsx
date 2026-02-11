@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSubscription } from '@/hooks/useSubscription';
 import LiveTicker from '@/components/LiveTicker';
+import ManageFollowsPanel from '@/components/ManageFollowsPanel';
 import type { FeedDataResult as FeedData, FeedCompanyItem as FeedCompany } from '@/lib/airtable';
 
 const PAGE_SIZE = 20;
@@ -276,6 +277,7 @@ export default function FeedPageContent({ stats }: { stats: StatsProps }) {
   const [loading, setLoading] = useState(true);
   const [signalVisible, setSignalVisible] = useState(true);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [managePanelOpen, setManagePanelOpen] = useState(false);
 
   // Ticker entries
   const tickerEntries = useMemo(() => [
@@ -340,12 +342,12 @@ export default function FeedPageContent({ stats }: { stats: StatsProps }) {
               <span className="font-semibold text-zinc-100">{data.newThisWeek}</span>{' '}
               new this week
             </p>
-            <Link
-              href="/feed"
+            <button
+              onClick={() => setManagePanelOpen(true)}
               className="text-xs text-zinc-400 hover:text-zinc-100 transition-colors hidden sm:block"
             >
               Manage
-            </Link>
+            </button>
           </div>
         )}
 
@@ -403,6 +405,12 @@ export default function FeedPageContent({ stats }: { stats: StatsProps }) {
           )}
         </div>
       </div>
+
+      {/* Manage Follows Panel */}
+      <ManageFollowsPanel
+        isOpen={managePanelOpen}
+        onClose={() => setManagePanelOpen(false)}
+      />
     </main>
   );
 }

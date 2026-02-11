@@ -6,6 +6,33 @@ Track what ships, what breaks, what's next. Updated after every Claude Code sess
 
 ## February 11, 2026
 
+### Session: Prompt 11 — Manage Follows Panel + Toast System
+- **Shipped:**
+  - **ToastProvider + useToast hook** (`hooks/useToast.tsx` — new):
+    - Fixed bottom-center (`bottom-6 z-50`), `bg-zinc-800 border border-zinc-700 rounded-lg`
+    - Success (✓ emerald-400) auto-dismisses at 3s, Error (✕ red-400) at 5s
+    - Slide-up + fade-in animation on appear, slide-down + fade-out on dismiss
+    - Multiple toasts stack vertically with `gap-2`, newest on bottom
+    - API: `const { toast } = useToast(); toast({ type: 'success', message: '...' })`
+  - **ManageFollowsPanel** (`components/ManageFollowsPanel.tsx` — new):
+    - Slide-over from right (`w-96` desktop, full-width mobile)
+    - Animation: `slideInRight 0.2s ease-out` via CSS keyframes
+    - Dimmed backdrop (`bg-black/40`), click/ESC/✕ to close
+    - Header: "Following (N)" with live count
+    - Search input filters both followed and all companies
+    - Followed list: `★ purple-500` star, logo, name, stage — tap to unfollow (strikethrough → animate out in 500ms)
+    - Suggested section: 3-5 companies from same industries as follows, not yet followed, sorted by job count — tap to follow (star fills, moves to followed)
+    - Uses global toasts for all follow/unfollow feedback
+  - **Wired ToastProvider** into `Providers.tsx` (outermost after FollowsProvider)
+  - **Updated FollowButton** — uses global `useToast()` for success/error messages
+  - **Updated FollowPortfolioButton** — removed local toast state, uses global `useToast()`, simplified JSX (removed wrapper divs + inline toast popups)
+  - **Updated FeedPageContent** — "Manage" link now opens ManageFollowsPanel instead of linking to `/feed`
+  - **CSS animations** added to `globals.css`: `animate-toast-in` (slide-up), `animate-slide-in-right` (panel)
+- **Broke:** Nothing. Zero TypeScript errors.
+- **Files changed:** `hooks/useToast.tsx` (new), `components/ManageFollowsPanel.tsx` (new), `components/Providers.tsx`, `components/FollowButton.tsx`, `components/FollowPortfolioButton.tsx`, `components/FeedPageContent.tsx`, `app/globals.css`, `docs/CHANGELOG.md`
+
+---
+
 ### Session: Prompt 10 — My Feed
 - **Shipped:**
   - **Feed page** (`app/feed/page.tsx` — new) — protected by middleware (auth required), server component fetches stats for ticker

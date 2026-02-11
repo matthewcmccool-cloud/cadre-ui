@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useFollows } from '@/hooks/useFollows';
+import { useToast } from '@/hooks/useToast';
 
 interface FollowButtonProps {
   companyId: string;
@@ -12,6 +13,7 @@ interface FollowButtonProps {
 export default function FollowButton({ companyId, companyName }: FollowButtonProps) {
   const { isSignedIn, openSignIn } = useAuth();
   const { isFollowing, follow, unfollow } = useFollows();
+  const { toast } = useToast();
   const [hovering, setHovering] = useState(false);
 
   const following = isFollowing(companyId);
@@ -25,11 +27,13 @@ export default function FollowButton({ companyId, companyName }: FollowButtonPro
     try {
       if (following) {
         await unfollow(companyId);
+        toast({ type: 'success', message: `Unfollowed ${companyName}.` });
       } else {
         await follow(companyId);
+        toast({ type: 'success', message: `Following ${companyName}. You'll see their activity in your feed.` });
       }
     } catch {
-      // Error handling — optimistic revert already happens in useFollows
+      toast({ type: 'error', message: 'Something went wrong. Try again.' });
     }
   };
 
