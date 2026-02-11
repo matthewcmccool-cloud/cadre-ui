@@ -6,6 +6,28 @@ Track what ships, what breaks, what's next. Updated after every Claude Code sess
 
 ## February 11, 2026
 
+### Session: Prompt 3 — Navigation Redesign
+- **Shipped:**
+  - Rewrote `Header.tsx` — complete navigation redesign per spec.
+  - Desktop top bar (`h-14`, `bg-zinc-950`, `border-b border-zinc-800`):
+    - Left: Cadre logo (link to `/`)
+    - Center: Discover | Feed | Fundraises — `text-sm font-medium`, active gets `text-zinc-100` with purple-500 bottom indicator, inactive `text-zinc-400`
+    - Feed nav item only renders when signed in (`useAuth`)
+    - Right: Search button with magnifying glass icon + `⌘K` keyboard hint (wires to command palette in Prompt 12), Sign in button OR avatar dropdown
+  - Avatar dropdown (signed in): My Feed, Settings, Sign out — `bg-zinc-900`, `border-zinc-800`, `shadow-lg`. Closes on outside click.
+  - Sign in button (anonymous): `text-zinc-400 hover:text-zinc-100`, triggers `openSignIn()` modal from Prompt 1.
+  - Mobile bottom tab bar (`md:hidden`, `fixed bottom-0`, `h-14`, `bg-zinc-950`, `border-t border-zinc-800`):
+    - Three tabs: Discover, Feed (auth-only), Fundraises — icon above label, `text-xs`
+    - Active tab: `text-purple-500`, inactive: `text-zinc-500`
+    - Bottom spacer div to prevent content from hiding behind fixed bar
+  - Sticky top bar (`sticky top-0 z-40`) — stays visible on scroll.
+  - Removed old nav (Fundraises + Analytics tabs).
+- **Broke:** Nothing. Zero TypeScript errors.
+- **Next:** Prompt 4 (Homepage Redesign — hero, ticker, entry cards, newsletter CTA, footer)
+- **Files changed:** `components/Header.tsx`
+
+---
+
 ### Session: Prompt 2 — Supabase Setup + Data Models
 - **Shipped:**
   - Added `createSupabaseAdmin()` to `lib/supabase.ts` — server-side client using `SUPABASE_SERVICE_ROLE_KEY` for full read/write access in API routes.
