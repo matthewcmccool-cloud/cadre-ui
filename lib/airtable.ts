@@ -1307,3 +1307,87 @@ export async function getFundraises(): Promise<FundraiseItem[]> {
 
   return fundraises;
 }
+
+// ── Onboarding Data ──
+// Provides company suggestions and top investors for the post-signup playlist flow.
+
+export interface OnboardingCompany {
+  id: string;
+  name: string;
+  slug: string;
+  url?: string;
+  industry?: string;
+  jobCount: number;
+}
+
+export interface OnboardingInvestor {
+  name: string;
+  slug: string;
+  companyCount: number;
+}
+
+export interface OnboardingData {
+  popularCompanies: OnboardingCompany[];
+  topInvestors: OnboardingInvestor[];
+  allCompanies: OnboardingCompany[];
+}
+
+export async function getOnboardingData(): Promise<OnboardingData> {
+  const [companyRecords, investorRecords, industryRecords] = await Promise.all([
+    fetchAllAirtable(TABLES.companies, {
+      fields: ['Company', 'URL', 'VCs', 'Industry', 'Job Listings', 'Slug'],
+    }),
+    fetchAllAirtable(TABLES.investors, {
+      fields: ['Firm Name'],
+    }),
+    fetchAirtable(TABLES.industries, { fields: ['Industry Name'] }),
+  ]);
+
+  const industryMap = new Map<string, string>();
+  industryRecords.records.forEach((r: { id: string; fields: Record<string, unknown> }) => {
+    industryMap.set(r.id, r.fields['Industry Name'] as string || '');
+  });
+
+  // Build portfolio counts per investor
+  const portfolioCounts = new Map<string, number>();
+  companyRecords.forEach(r => {
+    const vcIds = (r.fields['VCs'] || []) as string[];
+    for (const id of vcIds) {
+      portfolioCounts.set(id, (portfolioCounts.get(id) || 0) + 1);
+    }
+  });
+
+  // Map all companies
+  const allCompanies: OnboardingCompany[] = companyRecords
+    .map(r => {
+      const name = r.fields['Company'] as string || '';
+      const industryIds = (r.fields['Industry'] || []) as string[];
+      const jobIds = (r.fields['Job Listings'] || []) as string[];
+      return {
+        id: r.id,
+        name,
+        slug: r.fields['Slug'] as string || toSlug(name),
+        url: r.fields['URL'] as string || undefined,
+        industry: industryIds.length > 0 ? industryMap.get(industryIds[0]) || undefined : undefined,
+        jobCount: jobIds.length,
+      };
+    })
+    .filter(c => c.name)
+    .sort((a, b) => b.jobCount - a.jobCount || a.name.localeCompare(b.name));
+
+  // Popular = top by job count
+  const popularCompanies = allCompanies.slice(0, 9);
+
+  // Top investors by portfolio company count
+  const topInvestors: OnboardingInvestor[] = investorRecords
+    .map(r => ({
+      name: r.fields['Firm Name'] as string || '',
+      slug: toSlug(r.fields['Firm Name'] as string || ''),
+      companyCount: portfolioCounts.get(r.id) || 0,
+    }))
+    .filter(i => i.name && i.companyCount > 0)
+    .sort((a, b) => b.companyCount - a.companyCount)
+    .slice(0, 3);
+
+  return { popularCompanies, topInvestors, allCompanies };
+}

@@ -18,7 +18,7 @@ export default function FollowButton({ companyId, companyName }: FollowButtonPro
 
   const handleClick = async () => {
     if (!isSignedIn) {
-      openSignIn({ companyName });
+      openSignIn({ companyName, companyId });
       return;
     }
 

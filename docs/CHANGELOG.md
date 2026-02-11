@@ -6,6 +6,35 @@ Track what ships, what breaks, what's next. Updated after every Claude Code sess
 
 ## February 11, 2026
 
+### Session: Prompt 9 — Onboarding Flow (Playlist)
+- **Shipped:**
+  - **OnboardingModal** (`components/OnboardingModal.tsx` — new) — full-screen overlay that appears after sign-up:
+    - Header: "Pick companies to follow" + subtitle
+    - Search input for companies (same styling as Discover)
+    - "Already Following" section showing the company that triggered sign-up (auto-followed)
+    - "Suggested for You" section: 6-9 companies from same industry, sorted by job count
+    - "Popular on Cadre" section: top 9 companies by job count
+    - "Quick Follow" section: top 3 investor portfolio rows (`bg-zinc-800 rounded-lg p-3`), tap to follow entire portfolio
+    - Company chips: tappable with `scale-[1.02]` + purple fill on select, 150ms transition
+    - Continue button fixed at bottom: "Continue to your feed (N) →", disabled (opacity-50) until 3+ followed
+    - Minimum warning: "Follow at least 3 companies to get started" (`text-xs text-yellow-400`)
+    - Close via X or ESC: navigates to `/feed` (if 1+ followed) or `/discover` (if 0 followed)
+  - **`getOnboardingData()`** added to `lib/airtable.ts` — returns popular companies (by job count), top 3 investors (by portfolio size), and all companies for search
+  - **`GET /api/onboarding`** (`app/api/onboarding/route.ts` — new) — serves onboarding data with 60-minute ISR
+  - **Auth flow wired up:**
+    - FollowButton now stores pending company ID in localStorage before triggering sign-in
+    - SignInModal redirects to `/?onboarding=true` after Google OAuth and email magic link
+    - Sign-up page redirects to `/?onboarding=true` via `afterSignUpUrl` prop
+    - AuthProvider detects `?onboarding=true` URL param and renders OnboardingModal
+    - Pending follow company auto-followed and shown in "Already Following" section
+    - URL param cleaned after detection (no stale `?onboarding=true` in address bar)
+  - Root layout wrapped in `<Suspense>` for `useSearchParams` compatibility
+  - Sign-up page background changed from `bg-gray-50` to `bg-zinc-950` (dark theme consistency)
+- **Broke:** Nothing. Zero TypeScript errors.
+- **Files changed:** `components/OnboardingModal.tsx` (new), `app/api/onboarding/route.ts` (new), `lib/airtable.ts`, `hooks/useAuth.tsx`, `components/FollowButton.tsx`, `components/SignInModal.tsx`, `app/sign-up/[[...sign-up]]/page.tsx`, `app/layout.tsx`, `docs/CHANGELOG.md`
+
+---
+
 ### Session: Prompt 8 — Fundraises Page
 - **Shipped:**
   - Replaced "Coming Soon" placeholder with full Fundraises page (`app/fundraises/page.tsx`).
