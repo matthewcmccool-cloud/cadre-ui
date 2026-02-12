@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import { getStats } from '@/lib/data';
-import FeedPageContent from '@/components/FeedPageContent';
+import IntelligencePageContent from '@/components/IntelligencePageContent';
 
 export const metadata: Metadata = {
   title: 'Intelligence | Cadre',
-  description: 'Your personalized hiring intelligence feed. Stay updated on the companies you follow.',
+  description: 'Your personalized hiring intelligence hub. Track followed companies, investors, and open roles.',
   robots: { index: false },
 };
 
@@ -14,7 +14,7 @@ export default async function IntelligencePage() {
   const stats = await getStats();
 
   return (
-    <FeedPageContent
+    <IntelligencePageContent
       stats={{
         companyCount: stats.companyCount,
         investorCount: stats.investorCount,
