@@ -9,7 +9,7 @@ import ManageFollowsPanel from '@/components/ManageFollowsPanel';
 import { CompanyChipSkeleton } from '@/components/Skeletons';
 import Favicon from '@/components/Favicon';
 import FollowButton from '@/components/FollowButton';
-import type { FeedDataResult as FeedData, FeedCompanyItem as FeedCompany } from '@/lib/data';
+import type { IntelligenceDataResult as IntelligenceData, IntelligenceCompanyItem as IntelligenceCompany } from '@/lib/data';
 
 const getDomain = (url: string | null | undefined) => {
   if (!url) return null;
@@ -102,7 +102,7 @@ function ExpiredOverlay() {
 
 // ── Company Pill (matching Discover style) ──
 
-function CompanyPill({ company }: { company: FeedCompany }) {
+function CompanyPill({ company }: { company: IntelligenceCompany }) {
   const domain = getDomain(company.url);
   return (
     <div className="inline-flex items-center gap-2 px-3 py-2 bg-[#1a1a1b] hover:bg-[#252526] rounded-lg text-sm text-[#e8e8e8] transition-colors group">
@@ -155,7 +155,7 @@ function InvestorPill({ investor }: { investor: InvestorInfo }) {
 
 // ── Saved Job Row ──
 
-function SavedJobRow({ job, companyName }: { job: FeedCompany['recentJobs'][0]; companyName: string }) {
+function SavedJobRow({ job, companyName }: { job: IntelligenceCompany['recentJobs'][0]; companyName: string }) {
   return (
     <Link
       href={`/jobs/${job.id}`}
@@ -193,7 +193,7 @@ export default function IntelligencePageContent({ stats }: IntelligencePageConte
   const { isSignedIn } = useAuth();
   const { status, isPro, isTrialing } = useSubscription();
   const { followCount, isLoaded: followsLoaded } = useFollows();
-  const [data, setData] = useState<FeedData | null>(null);
+  const [data, setData] = useState<IntelligenceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [managePanelOpen, setManagePanelOpen] = useState(false);
 
@@ -201,21 +201,21 @@ export default function IntelligencePageContent({ stats }: IntelligencePageConte
   const hasAccess = isPro || isTrialing;
   const showEmptyState = followsLoaded && followCount === 0 && !hasAccess;
 
-  // Fetch feed data when signed in
+  // Fetch intelligence data when signed in
   useEffect(() => {
     if (!isSignedIn) {
       setLoading(false);
       return;
     }
     setLoading(true);
-    fetch('/api/feed')
+    fetch('/api/intelligence')
       .then((res) => res.json())
-      .then((d: FeedData) => setData(d))
-      .catch((err) => console.error('Failed to fetch feed:', err))
+      .then((d: IntelligenceData) => setData(d))
+      .catch((err) => console.error('Failed to fetch intelligence data:', err))
       .finally(() => setLoading(false));
   }, [isSignedIn]);
 
-  // Derive investors from feed data
+  // Derive investors from intelligence data
   const investorList = useMemo((): InvestorInfo[] => {
     if (!data) return [];
     const map = new Map<string, number>();
@@ -232,7 +232,7 @@ export default function IntelligencePageContent({ stats }: IntelligencePageConte
   // Collect recent jobs across all followed companies
   const recentJobs = useMemo(() => {
     if (!data) return [];
-    const jobs: { job: FeedCompany['recentJobs'][0]; companyName: string }[] = [];
+    const jobs: { job: IntelligenceCompany['recentJobs'][0]; companyName: string }[] = [];
     for (const company of data.companies) {
       for (const job of company.recentJobs) {
         jobs.push({ job, companyName: company.name });
@@ -400,10 +400,10 @@ export default function IntelligencePageContent({ stats }: IntelligencePageConte
               )}
             </section>
 
-            {/* ── Section 4: Activity Feed (placeholder) ── */}
+            {/* ── Section 4: Activity (placeholder) ── */}
             <section className="mb-8">
               <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">
-                Activity Feed
+                Activity
               </h2>
               <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-8 text-center">
                 <p className="text-sm text-zinc-500">

@@ -79,7 +79,7 @@ export default function Header() {
                 }`}
               >
                 Intelligence
-                <span className="text-xs bg-purple-500/20 text-purple-300 rounded-full px-1.5 font-medium">
+                <span className="text-[10px] font-semibold bg-purple-500/20 text-purple-300 rounded-full px-1.5 py-0.5 uppercase tracking-wide">
                   PRO
                 </span>
                 {followCount > 0 && (

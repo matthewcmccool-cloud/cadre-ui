@@ -52,8 +52,8 @@ export {
   // Search
   searchAll,
 
-  // Feed
-  getFeedDataForCompanyIds,
+  // Intelligence
+  getIntelligenceData,
 
   // Onboarding
   getOnboardingData,
@@ -79,7 +79,7 @@ export type {
   OnboardingCompany,
   OnboardingInvestor,
   OnboardingData,
-  FeedCompanyItem,
-  FeedDataResult,
+  IntelligenceCompanyItem,
+  IntelligenceDataResult,
   SearchResult,
 } from './airtable';
