@@ -323,7 +323,7 @@ export default function ForMePageContent({ stats }: ForMePageContentProps) {
                   Followed Companies
                 </h2>
                 <Link
-                  href="/discover?view=companies"
+                  href="/discover"
                   className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
                 >
                   Discover more &rarr;
@@ -340,7 +340,7 @@ export default function ForMePageContent({ stats }: ForMePageContentProps) {
                 <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6 text-center">
                   <p className="text-sm text-zinc-500">No followed companies yet.</p>
                   <Link
-                    href="/discover?view=companies"
+                    href="/discover"
                     className="mt-2 inline-block text-sm text-purple-400 hover:text-purple-300 transition-colors"
                   >
                     Browse companies &rarr;
@@ -357,7 +357,7 @@ export default function ForMePageContent({ stats }: ForMePageContentProps) {
                     Followed Investors
                   </h2>
                   <Link
-                    href="/discover?view=investors"
+                    href="/investors"
                     className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
                   >
                     Discover more &rarr;

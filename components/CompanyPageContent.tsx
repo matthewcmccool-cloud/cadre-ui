@@ -89,7 +89,7 @@ export default function CompanyPageContent({ company, jobs, similarCompanies = [
       <nav className="flex items-center gap-1.5 text-sm text-zinc-600 mt-6">
         <Link href="/discover" className="text-zinc-500 hover:text-zinc-300 transition-colors">Discover</Link>
         <span>/</span>
-        <Link href="/discover?view=companies" className="text-zinc-500 hover:text-zinc-300 transition-colors">Companies</Link>
+        <Link href="/discover" className="text-zinc-500 hover:text-zinc-300 transition-colors">Companies</Link>
         <span>/</span>
         <span className="text-zinc-400">{company.name}</span>
       </nav>

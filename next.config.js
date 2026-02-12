@@ -12,17 +12,36 @@ const nextConfig = {
     },
     async redirects() {
         return [
-            // Legacy homepage tab params → /discover
+            // Legacy homepage tab params → standalone pages
             {
                 source: '/',
                 has: [{ type: 'query', key: 'tab', value: 'companies' }],
-                destination: '/discover?view=companies',
+                destination: '/discover',
                 permanent: true,
             },
             {
                 source: '/',
                 has: [{ type: 'query', key: 'tab', value: 'investors' }],
-                destination: '/discover?view=investors',
+                destination: '/investors',
+                permanent: true,
+            },
+            // Legacy discover view params → standalone pages
+            {
+                source: '/discover',
+                has: [{ type: 'query', key: 'view', value: 'jobs' }],
+                destination: '/jobs',
+                permanent: true,
+            },
+            {
+                source: '/discover',
+                has: [{ type: 'query', key: 'view', value: 'investors' }],
+                destination: '/investors',
+                permanent: true,
+            },
+            {
+                source: '/discover',
+                has: [{ type: 'query', key: 'view', value: 'companies' }],
+                destination: '/discover',
                 permanent: true,
             },
         ];
