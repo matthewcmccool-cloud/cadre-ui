@@ -93,7 +93,7 @@ function ExpiredOverlay() {
           href="/pricing"
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium transition-colors"
         >
-          Reactivate &mdash; $99/month
+          Reactivate &mdash; $15/month
         </Link>
       </div>
     </div>

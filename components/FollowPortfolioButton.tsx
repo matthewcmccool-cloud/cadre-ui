@@ -63,7 +63,7 @@ export default function FollowPortfolioButton({
       toast({
         type: 'error',
         message: 'Reactivate Pro to follow portfolios',
-        link: { text: '$99/month \u2192', href: '/pricing' },
+        link: { text: '$15/month \u2192', href: '/pricing' },
       });
       return;
     }

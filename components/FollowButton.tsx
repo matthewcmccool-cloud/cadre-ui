@@ -61,7 +61,7 @@ export default function FollowButton({ companyId, companyName, variant = 'follow
       toast({
         type: 'error',
         message: `Reactivate Pro to ${label.toLowerCase()} companies`,
-        link: { text: '$99/month \u2192', href: '/pricing' },
+        link: { text: '$15/month \u2192', href: '/pricing' },
       });
       return;
     }
