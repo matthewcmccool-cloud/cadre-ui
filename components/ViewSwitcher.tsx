@@ -21,7 +21,7 @@ interface ViewSwitcherProps {
 
 export default function ViewSwitcher({ counts }: ViewSwitcherProps) {
   const searchParams = useSearchParams();
-  const activeView = searchParams.get('view') || 'jobs';
+  const activeView = searchParams.get('view') || 'companies';
 
   return (
     <div className="flex items-center gap-1 p-1 bg-zinc-900 rounded-lg w-fit">

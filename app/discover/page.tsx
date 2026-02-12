@@ -41,12 +41,12 @@ interface PageProps {
 }
 
 export default async function DiscoverPage({ searchParams }: PageProps) {
-  // Default to jobs view
-  const view = searchParams.view === 'companies'
-    ? 'companies'
+  // Default to companies view
+  const view = searchParams.view === 'jobs'
+    ? 'jobs'
     : searchParams.view === 'investors'
       ? 'investors'
-      : 'jobs';
+      : 'companies';
 
   // Fetch filter options and stats in parallel (needed for counts across views)
   const [filterOptions, stats] = await Promise.all([
