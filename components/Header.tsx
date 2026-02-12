@@ -6,13 +6,11 @@ import { usePathname } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
-import { useFollows } from '@/hooks/useFollows';
 
 export default function Header() {
   const pathname = usePathname();
   const { user, isSignedIn, isLoaded, openSignIn, signOut } = useAuth();
   const { status } = useSubscription();
-  const { followCount } = useFollows();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -87,21 +85,13 @@ export default function Header() {
             {isSignedIn && (
               <Link
                 href="/for-me"
-                className={`relative px-3 py-1.5 text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                className={`relative px-3 py-1.5 text-sm font-medium transition-colors ${
                   isActive('/for-me')
-                    ? isExpiredTrial ? 'text-zinc-500' : 'text-zinc-100'
-                    : isExpiredTrial ? 'text-zinc-500 hover:text-zinc-400' : 'text-zinc-400 hover:text-zinc-100'
+                    ? 'text-zinc-100'
+                    : 'text-zinc-400 hover:text-zinc-100'
                 }`}
               >
                 For Me
-                <span className="text-[10px] font-semibold bg-purple-500/20 text-purple-300 rounded-full px-1.5 py-0.5 uppercase tracking-wide">
-                  PRO
-                </span>
-                {followCount > 0 && (
-                  <span className={`text-xs ${isExpiredTrial ? 'text-zinc-500' : 'text-zinc-400'}`}>
-                    ({followCount})
-                  </span>
-                )}
                 {isActive('/for-me') && (
                   <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-purple-500 rounded-full" />
                 )}
