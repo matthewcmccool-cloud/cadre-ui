@@ -5,12 +5,12 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useUserStatus } from '@/hooks/useUserStatus';
 
 export default function Header() {
   const pathname = usePathname();
   const { user, isSignedIn, isLoaded, openSignIn, signOut } = useAuth();
-  const { status } = useSubscription();
+  const { userStatus } = useUserStatus();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -34,8 +34,7 @@ export default function Header() {
     return pathname.startsWith(href);
   };
 
-  // Determine if trial is expired (canceled = expired trial or canceled sub)
-  const isExpiredTrial = status === 'canceled';
+  const isExpiredTrial = userStatus === 'expired';
 
   return (
     <>

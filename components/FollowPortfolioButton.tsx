@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useFollows } from '@/hooks/useFollows';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useUserStatus } from '@/hooks/useUserStatus';
 import { useToast } from '@/hooks/useToast';
 
 // Inline SVG icons
@@ -46,12 +46,12 @@ export default function FollowPortfolioButton({
 }: FollowPortfolioButtonProps) {
   const { isSignedIn, openSignIn } = useAuth();
   const { isFollowing, followPortfolio } = useFollows();
-  const { status } = useSubscription();
+  const { userStatus } = useUserStatus();
   const { toast } = useToast();
   const [hovering, setHovering] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const isExpired = status === 'canceled';
+  const isExpired = userStatus === 'expired';
   const followedCount = portfolioCompanyIds.filter((id) => isFollowing(id)).length;
   const allFollowed = companyCount > 0 && followedCount === companyCount;
 

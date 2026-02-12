@@ -23,7 +23,7 @@ export default function TrialWelcomeToast() {
       const timer = setTimeout(() => {
         toast({
           type: 'success',
-          message: 'Your 14-day Pro trial has started!',
+          message: 'Welcome to Cadre Pro! Your 14-day free trial has started.',
           link: { text: 'View in For Me \u2192', href: '/for-me' },
         });
       }, 600);
