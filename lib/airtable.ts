@@ -381,7 +381,7 @@ export async function getJobs(filters?: {
   company?: string;
   page?: number;
 }): Promise<JobsResult> {
-  const pageSize = 25;
+  const pageSize = 50;
   const page = filters?.page || 1;
 
   try {
@@ -396,18 +396,35 @@ export async function getJobs(filters?: {
       ? 'AND(' + formulaParts.join(', ') + ')'
       : '';
 
-    // Fetch job records and lookup maps in parallel for better latency
-    const [allRecordsResult, maps] = await Promise.all([
-      fetchAirtable(TABLES.jobs, {
-        filterByFormula,
-        sort: [{ field: 'Created Time', direction: 'desc' }],
-        maxRecords: 100,
-        fields: JOB_FIELDS,
-      }),
+    // Fetch up to 500 job records (5 pages of 100) sorted by most recent,
+    // plus lookup maps in parallel for better latency.
+    const fetchJobPages = async () => {
+      const allRecords: AirtableRecord[] = [];
+      let offset: string | undefined;
+      const maxPages = 5; // 5 * 100 = 500 records max
+      for (let i = 0; i < maxPages; i++) {
+        const result = await fetchAirtable(TABLES.jobs, {
+          filterByFormula,
+          sort: [{ field: 'Created Time', direction: 'desc' }],
+          fields: JOB_FIELDS,
+          offset,
+        });
+        allRecords.push(...result.records);
+        offset = result.offset;
+        if (!offset) break;
+        if (i < maxPages - 1) {
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+      }
+      return allRecords;
+    };
+
+    const [allRecords, maps] = await Promise.all([
+      fetchJobPages(),
       buildLookupMaps(),
     ]);
 
-    let jobs = allRecordsResult.records.map(record => mapRecordToJob(record, maps));
+    let jobs = allRecords.map(record => mapRecordToJob(record, maps));
 
     // Client-side filters: these fields are derived from linked records / Raw JSON
     // and can't be pushed into Airtable's filterByFormula efficiently.
