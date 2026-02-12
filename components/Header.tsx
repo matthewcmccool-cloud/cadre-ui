@@ -3,9 +3,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import CommandPalette from '@/components/CommandPalette';
 
 // Desktop nav items — Feed only renders if signed in
 const NAV_ITEMS = [
@@ -18,23 +17,7 @@ export default function Header() {
   const pathname = usePathname();
   const { user, isSignedIn, isLoaded, openSignIn, signOut } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [paletteOpen, setPaletteOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const openPalette = useCallback(() => setPaletteOpen(true), []);
-  const closePalette = useCallback(() => setPaletteOpen(false), []);
-
-  // ⌘K / Ctrl+K global shortcut
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setPaletteOpen((prev) => !prev);
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -92,31 +75,8 @@ export default function Header() {
             })}
           </nav>
 
-          {/* Right: Search + Auth */}
+          {/* Right: Auth */}
           <div className="flex items-center gap-3">
-            {/* Search button — opens command palette */}
-            <button
-              className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50 transition-colors"
-              onClick={openPalette}
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <kbd className="hidden lg:inline text-xs text-zinc-600 border border-zinc-700 rounded px-1.5 py-0.5">
-                ⌘K
-              </kbd>
-            </button>
-
-            {/* Mobile search icon */}
-            <button
-              className="md:hidden p-2 text-zinc-500 hover:text-zinc-300"
-              onClick={openPalette}
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </button>
-
             {/* Auth: Sign in button OR avatar dropdown */}
             {isLoaded && (
               <>
@@ -208,9 +168,6 @@ export default function Header() {
 
       {/* Spacer for mobile bottom bar so page content isn't hidden behind it */}
       <div className="md:hidden h-14" />
-
-      {/* Command Palette */}
-      <CommandPalette isOpen={paletteOpen} onClose={closePalette} />
     </>
   );
 }
