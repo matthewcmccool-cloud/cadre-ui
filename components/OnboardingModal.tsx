@@ -117,7 +117,7 @@ export default function OnboardingModal({ isOpen, onClose, pendingFollowCompanyI
   const handleClose = useCallback(() => {
     onClose();
     if (totalFollowed > 0) {
-      router.push('/feed');
+      router.push('/intelligence');
     } else {
       router.push('/discover');
     }
@@ -170,7 +170,7 @@ export default function OnboardingModal({ isOpen, onClose, pendingFollowCompanyI
       return;
     }
     onClose();
-    router.push('/feed');
+    router.push('/intelligence');
   }, [totalFollowed, onClose, router]);
 
   // Derive suggestions based on the first followed company
@@ -393,7 +393,7 @@ export default function OnboardingModal({ isOpen, onClose, pendingFollowCompanyI
                 : 'bg-purple-600 text-white opacity-50 cursor-default'
             }`}
           >
-            Continue to your feed ({totalFollowed}) →
+            Continue to Intelligence ({totalFollowed}) →
           </button>
         </div>
       </div>

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { Job, toSlug } from '@/lib/data';
+import { formatNumber } from '@/lib/format';
 import Favicon from '@/components/Favicon';
 import { trackViewCompany } from '@/lib/analytics';
 import CompanyLogo from '@/components/CompanyLogo';
@@ -199,7 +200,7 @@ export default function CompanyPageContent({ company, jobs, similarCompanies = [
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-medium text-zinc-100">
             Open Roles
-            <span className="ml-2 text-sm font-normal text-zinc-500">{filteredJobs.length}</span>
+            <span className="ml-2 text-sm font-normal text-zinc-500">{formatNumber(filteredJobs.length)}</span>
           </h2>
         </div>
 
@@ -290,7 +291,7 @@ export default function CompanyPageContent({ company, jobs, similarCompanies = [
                   )}
                   <span>{sc.name}</span>
                   {sc.jobCount > 0 && (
-                    <span className="text-xs text-zinc-500">{sc.jobCount} roles</span>
+                    <span className="text-xs text-zinc-500">{formatNumber(sc.jobCount)} roles</span>
                   )}
                 </Link>
               );

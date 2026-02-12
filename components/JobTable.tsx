@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Job } from '@/lib/data';
 import Favicon from '@/components/Favicon';
+import FollowButton from '@/components/FollowButton';
 
 interface JobTableProps {
   jobs: Job[];
@@ -174,26 +175,13 @@ export default function JobTable({ jobs }: JobTableProps) {
               </div>
             </div>
 
-            {/* Investors */}
-            <div className="hidden lg:flex items-center gap-1.5 flex-shrink-0 justify-end">
-              {job.investors && job.investors.slice(0, 3).map((investor) => (
-                <Link
-                  key={investor}
-                  href={`/investors/${toSlug(investor)}`}
-                  className="px-2 py-0.5 rounded-md text-[11px] bg-[#5e6ad2]/8 text-[#8b93e6] hover:bg-[#5e6ad2]/15 transition-colors whitespace-nowrap"
-                >
-                  {investor}
-                </Link>
-              ))}
-              {job.investors && job.investors.length > 3 && (
-                <span className="px-1.5 py-0.5 rounded-md text-[10px] text-[#555] bg-[#1a1a1b]">
-                  +{job.investors.length - 3}
-                </span>
-              )}
+            {/* Save bookmark */}
+            <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+              <FollowButton companyId={job.id} companyName={job.title} variant="save" compact />
             </div>
 
-            {/* Hover chevron */}
-            <svg className="w-4 h-4 text-[#333] opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {/* Chevron */}
+            <svg className="w-4 h-4 text-[#333] group-hover:text-[#666] transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </div>

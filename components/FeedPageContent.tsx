@@ -342,7 +342,7 @@ export default function FeedPageContent({ stats }: { stats: StatsProps }) {
                 new this week
               </p>
               <Link
-                href="/feed/compare"
+                href="/intelligence/compare"
                 className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-400 hover:text-zinc-100 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors"
               >
                 Compare

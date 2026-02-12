@@ -42,8 +42,8 @@ export default function ComparePage() {
       <div className="max-w-5xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <Link href="/feed" className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors">
-            ← Feed
+          <Link href="/intelligence" className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors">
+            ← Intelligence
           </Link>
           <h1 className="text-xl font-semibold text-zinc-100">Compare Companies</h1>
         </div>
@@ -53,8 +53,8 @@ export default function ComparePage() {
           <p className="text-sm text-zinc-400">
             Comparison view is available on desktop.
           </p>
-          <Link href="/feed" className="mt-3 inline-block text-sm text-purple-400 hover:text-purple-300 transition-colors">
-            ← Back to feed
+          <Link href="/intelligence" className="mt-3 inline-block text-sm text-purple-400 hover:text-purple-300 transition-colors">
+            ← Back to Intelligence
           </Link>
         </div>
 

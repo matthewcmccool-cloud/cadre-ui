@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { toSlug } from '@/lib/data';
 import type { FundraiseItem } from '@/lib/data';
+import { formatAmount, formatNumber } from '@/lib/format';
 import FollowButton from '@/components/FollowButton';
 import Favicon from '@/components/Favicon';
 
@@ -88,7 +89,7 @@ export default function FundraisesPageContent({ fundraises, industries }: Fundra
 
         {/* Count */}
         <span className="text-sm text-zinc-500 ml-auto">
-          {filtered.length} fundraise{filtered.length !== 1 ? 's' : ''}{timeLabel ? ` ${timeLabel}` : ''}
+          {formatNumber(filtered.length)} fundraise{filtered.length !== 1 ? 's' : ''}{timeLabel ? ` ${timeLabel}` : ''}
         </span>
       </div>
 
@@ -97,6 +98,10 @@ export default function FundraisesPageContent({ fundraises, industries }: Fundra
         <div className="space-y-3">
           {visible.map((f) => {
             const domain = getDomain(f.companyUrl);
+            const amount = formatAmount(f.totalRaised);
+            const leadInvestor = f.leadInvestors[0];
+            const othersCount = f.coInvestors.length;
+
             return (
               <div
                 key={f.companyId}
@@ -105,7 +110,7 @@ export default function FundraisesPageContent({ fundraises, industries }: Fundra
                 <div className="flex items-start gap-4">
                   {/* Left content */}
                   <div className="flex-1 min-w-0">
-                    {/* Line 1: Logo + company + raised */}
+                    {/* Company header: logo + name + industry chip */}
                     <div className="flex items-center gap-2.5">
                       {domain ? (
                         <Favicon domain={domain} size={32} className="w-8 h-8 rounded flex-shrink-0" />
@@ -114,76 +119,57 @@ export default function FundraisesPageContent({ fundraises, industries }: Fundra
                           {f.companyName.charAt(0)}
                         </div>
                       )}
-                      <span className="text-sm font-medium text-zinc-100">
-                        <Link href={`/companies/${f.companySlug}`} className="hover:text-white transition-colors">
-                          {f.companyName}
-                        </Link>
-                        {' '}
-                        <span className="text-zinc-400">
-                          {f.totalRaised ? `raised ${f.totalRaised}` : ''} {f.stage}
-                        </span>
-                      </span>
-                    </div>
-
-                    {/* Line 2: Investors */}
-                    {(f.leadInvestors.length > 0 || f.coInvestors.length > 0) && (
-                      <p className="mt-1.5 text-sm text-zinc-400 sm:ml-[42px]">
-                        {f.leadInvestors.length > 0 && (
-                          <>
-                            Led by{' '}
-                            {f.leadInvestors.map((inv, i) => (
-                              <span key={inv}>
-                                {i > 0 && ', '}
-                                <Link
-                                  href={`/investors/${toSlug(inv)}`}
-                                  className="hover:text-zinc-200 transition-colors"
-                                >
-                                  {inv}
-                                </Link>
-                              </span>
-                            ))}
-                          </>
-                        )}
-                        {f.coInvestors.length > 0 && (
-                          <>
-                            {f.leadInvestors.length > 0 ? ' · with ' : ''}
-                            {f.coInvestors.slice(0, 3).map((inv, i) => (
-                              <span key={inv}>
-                                {i > 0 && ', '}
-                                <Link
-                                  href={`/investors/${toSlug(inv)}`}
-                                  className="hover:text-zinc-200 transition-colors"
-                                >
-                                  {inv}
-                                </Link>
-                              </span>
-                            ))}
-                            {f.coInvestors.length > 3 && (
-                              <span> +{f.coInvestors.length - 3} more</span>
-                            )}
-                          </>
-                        )}
-                      </p>
-                    )}
-
-                    {/* Line 3: Industry + hiring link */}
-                    <div className="flex items-center gap-2 mt-2 ml-[42px]">
+                      <Link href={`/companies/${f.companySlug}`} className="text-sm font-medium text-zinc-100 hover:text-white transition-colors truncate">
+                        {f.companyName}
+                      </Link>
                       {f.industry && (
                         <Link
                           href={`/industry/${toSlug(f.industry)}`}
-                          className="bg-zinc-800 rounded-full px-2.5 py-0.5 text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+                          className="bg-zinc-800 rounded-full px-2.5 py-0.5 text-xs text-zinc-400 hover:text-zinc-200 transition-colors flex-shrink-0"
                         >
                           {f.industry}
                         </Link>
                       )}
-                      {f.jobCount > 0 && (
-                        <Link
-                          href={`/companies/${f.companySlug}`}
-                          className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
-                        >
-                          Now hiring {f.jobCount} role{f.jobCount !== 1 ? 's' : ''} →
-                        </Link>
+                    </div>
+
+                    {/* Data point 1: Amount + Stage */}
+                    <div className="mt-2.5 sm:ml-[42px]">
+                      {amount ? (
+                        <span className="text-xl font-semibold text-zinc-100">{amount}</span>
+                      ) : null}
+                      {f.stage && (
+                        <span className="text-sm text-zinc-400">
+                          {amount ? ' \u00B7 ' : ''}{f.stage}
+                        </span>
                       )}
+                    </div>
+
+                    {/* Data point 2: Lead investor */}
+                    {leadInvestor && (
+                      <p className="mt-1.5 text-sm text-zinc-400 sm:ml-[42px]">
+                        Led by{' '}
+                        <Link
+                          href={`/investors/${toSlug(leadInvestor)}`}
+                          className="text-zinc-300 hover:text-zinc-100 transition-colors"
+                        >
+                          {leadInvestor}
+                        </Link>
+                        {othersCount > 0 && (
+                          <span> &middot; with {othersCount} other{othersCount !== 1 ? 's' : ''}</span>
+                        )}
+                      </p>
+                    )}
+
+                    {/* Data point 3: Hiring signal */}
+                    <div className="mt-1.5 sm:ml-[42px]">
+                      <Link
+                        href={`/companies/${f.companySlug}`}
+                        className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
+                      >
+                        {f.jobCount > 0
+                          ? `Now hiring ${formatNumber(f.jobCount)} role${f.jobCount !== 1 ? 's' : ''} \u2192`
+                          : 'View company \u2192'}
+                      </Link>
                     </div>
                   </div>
 

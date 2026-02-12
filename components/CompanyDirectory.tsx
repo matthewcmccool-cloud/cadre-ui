@@ -5,6 +5,7 @@ import { useState, useMemo } from 'react';
 import { CompanyDirectoryItem } from '@/lib/data';
 import Favicon from '@/components/Favicon';
 import FilterDropdown, { type FilterOption } from './FilterDropdown';
+import FollowButton from '@/components/FollowButton';
 
 interface CompanyDirectoryProps {
   companies: CompanyDirectoryItem[];
@@ -183,26 +184,28 @@ export default function CompanyDirectory({ companies }: CompanyDirectoryProps) {
           const domain = getDomain(company.url);
           const isRevealed = expanded && i >= INITIAL_DISPLAY_COUNT;
           return (
-            <Link
+            <div
               key={company.slug}
-              href={`/companies/${company.slug}`}
               className={`inline-flex items-center gap-2 px-3 py-2 bg-[#1a1a1b] hover:bg-[#252526] rounded-lg text-sm text-[#e8e8e8] transition-colors group${isRevealed ? ' animate-chip-reveal' : ''}`}
               style={isRevealed ? { animationDelay: `${Math.min((i - INITIAL_DISPLAY_COUNT) * 8, 300)}ms` } : undefined}
             >
-              {domain ? (
-                <Favicon domain={domain} size={32} className="w-4 h-4 rounded-sm opacity-70 group-hover:opacity-100 transition-opacity" />
-              ) : (
-                <div className="w-4 h-4 rounded-sm bg-[#252526] flex items-center justify-center text-[8px] font-bold text-[#555]">
-                  {company.name.charAt(0)}
-                </div>
-              )}
-              <span className="whitespace-nowrap">{company.name}</span>
-              {company.jobCount > 0 && (
-                <span className="text-[10px] text-[#555] font-medium">
-                  {company.jobCount} {company.jobCount === 1 ? 'job' : 'jobs'}
-                </span>
-              )}
-            </Link>
+              <Link href={`/companies/${company.slug}`} className="inline-flex items-center gap-2">
+                {domain ? (
+                  <Favicon domain={domain} size={32} className="w-4 h-4 rounded-sm opacity-70 group-hover:opacity-100 transition-opacity" />
+                ) : (
+                  <div className="w-4 h-4 rounded-sm bg-[#252526] flex items-center justify-center text-[8px] font-bold text-[#555]">
+                    {company.name.charAt(0)}
+                  </div>
+                )}
+                <span className="whitespace-nowrap">{company.name}</span>
+                {company.jobCount > 0 && (
+                  <span className="text-[10px] text-[#555] font-medium">
+                    {company.jobCount} {company.jobCount === 1 ? 'job' : 'jobs'}
+                  </span>
+                )}
+              </Link>
+              <FollowButton companyId={company.id} companyName={company.name} compact />
+            </div>
           );
         })}
         {filtered.length > INITIAL_DISPLAY_COUNT && (

@@ -5,6 +5,7 @@ import { useState, useMemo } from 'react';
 import { InvestorDirectoryItem } from '@/lib/data';
 import Favicon from '@/components/Favicon';
 import FilterDropdown, { type FilterOption } from './FilterDropdown';
+import FollowButton from '@/components/FollowButton';
 
 interface InvestorDirectoryProps {
   investors: InvestorDirectoryItem[];
@@ -190,26 +191,28 @@ export default function InvestorDirectory({ investors }: InvestorDirectoryProps)
           const domain = getDomain(investor.url);
           const isRevealed = expanded && i >= INITIAL_DISPLAY_COUNT;
           return (
-            <Link
+            <div
               key={investor.slug}
-              href={`/investors/${investor.slug}`}
               className={`inline-flex items-center gap-2 px-3 py-2 bg-[#1a1a1b] hover:bg-[#252526] rounded-lg text-sm text-[#e8e8e8] transition-colors group${isRevealed ? ' animate-chip-reveal' : ''}`}
               style={isRevealed ? { animationDelay: `${Math.min((i - INITIAL_DISPLAY_COUNT) * 8, 300)}ms` } : undefined}
             >
-              {domain ? (
-                <Favicon domain={domain} size={32} className="w-4 h-4 rounded-sm opacity-70 group-hover:opacity-100 transition-opacity" />
-              ) : (
-                <div className="w-4 h-4 rounded-sm bg-[#252526] flex items-center justify-center text-[8px] font-bold text-[#555]">
-                  {investor.name.charAt(0)}
-                </div>
-              )}
-              <span className="whitespace-nowrap">{investor.name}</span>
-              {investor.companyCount > 0 && (
-                <span className="text-[10px] text-[#555] font-medium">
-                  {investor.companyCount} {investor.companyCount === 1 ? 'co' : 'cos'}
-                </span>
-              )}
-            </Link>
+              <Link href={`/investors/${investor.slug}`} className="inline-flex items-center gap-2">
+                {domain ? (
+                  <Favicon domain={domain} size={32} className="w-4 h-4 rounded-sm opacity-70 group-hover:opacity-100 transition-opacity" />
+                ) : (
+                  <div className="w-4 h-4 rounded-sm bg-[#252526] flex items-center justify-center text-[8px] font-bold text-[#555]">
+                    {investor.name.charAt(0)}
+                  </div>
+                )}
+                <span className="whitespace-nowrap">{investor.name}</span>
+                {investor.companyCount > 0 && (
+                  <span className="text-[10px] text-[#555] font-medium">
+                    {investor.companyCount} {investor.companyCount === 1 ? 'co' : 'cos'}
+                  </span>
+                )}
+              </Link>
+              <FollowButton companyId={investor.id} companyName={investor.name} compact />
+            </div>
           );
         })}
         {filtered.length > INITIAL_DISPLAY_COUNT && (

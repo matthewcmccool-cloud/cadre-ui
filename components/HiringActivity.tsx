@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useSubscription } from '@/hooks/useSubscription';
+import { formatNumber } from '@/lib/format';
 
 interface HiringActivityProps {
   totalRoles: number;
@@ -66,11 +67,11 @@ export default function HiringActivity({ totalRoles, newThisWeek, dailyData = []
       {/* Stats + sparkline */}
       <div className="flex items-center gap-6">
         <div>
-          <span className="text-2xl font-semibold tabular-nums text-zinc-100">{totalRoles}</span>
+          <span className="text-2xl font-semibold tabular-nums text-zinc-100">{formatNumber(totalRoles)}</span>
           <span className="ml-1.5 text-xs text-zinc-500">open roles</span>
         </div>
         <div>
-          <span className="text-2xl font-semibold tabular-nums text-zinc-100">{newThisWeek}</span>
+          <span className="text-2xl font-semibold tabular-nums text-zinc-100">{formatNumber(newThisWeek)}</span>
           <span className="ml-1.5 text-xs text-zinc-500">new this week</span>
         </div>
         <Sparkline data={dailyData} />

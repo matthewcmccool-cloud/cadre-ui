@@ -2,7 +2,7 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
 // Routes that require authentication — redirect to / if not signed in
 const isProtectedRoute = createRouteMatcher([
-  '/feed(.*)',
+  '/intelligence(.*)',
   '/settings(.*)',
 ]);
 

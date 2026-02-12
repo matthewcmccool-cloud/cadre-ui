@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 import { Job } from '@/lib/data';
+import { formatNumber } from '@/lib/format';
 import Favicon from '@/components/Favicon';
 import FollowPortfolioButton from '@/components/FollowPortfolioButton';
 import { useFollows } from '@/hooks/useFollows';
@@ -125,15 +126,15 @@ export default function InvestorPageContent({ investor, jobs }: InvestorPageCont
       {/* ── Portfolio Overview ── */}
       <div className="flex flex-wrap gap-4 mb-8">
         <div className="bg-zinc-900 rounded-lg px-4 py-3 border border-zinc-800">
-          <div className="text-xl font-semibold text-zinc-100">{investor.companies.length}</div>
+          <div className="text-xl font-semibold text-zinc-100">{formatNumber(investor.companies.length)}</div>
           <div className="text-xs text-zinc-500 mt-0.5">portfolio companies</div>
         </div>
         <div className="bg-zinc-900 rounded-lg px-4 py-3 border border-zinc-800">
-          <div className="text-xl font-semibold text-zinc-100">{jobs.length.toLocaleString()}</div>
+          <div className="text-xl font-semibold text-zinc-100">{formatNumber(jobs.length)}</div>
           <div className="text-xs text-zinc-500 mt-0.5">open roles</div>
         </div>
         <div className="bg-zinc-900 rounded-lg px-4 py-3 border border-zinc-800">
-          <div className="text-xl font-semibold text-zinc-100">{newThisWeek}</div>
+          <div className="text-xl font-semibold text-zinc-100">{formatNumber(newThisWeek)}</div>
           <div className="text-xs text-zinc-500 mt-0.5">new roles this week</div>
         </div>
       </div>
@@ -228,7 +229,7 @@ export default function InvestorPageContent({ investor, jobs }: InvestorPageCont
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-medium text-zinc-100">
             Open Roles
-            <span className="ml-2 text-sm font-normal text-zinc-500">{filteredJobs.length}</span>
+            <span className="ml-2 text-sm font-normal text-zinc-500">{formatNumber(filteredJobs.length)}</span>
           </h2>
         </div>
 

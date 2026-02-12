@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getJobs, getFilterOptions, getRecentCompanies, getAllCompaniesForDirectory, getAllInvestorsForDirectory } from '@/lib/data';
+import { getJobs, getFilterOptions, getRecentCompanies, getAllCompaniesForDirectory, getAllInvestorsForDirectory, getStats } from '@/lib/data';
 import JobTable from '@/components/JobTable';
 import Pagination from '@/components/Pagination';
 import SearchFilters from '@/components/SearchFilters';
@@ -41,14 +41,18 @@ interface PageProps {
 }
 
 export default async function DiscoverPage({ searchParams }: PageProps) {
-  const view = searchParams.view === 'jobs'
-    ? 'jobs'
+  // Default to jobs view
+  const view = searchParams.view === 'companies'
+    ? 'companies'
     : searchParams.view === 'investors'
       ? 'investors'
-      : 'companies';
+      : 'jobs';
 
-  // Always fetch filter options (needed for counts across views)
-  const filterOptions = await getFilterOptions();
+  // Fetch filter options and stats in parallel (needed for counts across views)
+  const [filterOptions, stats] = await Promise.all([
+    getFilterOptions(),
+    getStats(),
+  ]);
 
   // Fetch view-specific data in parallel
   const [jobsResult, recentCompanies, companiesData, investorsData] = await Promise.all([
@@ -82,17 +86,12 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
         <div className="mb-6">
           <ViewSwitcher
             counts={{
+              jobs: stats.jobCount,
               companies: filterOptions.companies.length,
-              jobs: jobsResult?.totalCount,
               investors: filterOptions.investors?.length,
             }}
           />
         </div>
-
-        {/* ── Companies View ── */}
-        {view === 'companies' && (
-          <CompanyDirectory companies={companiesData} />
-        )}
 
         {/* ── Jobs View ── */}
         {view === 'jobs' && jobsResult && (
@@ -117,6 +116,11 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
               searchParams={searchParams}
             />
           </>
+        )}
+
+        {/* ── Companies View ── */}
+        {view === 'companies' && (
+          <CompanyDirectory companies={companiesData} />
         )}
 
         {/* ── Investors View ── */}

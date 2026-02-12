@@ -2,12 +2,18 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { formatNumber } from '@/lib/format';
 
 const VIEWS = [
-  { key: 'companies', label: 'Companies' },
   { key: 'jobs', label: 'Jobs' },
+  { key: 'companies', label: 'Companies' },
   { key: 'investors', label: 'Investors' },
 ] as const;
+
+function formatCount(count: number): string {
+  if (count > 5000) return '5,000+';
+  return formatNumber(count);
+}
 
 interface ViewSwitcherProps {
   counts?: { companies?: number; jobs?: number; investors?: number };
@@ -15,7 +21,7 @@ interface ViewSwitcherProps {
 
 export default function ViewSwitcher({ counts }: ViewSwitcherProps) {
   const searchParams = useSearchParams();
-  const activeView = searchParams.get('view') || 'companies';
+  const activeView = searchParams.get('view') || 'jobs';
 
   return (
     <div className="flex items-center gap-1 p-1 bg-zinc-900 rounded-lg w-fit">
@@ -34,7 +40,7 @@ export default function ViewSwitcher({ counts }: ViewSwitcherProps) {
             {label}
             {counts?.[key] !== undefined && (
               <span className={`ml-1.5 text-xs ${isActive ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                {counts[key]?.toLocaleString()}
+                {formatCount(counts[key]!)}
               </span>
             )}
           </Link>
