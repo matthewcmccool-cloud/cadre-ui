@@ -1,7 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { createSupabaseAdmin } from '@/lib/supabase';
-import { getIntelligenceData } from '@/lib/data';
+import { getFollowedData } from '@/lib/data';
 
 export async function GET() {
   const { userId } = await auth();
@@ -23,7 +23,7 @@ export async function GET() {
   }
 
   const companyIds = (followsData || []).map((f) => f.company_id);
-  const data = await getIntelligenceData(companyIds);
+  const data = await getFollowedData(companyIds);
 
   return NextResponse.json(data, {
     headers: { 'Cache-Control': 'private, no-cache, no-store' },

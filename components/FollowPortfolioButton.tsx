@@ -86,7 +86,7 @@ export default function FollowPortfolioButton({
       toast({
         type: 'success',
         message: `Following ${result.newFollows} companies in ${result.investorName}'s portfolio`,
-        link: { text: 'View in Intelligence \u2192', href: '/intelligence' },
+        link: { text: 'View in For Me \u2192', href: '/for-me' },
       });
     } catch {
       toast({ type: 'error', message: 'Something went wrong. Please try again.' });

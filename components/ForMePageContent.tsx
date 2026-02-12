@@ -9,7 +9,7 @@ import ManageFollowsPanel from '@/components/ManageFollowsPanel';
 import { CompanyChipSkeleton } from '@/components/Skeletons';
 import Favicon from '@/components/Favicon';
 import FollowButton from '@/components/FollowButton';
-import type { IntelligenceDataResult as IntelligenceData, IntelligenceCompanyItem as IntelligenceCompany } from '@/lib/data';
+import type { FollowedDataResult as FollowedData, FollowedCompanyItem as FollowedCompany } from '@/lib/data';
 
 const getDomain = (url: string | null | undefined) => {
   if (!url) return null;
@@ -102,7 +102,7 @@ function ExpiredOverlay() {
 
 // ── Company Pill (matching Discover style) ──
 
-function CompanyPill({ company }: { company: IntelligenceCompany }) {
+function CompanyPill({ company }: { company: FollowedCompany }) {
   const domain = getDomain(company.url);
   return (
     <div className="inline-flex items-center gap-2 px-3 py-2 bg-[#1a1a1b] hover:bg-[#252526] rounded-lg text-sm text-[#e8e8e8] transition-colors group">
@@ -155,7 +155,7 @@ function InvestorPill({ investor }: { investor: InvestorInfo }) {
 
 // ── Saved Job Row ──
 
-function SavedJobRow({ job, companyName }: { job: IntelligenceCompany['recentJobs'][0]; companyName: string }) {
+function SavedJobRow({ job, companyName }: { job: FollowedCompany['recentJobs'][0]; companyName: string }) {
   return (
     <Link
       href={`/jobs/${job.id}`}
@@ -181,7 +181,7 @@ function SavedJobRow({ job, companyName }: { job: IntelligenceCompany['recentJob
 
 // ── Main Component ──
 
-interface IntelligencePageContentProps {
+interface ForMePageContentProps {
   stats: {
     companyCount: number;
     investorCount: number;
@@ -189,11 +189,11 @@ interface IntelligencePageContentProps {
   };
 }
 
-export default function IntelligencePageContent({ stats }: IntelligencePageContentProps) {
+export default function ForMePageContent({ stats }: ForMePageContentProps) {
   const { isSignedIn } = useAuth();
   const { status, isPro, isTrialing } = useSubscription();
   const { followCount, isLoaded: followsLoaded } = useFollows();
-  const [data, setData] = useState<IntelligenceData | null>(null);
+  const [data, setData] = useState<FollowedData | null>(null);
   const [loading, setLoading] = useState(true);
   const [managePanelOpen, setManagePanelOpen] = useState(false);
 
@@ -201,21 +201,21 @@ export default function IntelligencePageContent({ stats }: IntelligencePageConte
   const hasAccess = isPro || isTrialing;
   const showEmptyState = followsLoaded && followCount === 0 && !hasAccess;
 
-  // Fetch intelligence data when signed in
+  // Fetch followed company data when signed in
   useEffect(() => {
     if (!isSignedIn) {
       setLoading(false);
       return;
     }
     setLoading(true);
-    fetch('/api/intelligence')
+    fetch('/api/for-me')
       .then((res) => res.json())
-      .then((d: IntelligenceData) => setData(d))
-      .catch((err) => console.error('Failed to fetch intelligence data:', err))
+      .then((d: FollowedData) => setData(d))
+      .catch((err) => console.error('Failed to fetch followed data:', err))
       .finally(() => setLoading(false));
   }, [isSignedIn]);
 
-  // Derive investors from intelligence data
+  // Derive investors from followed data
   const investorList = useMemo((): InvestorInfo[] => {
     if (!data) return [];
     const map = new Map<string, number>();
@@ -232,7 +232,7 @@ export default function IntelligencePageContent({ stats }: IntelligencePageConte
   // Collect recent jobs across all followed companies
   const recentJobs = useMemo(() => {
     if (!data) return [];
-    const jobs: { job: IntelligenceCompany['recentJobs'][0]; companyName: string }[] = [];
+    const jobs: { job: FollowedCompany['recentJobs'][0]; companyName: string }[] = [];
     for (const company of data.companies) {
       for (const job of company.recentJobs) {
         jobs.push({ job, companyName: company.name });

@@ -1413,11 +1413,11 @@ export async function getOnboardingData(): Promise<OnboardingData> {
   return { popularCompanies, topInvestors, allCompanies };
 }
 
-// ── Intelligence Data ──
+// ── Followed Company Data ──
 // Returns enriched company data for a user's followed company IDs,
-// plus summary stats for the intelligence page.
+// plus summary stats for the For Me page.
 
-export interface IntelligenceCompanyItem {
+export interface FollowedCompanyItem {
   id: string;
   name: string;
   slug: string;
@@ -1429,15 +1429,15 @@ export interface IntelligenceCompanyItem {
   recentJobs: { id: string; title: string; location: string; function?: string; postedDate?: string }[];
 }
 
-export interface IntelligenceDataResult {
-  companies: IntelligenceCompanyItem[];
+export interface FollowedDataResult {
+  companies: FollowedCompanyItem[];
   totalFollowed: number;
   totalRoles: number;
   newThisWeek: number;
   topFunctions: { name: string; count: number; pct: number }[];
 }
 
-export async function getIntelligenceData(companyIds: string[]): Promise<IntelligenceDataResult> {
+export async function getFollowedData(companyIds: string[]): Promise<FollowedDataResult> {
   if (companyIds.length === 0) {
     return { companies: [], totalFollowed: 0, totalRoles: 0, newThisWeek: 0, topFunctions: [] };
   }
@@ -1498,7 +1498,7 @@ export async function getIntelligenceData(companyIds: string[]): Promise<Intelli
   const functionCounts = new Map<string, number>();
   let totalRoles = 0;
 
-  const companies: IntelligenceCompanyItem[] = followed
+  const companies: FollowedCompanyItem[] = followed
     .map(r => {
       const name = r.fields['Company'] as string || '';
       const vcIds = (r.fields['VCs'] || []) as string[];

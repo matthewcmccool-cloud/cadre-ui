@@ -68,31 +68,6 @@ export default function Header() {
               )}
             </Link>
 
-            {/* Intelligence — logged-in only */}
-            {isSignedIn && (
-              <Link
-                href="/intelligence"
-                className={`relative px-3 py-1.5 text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                  isActive('/intelligence')
-                    ? isExpiredTrial ? 'text-zinc-500' : 'text-zinc-100'
-                    : isExpiredTrial ? 'text-zinc-500 hover:text-zinc-400' : 'text-zinc-400 hover:text-zinc-100'
-                }`}
-              >
-                Intelligence
-                <span className="text-[10px] font-semibold bg-purple-500/20 text-purple-300 rounded-full px-1.5 py-0.5 uppercase tracking-wide">
-                  PRO
-                </span>
-                {followCount > 0 && (
-                  <span className={`text-xs ${isExpiredTrial ? 'text-zinc-500' : 'text-zinc-400'}`}>
-                    ({followCount})
-                  </span>
-                )}
-                {isActive('/intelligence') && (
-                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-purple-500 rounded-full" />
-                )}
-              </Link>
-            )}
-
             {/* Fundraises — always visible */}
             <Link
               href="/fundraises"
@@ -107,6 +82,31 @@ export default function Header() {
                 <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-purple-500 rounded-full" />
               )}
             </Link>
+
+            {/* For Me — logged-in only */}
+            {isSignedIn && (
+              <Link
+                href="/for-me"
+                className={`relative px-3 py-1.5 text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                  isActive('/for-me')
+                    ? isExpiredTrial ? 'text-zinc-500' : 'text-zinc-100'
+                    : isExpiredTrial ? 'text-zinc-500 hover:text-zinc-400' : 'text-zinc-400 hover:text-zinc-100'
+                }`}
+              >
+                For Me
+                <span className="text-[10px] font-semibold bg-purple-500/20 text-purple-300 rounded-full px-1.5 py-0.5 uppercase tracking-wide">
+                  PRO
+                </span>
+                {followCount > 0 && (
+                  <span className={`text-xs ${isExpiredTrial ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                    ({followCount})
+                  </span>
+                )}
+                {isActive('/for-me') && (
+                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-purple-500 rounded-full" />
+                )}
+              </Link>
+            )}
 
             {/* Pricing — logged-out only */}
             {!isSignedIn && (
@@ -154,11 +154,11 @@ export default function Header() {
                     {dropdownOpen && (
                       <div className="absolute right-0 mt-2 w-48 bg-zinc-900 border border-zinc-800 rounded-lg shadow-lg py-1 z-50">
                         <Link
-                          href="/intelligence"
+                          href="/for-me"
                           onClick={() => setDropdownOpen(false)}
                           className="block px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100 transition-colors"
                         >
-                          Intelligence
+                          For Me
                         </Link>
                         <Link
                           href="/settings"
@@ -208,19 +208,6 @@ export default function Header() {
             <span className="text-xs font-medium">Discover</span>
           </Link>
 
-          {/* Intelligence — logged-in only */}
-          {isSignedIn && (
-            <Link
-              href="/intelligence"
-              className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${
-                isActive('/intelligence') ? 'text-purple-500' : isExpiredTrial ? 'text-zinc-600' : 'text-zinc-500'
-              }`}
-            >
-              <MobileTabIcon tab="Intelligence" />
-              <span className="text-xs font-medium">Intelligence</span>
-            </Link>
-          )}
-
           {/* Fundraises */}
           <Link
             href="/fundraises"
@@ -231,6 +218,19 @@ export default function Header() {
             <MobileTabIcon tab="Fundraises" />
             <span className="text-xs font-medium">Fundraises</span>
           </Link>
+
+          {/* For Me — logged-in only */}
+          {isSignedIn && (
+            <Link
+              href="/for-me"
+              className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${
+                isActive('/for-me') ? 'text-purple-500' : isExpiredTrial ? 'text-zinc-600' : 'text-zinc-500'
+              }`}
+            >
+              <MobileTabIcon tab="ForMe" />
+              <span className="text-xs font-medium">For Me</span>
+            </Link>
+          )}
 
           {/* Pricing — logged-out only */}
           {!isSignedIn && (
@@ -261,7 +261,7 @@ function MobileTabIcon({ tab }: { tab: string }) {
           <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
         </svg>
       );
-    case 'Intelligence':
+    case 'ForMe':
       return (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z" />

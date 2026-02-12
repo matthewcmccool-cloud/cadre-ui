@@ -12,7 +12,7 @@ export function CompanyChipSkeleton({ count = 12 }: { count?: number }) {
   );
 }
 
-export function IntelligenceCardSkeleton({ count = 4 }: { count?: number }) {
+export function CardSkeleton({ count = 4 }: { count?: number }) {
   return (
     <div className="space-y-3">
       {Array.from({ length: count }).map((_, i) => (

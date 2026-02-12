@@ -52,8 +52,8 @@ export {
   // Search
   searchAll,
 
-  // Intelligence
-  getIntelligenceData,
+  // For Me (followed company data)
+  getFollowedData,
 
   // Onboarding
   getOnboardingData,
@@ -79,7 +79,7 @@ export type {
   OnboardingCompany,
   OnboardingInvestor,
   OnboardingData,
-  IntelligenceCompanyItem,
-  IntelligenceDataResult,
+  FollowedCompanyItem,
+  FollowedDataResult,
   SearchResult,
 } from './airtable';

@@ -87,7 +87,7 @@ export default function FollowButton({ companyId, companyName, variant = 'follow
         toast({
           type: 'success',
           message: `Following ${companyName}`,
-          link: { text: 'View in Intelligence \u2192', href: '/intelligence' },
+          link: { text: 'View in For Me \u2192', href: '/for-me' },
         });
       }
     } catch {
