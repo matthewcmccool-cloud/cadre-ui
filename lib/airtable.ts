@@ -1112,6 +1112,35 @@ export async function getOrganicJobs(page: number = 1, pageSize: number = 25): P
   };
 }
 
+// Get recent jobs for the Discover page segmented control (Jobs tab).
+// Returns up to 300 most-recent jobs for client-side filtering.
+export async function getRecentJobsForDiscover(): Promise<{ jobs: Job[]; totalCount: number }> {
+  try {
+    const fetchPages = async () => {
+      const all: AirtableRecord[] = [];
+      let offset: string | undefined;
+      for (let i = 0; i < 3; i++) {
+        const result = await fetchAirtable(TABLES.jobs, {
+          sort: [{ field: 'Created Time', direction: 'desc' }],
+          fields: JOB_FIELDS,
+          offset,
+        });
+        all.push(...result.records);
+        offset = result.offset;
+        if (!offset) break;
+        if (i < 2) await new Promise(r => setTimeout(r, 200));
+      }
+      return all;
+    };
+    const [records, maps] = await Promise.all([fetchPages(), buildLookupMaps()]);
+    const jobs = records.map(r => mapRecordToJob(r, maps));
+    return { jobs, totalCount: jobs.length };
+  } catch (error) {
+    console.error('getRecentJobsForDiscover error:', error);
+    return { jobs: [], totalCount: 0 };
+  }
+}
+
 // Get stats for the homepage
 export async function getStats(): Promise<{ jobCount: number; companyCount: number; investorCount: number }> {
   // Companies and investors are small enough to count exactly via pagination.

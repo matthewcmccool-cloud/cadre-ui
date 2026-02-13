@@ -25,25 +25,7 @@ const nextConfig = {
                 destination: '/investors',
                 permanent: true,
             },
-            // Legacy discover view params → standalone pages
-            {
-                source: '/discover',
-                has: [{ type: 'query', key: 'view', value: 'jobs' }],
-                destination: '/jobs',
-                permanent: true,
-            },
-            {
-                source: '/discover',
-                has: [{ type: 'query', key: 'view', value: 'investors' }],
-                destination: '/investors',
-                permanent: true,
-            },
-            {
-                source: '/discover',
-                has: [{ type: 'query', key: 'view', value: 'companies' }],
-                destination: '/discover',
-                permanent: true,
-            },
+            // /discover?view= params are now handled client-side by the segmented control
         ];
     },
     async headers() {

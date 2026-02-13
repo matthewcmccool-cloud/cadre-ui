@@ -28,6 +28,7 @@ export {
   getJobsByCompany,
   getJobsForCompanyNames,
   getJobsForCompanyIds,
+  getRecentJobsForDiscover,
 
   // Companies
   getCompanyBySlug,
