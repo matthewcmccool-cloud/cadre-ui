@@ -1,14 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserStatus } from '@/hooks/useUserStatus';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { formatNumber } from '@/lib/format';
 import Favicon from '@/components/Favicon';
 import BookmarkButton from '@/components/BookmarkButton';
-import ManageFollowsPanel from '@/components/ManageFollowsPanel';
 
 // ── Types ──
 
@@ -22,6 +21,7 @@ interface HydratedJob {
   datePosted: string;
   jobUrl: string;
   salary: string;
+  isActive?: boolean;
 }
 
 interface HydratedCompany {
@@ -47,12 +47,9 @@ interface HydratedInvestor {
 
 interface ForMeData {
   counts: { job: number; company: number; investor: number };
-  newFromCompanies: HydratedJob[];
   savedJobs: HydratedJob[];
   followedCompanies: HydratedCompany[];
   followedInvestors: HydratedInvestor[];
-  totalRoles: number;
-  newThisWeek: number;
 }
 
 // ── Helpers ──
@@ -78,6 +75,24 @@ function formatRelativeDate(dateStr: string | undefined): string {
   if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
   return `${Math.floor(diffDays / 30)}mo ago`;
 }
+
+const FUNCTION_COLORS: Record<string, string> = {
+  'Engineering': 'text-blue-400 bg-blue-400/10',
+  'Product Management': 'text-purple-400 bg-purple-400/10',
+  'Product Design / UX': 'text-pink-400 bg-pink-400/10',
+  'Sales': 'text-orange-400 bg-orange-400/10',
+  'Marketing': 'text-yellow-400 bg-yellow-400/10',
+  'AI & Research': 'text-cyan-400 bg-cyan-400/10',
+  'Customer Success': 'text-teal-400 bg-teal-400/10',
+  'People': 'text-rose-400 bg-rose-400/10',
+  'Finance & Accounting': 'text-emerald-400 bg-emerald-400/10',
+  'Business Operations': 'text-amber-400 bg-amber-400/10',
+  'BD & Partnerships': 'text-orange-300 bg-orange-300/10',
+  'Legal': 'text-slate-400 bg-slate-400/10',
+  'Solutions Engineering': 'text-indigo-400 bg-indigo-400/10',
+  'Developer Relations': 'text-violet-400 bg-violet-400/10',
+  'Revenue Operations': 'text-lime-400 bg-lime-400/10',
+};
 
 // ── Inline SVG Icons ──
 
@@ -163,128 +178,6 @@ function SectionEmpty({ message, cta, href }: { message: string; cta: string; hr
   );
 }
 
-// ── Job Card (compact for For Me page) ──
-
-function JobCard({ job }: { job: HydratedJob }) {
-  const domain = getDomain(job.companyUrl);
-  return (
-    <div className="flex-shrink-0 w-64 sm:w-72 bg-zinc-900 border border-zinc-800 rounded-lg p-3 hover:bg-zinc-800/80 transition-colors group">
-      <Link href={`/jobs/${job.id}`} className="block">
-        <div className="flex items-center gap-2 mb-2">
-          {domain ? (
-            <Favicon domain={domain} size={32} className="w-8 h-8 rounded" />
-          ) : (
-            <div className="w-8 h-8 rounded bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-500">
-              {job.company.charAt(0)}
-            </div>
-          )}
-          <span className="text-xs text-zinc-500 truncate">{job.company}</span>
-        </div>
-        <p className="text-sm font-medium text-zinc-200 truncate group-hover:text-zinc-100 transition-colors">
-          {job.title}
-        </p>
-        <div className="flex items-center gap-2 mt-1.5">
-          {job.location && (
-            <span className="text-xs text-zinc-500 truncate">{job.location}</span>
-          )}
-          {job.functionName && (
-            <>
-              {job.location && <span className="text-zinc-700">&middot;</span>}
-              <span className="text-xs text-zinc-500">{job.functionName}</span>
-            </>
-          )}
-        </div>
-        {job.datePosted && (
-          <span className="text-[10px] text-zinc-600 mt-1 block">{formatRelativeDate(job.datePosted)}</span>
-        )}
-      </Link>
-      <div className="mt-2 flex justify-end">
-        <BookmarkButton itemId={job.id} itemType="job" itemName={job.title} compact />
-      </div>
-    </div>
-  );
-}
-
-// ── Company Card ──
-
-function CompanyCard({ company }: { company: HydratedCompany }) {
-  const domain = getDomain(company.url);
-  const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const newThisWeek = company.recentJobs.filter(
-    (j) => j.postedDate && new Date(j.postedDate).getTime() >= oneWeekAgo
-  ).length;
-
-  return (
-    <div className="flex-shrink-0 w-64 sm:w-72 bg-zinc-900 border border-zinc-800 rounded-lg p-3 hover:bg-zinc-800/80 transition-colors group">
-      <Link href={`/companies/${company.slug}`} className="block">
-        <div className="flex items-center gap-2 mb-2">
-          {domain ? (
-            <Favicon domain={domain} size={40} className="w-10 h-10 rounded-lg" />
-          ) : (
-            <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-sm font-bold text-zinc-500">
-              {company.name.charAt(0)}
-            </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-zinc-200 truncate">{company.name}</p>
-            <div className="flex items-center gap-1.5">
-              {company.stage && (
-                <span className="text-[10px] text-zinc-500">{company.stage}</span>
-              )}
-              {company.stage && company.industry && (
-                <span className="text-zinc-700">&middot;</span>
-              )}
-              {company.industry && (
-                <span className="text-[10px] text-zinc-500 truncate">{company.industry}</span>
-              )}
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-xs text-zinc-400">{company.jobCount} open roles</span>
-          {newThisWeek > 0 && (
-            <span className="text-xs text-green-400">{newThisWeek} new this week</span>
-          )}
-        </div>
-      </Link>
-      <div className="mt-2 flex justify-end">
-        <BookmarkButton itemId={company.id} itemType="company" itemName={company.name} compact />
-      </div>
-    </div>
-  );
-}
-
-// ── Investor Card ──
-
-function InvestorCard({ investor }: { investor: HydratedInvestor }) {
-  const domain = getDomain(investor.url);
-  return (
-    <div className="flex-shrink-0 w-64 sm:w-72 bg-zinc-900 border border-zinc-800 rounded-lg p-3 hover:bg-zinc-800/80 transition-colors group">
-      <Link href={`/investors/${investor.slug}`} className="block">
-        <div className="flex items-center gap-2 mb-2">
-          {domain ? (
-            <Favicon domain={domain} size={40} className="w-10 h-10 rounded-lg" />
-          ) : (
-            <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-sm font-bold text-zinc-500">
-              {investor.name.charAt(0)}
-            </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-zinc-200 truncate">{investor.name}</p>
-          </div>
-        </div>
-        <div className="flex flex-col gap-0.5 mt-1">
-          <span className="text-xs text-zinc-400">{investor.companyCount} portfolio companies</span>
-          <span className="text-xs text-zinc-500">{formatNumber(investor.jobCount)} open roles</span>
-        </div>
-      </Link>
-      <div className="mt-2 flex justify-end">
-        <BookmarkButton itemId={investor.id} itemType="investor" itemName={investor.name} compact />
-      </div>
-    </div>
-  );
-}
-
 // ── Section Header ──
 
 function SectionHeader({ title, count, seeAllHref }: { title: string; count?: number; seeAllHref?: string }) {
@@ -308,12 +201,124 @@ function SectionHeader({ title, count, seeAllHref }: { title: string; count?: nu
   );
 }
 
-// ── Card Scroll Row ──
+// ── Job Card (grid layout) ──
 
-function CardScrollRow({ children }: { children: React.ReactNode }) {
+function JobCard({ job }: { job: HydratedJob }) {
+  const domain = getDomain(job.companyUrl);
+  const inactive = job.isActive === false;
+  const fnStyle = job.functionName
+    ? FUNCTION_COLORS[job.functionName] || 'text-zinc-500 bg-zinc-800'
+    : '';
+
   return (
-    <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
-      {children}
+    <div className={`bg-zinc-900 border border-zinc-800 rounded-lg p-4 transition-colors group ${
+      inactive ? 'opacity-50' : 'hover:bg-zinc-800/80'
+    }`}>
+      <div className="flex items-start justify-between gap-2">
+        <Link href={`/jobs/${job.id}`} className="flex items-center gap-2.5 min-w-0">
+          {domain ? (
+            <Favicon domain={domain} size={32} className="w-8 h-8 rounded flex-shrink-0" />
+          ) : (
+            <div className="w-8 h-8 rounded bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-500 flex-shrink-0">
+              {job.company.charAt(0)}
+            </div>
+          )}
+          <span className="text-xs text-zinc-500 truncate">{job.company}</span>
+        </Link>
+        <BookmarkButton itemId={job.id} itemType="job" itemName={job.title} compact />
+      </div>
+      <Link href={`/jobs/${job.id}`} className="block mt-2">
+        <p className="text-sm font-medium text-zinc-200 truncate group-hover:text-zinc-100 transition-colors">
+          {job.title}
+        </p>
+        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+          {job.location && (
+            <span className="text-xs text-zinc-500 truncate max-w-[140px]">{job.location}</span>
+          )}
+          {job.functionName && (
+            <span className={`text-[10px] px-1.5 py-0.5 rounded ${fnStyle}`}>
+              {job.functionName}
+            </span>
+          )}
+          {job.datePosted && (
+            <span className="text-[10px] text-zinc-600">{formatRelativeDate(job.datePosted)}</span>
+          )}
+        </div>
+        {inactive && (
+          <span className="inline-block mt-2 text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-500">
+            No longer active
+          </span>
+        )}
+      </Link>
+    </div>
+  );
+}
+
+// ── Company Card ──
+
+function CompanyCard({ company }: { company: HydratedCompany }) {
+  const domain = getDomain(company.url);
+
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 hover:bg-zinc-800/80 transition-colors group">
+      <div className="flex items-start justify-between gap-2">
+        <Link href={`/companies/${company.slug}`} className="flex items-center gap-2.5 min-w-0">
+          {domain ? (
+            <Favicon domain={domain} size={40} className="w-10 h-10 rounded-lg flex-shrink-0" />
+          ) : (
+            <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-sm font-bold text-zinc-500 flex-shrink-0">
+              {company.name.charAt(0)}
+            </div>
+          )}
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-zinc-200 truncate">{company.name}</p>
+            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+              {company.stage && (
+                <span className="text-[10px] text-zinc-500 px-1.5 py-0.5 bg-zinc-800 rounded">{company.stage}</span>
+              )}
+              {company.industry && (
+                <span className="text-[10px] text-zinc-500 px-1.5 py-0.5 bg-zinc-800 rounded truncate max-w-[120px]">{company.industry}</span>
+              )}
+            </div>
+          </div>
+        </Link>
+        <BookmarkButton itemId={company.id} itemType="company" itemName={company.name} compact />
+      </div>
+      <Link href={`/companies/${company.slug}`} className="block mt-3">
+        <span className="text-xs text-zinc-400">{company.jobCount} open roles</span>
+      </Link>
+    </div>
+  );
+}
+
+// ── Investor Card ──
+
+function InvestorCard({ investor }: { investor: HydratedInvestor }) {
+  const domain = getDomain(investor.url);
+
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 hover:bg-zinc-800/80 transition-colors group">
+      <div className="flex items-start justify-between gap-2">
+        <Link href={`/investors/${investor.slug}`} className="flex items-center gap-2.5 min-w-0">
+          {domain ? (
+            <Favicon domain={domain} size={40} className="w-10 h-10 rounded-lg flex-shrink-0" />
+          ) : (
+            <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-sm font-bold text-zinc-500 flex-shrink-0">
+              {investor.name.charAt(0)}
+            </div>
+          )}
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-zinc-200 truncate">{investor.name}</p>
+          </div>
+        </Link>
+        <BookmarkButton itemId={investor.id} itemType="investor" itemName={investor.name} compact />
+      </div>
+      <Link href={`/investors/${investor.slug}`} className="block mt-3">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xs text-zinc-400">{investor.companyCount} portfolio companies</span>
+          <span className="text-xs text-zinc-500">{formatNumber(investor.jobCount)} active roles</span>
+        </div>
+      </Link>
     </div>
   );
 }
@@ -334,7 +339,6 @@ export default function ForMePageContent({ stats }: ForMePageContentProps) {
   const { counts: bookmarkCounts, isLoaded: bookmarksLoaded } = useBookmarks();
   const [data, setData] = useState<ForMeData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [managePanelOpen, setManagePanelOpen] = useState(false);
 
   const isExpired = userStatus === 'expired';
   const totalBookmarks = bookmarkCounts.job + bookmarkCounts.company + bookmarkCounts.investor;
@@ -358,17 +362,48 @@ export default function ForMePageContent({ stats }: ForMePageContentProps) {
       .then((d) => {
         setData({
           counts: d.counts || { job: 0, company: 0, investor: 0 },
-          newFromCompanies: d.newFromCompanies || [],
           savedJobs: d.savedJobs || [],
           followedCompanies: d.followedCompanies || d.companies || [],
           followedInvestors: d.followedInvestors || [],
-          totalRoles: d.totalRoles || 0,
-          newThisWeek: d.newThisWeek || 0,
         });
       })
       .catch((err) => console.error('Failed to fetch For Me data:', err))
       .finally(() => setLoading(false));
   }, [isSignedIn]);
+
+  // Sort saved jobs: active first, inactive last (already ordered by most recently saved from API)
+  const sortedJobs = useMemo(() => {
+    if (!data) return [];
+    const active = data.savedJobs.filter((j) => j.isActive !== false);
+    const inactive = data.savedJobs.filter((j) => j.isActive === false);
+    return [...active, ...inactive].slice(0, 6);
+  }, [data]);
+
+  // Sort companies by most recent hiring activity
+  const sortedCompanies = useMemo(() => {
+    if (!data) return [];
+    return [...data.followedCompanies]
+      .sort((a, b) => {
+        const aLatest = a.recentJobs.reduce((max, j) => {
+          if (!j.postedDate) return max;
+          return Math.max(max, new Date(j.postedDate).getTime());
+        }, 0);
+        const bLatest = b.recentJobs.reduce((max, j) => {
+          if (!j.postedDate) return max;
+          return Math.max(max, new Date(j.postedDate).getTime());
+        }, 0);
+        return bLatest - aLatest;
+      })
+      .slice(0, 6);
+  }, [data]);
+
+  // Sort investors by portfolio size (largest first)
+  const sortedInvestors = useMemo(() => {
+    if (!data) return [];
+    return [...data.followedInvestors]
+      .sort((a, b) => b.companyCount - a.companyCount)
+      .slice(0, 6);
+  }, [data]);
 
   // Determine empty state
   const showEmptyState = bookmarksLoaded && totalBookmarks === 0 && !data?.followedCompanies?.length;
@@ -391,22 +426,16 @@ export default function ForMePageContent({ stats }: ForMePageContentProps) {
         <div className="max-w-6xl mx-auto px-4 py-6">
           <div className="h-8 bg-zinc-800 rounded animate-pulse w-48 mb-2" />
           <div className="h-4 bg-zinc-800/50 rounded animate-pulse w-64 mb-8" />
-          <div className="mb-8">
-            <div className="h-4 bg-zinc-800 rounded animate-pulse w-48 mb-3" />
-            <div className="flex gap-3">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="w-72 h-32 bg-zinc-800 rounded-lg animate-pulse flex-shrink-0" />
-              ))}
+          {[1, 2, 3].map((section) => (
+            <div key={section} className="mb-10">
+              <div className="h-4 bg-zinc-800 rounded animate-pulse w-48 mb-3" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-32 bg-zinc-800 rounded-lg animate-pulse" />
+                ))}
+              </div>
             </div>
-          </div>
-          <div className="mb-8">
-            <div className="h-4 bg-zinc-800 rounded animate-pulse w-40 mb-3" />
-            <div className="flex gap-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="w-72 h-32 bg-zinc-800 rounded-lg animate-pulse flex-shrink-0" />
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
       </main>
     );
@@ -444,48 +473,19 @@ export default function ForMePageContent({ stats }: ForMePageContentProps) {
 
           <div className={isExpired ? 'blur-sm pointer-events-none select-none' : ''}>
 
-            {/* ── Section 1: New From Your Companies ── */}
-            <section className="mb-10">
-              <SectionHeader
-                title="New From Your Companies"
-                seeAllHref="/discover"
-              />
-              {data && data.newFromCompanies.length > 0 ? (
-                <>
-                  <div className="mb-2">
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 text-xs font-medium">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                      {data.newFromCompanies.length} new
-                    </span>
-                  </div>
-                  <CardScrollRow>
-                    {data.newFromCompanies.slice(0, 6).map((job) => (
-                      <JobCard key={job.id} job={job} />
-                    ))}
-                  </CardScrollRow>
-                </>
-              ) : (
-                <SectionEmpty
-                  message="Follow companies to see their latest roles here."
-                  cta="Browse Discover"
-                  href="/discover"
-                />
-              )}
-            </section>
-
-            {/* ── Section 2: Saved Jobs ── */}
+            {/* ── Saved Jobs ── */}
             <section className="mb-10">
               <SectionHeader
                 title="Saved Jobs"
                 count={counts.job}
                 seeAllHref="/discover"
               />
-              {data && data.savedJobs.length > 0 ? (
-                <CardScrollRow>
-                  {data.savedJobs.slice(0, 6).map((job) => (
+              {sortedJobs.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {sortedJobs.map((job) => (
                     <JobCard key={job.id} job={job} />
                   ))}
-                </CardScrollRow>
+                </div>
               ) : (
                 <SectionEmpty
                   message="Save jobs you're interested in from Discover."
@@ -495,19 +495,19 @@ export default function ForMePageContent({ stats }: ForMePageContentProps) {
               )}
             </section>
 
-            {/* ── Section 3: Followed Companies ── */}
+            {/* ── Followed Companies ── */}
             <section className="mb-10">
               <SectionHeader
                 title="Followed Companies"
                 count={counts.company}
                 seeAllHref="/discover?view=companies"
               />
-              {data && data.followedCompanies.length > 0 ? (
-                <CardScrollRow>
-                  {data.followedCompanies.slice(0, 6).map((company) => (
+              {sortedCompanies.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {sortedCompanies.map((company) => (
                     <CompanyCard key={company.id} company={company} />
                   ))}
-                </CardScrollRow>
+                </div>
               ) : (
                 <SectionEmpty
                   message="Follow companies to track their hiring activity."
@@ -517,19 +517,19 @@ export default function ForMePageContent({ stats }: ForMePageContentProps) {
               )}
             </section>
 
-            {/* ── Section 4: Followed Investors ── */}
+            {/* ── Followed Investors ── */}
             <section className="mb-10">
               <SectionHeader
                 title="Followed Investors"
                 count={counts.investor}
                 seeAllHref="/discover?view=investors"
               />
-              {data && data.followedInvestors.length > 0 ? (
-                <CardScrollRow>
-                  {data.followedInvestors.slice(0, 6).map((investor) => (
+              {sortedInvestors.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {sortedInvestors.map((investor) => (
                     <InvestorCard key={investor.id} investor={investor} />
                   ))}
-                </CardScrollRow>
+                </div>
               ) : (
                 <SectionEmpty
                   message="Follow investors to monitor hiring across their portfolios."
@@ -542,12 +542,6 @@ export default function ForMePageContent({ stats }: ForMePageContentProps) {
           </div>
         </div>
       </div>
-
-      {/* Manage Follows Panel */}
-      <ManageFollowsPanel
-        isOpen={managePanelOpen}
-        onClose={() => setManagePanelOpen(false)}
-      />
     </main>
   );
 }
