@@ -6,6 +6,7 @@ import { Job } from '@/lib/data';
 import { formatNumber } from '@/lib/format';
 import Favicon from '@/components/Favicon';
 import FollowPortfolioButton from '@/components/FollowPortfolioButton';
+import BookmarkButton from '@/components/BookmarkButton';
 import { useFollows } from '@/hooks/useFollows';
 import { useSubscription } from '@/hooks/useSubscription';
 import { trackViewInvestor } from '@/lib/analytics';
@@ -85,7 +86,10 @@ export default function InvestorPageContent({ investor, jobs }: InvestorPageCont
       <div className="mt-6 mb-8">
         {/* Name + Follow Portfolio */}
         <div className="flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-100">{investor.name}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight text-zinc-100">{investor.name}</h1>
+            <BookmarkButton itemId={investor.id} itemType="investor" itemName={investor.name} compact />
+          </div>
           <FollowPortfolioButton
             investorSlug={investor.slug}
             investorName={investor.name}

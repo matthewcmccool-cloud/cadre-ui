@@ -8,6 +8,7 @@ import { formatNumber } from '@/lib/format';
 import Favicon from '@/components/Favicon';
 import FilterDropdown, { type FilterOption } from './FilterDropdown';
 import FollowButton from '@/components/FollowButton';
+import BookmarkButton from '@/components/BookmarkButton';
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -605,7 +606,7 @@ function DiscoverInner({ companies, investors, jobs, jobsTotalCount, stats }: Di
                       </span>
                     )}
                   </Link>
-                  <FollowButton companyId={company.id} companyName={company.name} compact />
+                  <BookmarkButton itemId={company.id} itemType="company" itemName={company.name} compact />
                 </div>
               );
             })}
@@ -705,7 +706,7 @@ function DiscoverInner({ companies, investors, jobs, jobsTotalCount, stats }: Di
 
                     {/* Bookmark */}
                     <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <FollowButton companyId={job.id} companyName={job.title} variant="save" compact />
+                      <BookmarkButton itemId={job.id} itemType="job" itemName={job.title} compact />
                     </div>
 
                     {/* Chevron */}
@@ -749,7 +750,7 @@ function DiscoverInner({ companies, investors, jobs, jobsTotalCount, stats }: Di
                       </span>
                     )}
                   </Link>
-                  <FollowButton companyId={investor.id} companyName={investor.name} compact />
+                  <BookmarkButton itemId={investor.id} itemType="investor" itemName={investor.name} compact />
                 </div>
               );
             })}
