@@ -115,3 +115,11 @@ export function trackUpgradePromptShown(): void {
 export function trackUpgradePromptClicked(): void {
   track('upgrade_prompt_clicked');
 }
+
+export function trackBookmarkAdd(itemId: string, itemType: string): void {
+  track('bookmark_add', { item_id: itemId, item_type: itemType });
+}
+
+export function trackBookmarkRemove(itemId: string, itemType: string): void {
+  track('bookmark_remove', { item_id: itemId, item_type: itemType });
+}

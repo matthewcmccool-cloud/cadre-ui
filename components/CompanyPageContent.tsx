@@ -8,6 +8,7 @@ import Favicon from '@/components/Favicon';
 import { trackViewCompany } from '@/lib/analytics';
 import CompanyLogo from '@/components/CompanyLogo';
 import FollowButton from '@/components/FollowButton';
+import BookmarkButton from '@/components/BookmarkButton';
 import HiringActivity from '@/components/HiringActivity';
 
 interface SimilarCompany {
@@ -110,7 +111,7 @@ export default function CompanyPageContent({ company, jobs, similarCompanies = [
         {/* Name + Follow */}
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-2xl font-semibold tracking-tight text-zinc-100">{company.name}</h1>
-          <FollowButton companyId={company.id} companyName={company.name} />
+          <BookmarkButton itemId={company.id} itemType="company" itemName={company.name} />
         </div>
 
         {/* Description */}

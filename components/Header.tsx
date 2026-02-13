@@ -6,13 +6,38 @@ import { usePathname } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserStatus } from '@/hooks/useUserStatus';
+import { useBookmarks } from '@/hooks/useBookmarks';
 
 export default function Header() {
   const pathname = usePathname();
   const { user, isSignedIn, isLoaded, openSignIn, signOut } = useAuth();
   const { userStatus } = useUserStatus();
+  const { counts: bookmarkCounts } = useBookmarks();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [forMeBadge, setForMeBadge] = useState(false);
+
+  // Check if there are new items since last For Me visit
+  useEffect(() => {
+    if (!isSignedIn) return;
+    const totalBookmarks = bookmarkCounts.job + bookmarkCounts.company + bookmarkCounts.investor;
+    if (totalBookmarks === 0) {
+      setForMeBadge(false);
+      return;
+    }
+    try {
+      const lastVisited = localStorage.getItem('cadre_last_visited_for_me');
+      if (!lastVisited) {
+        setForMeBadge(true);
+        return;
+      }
+      const lastTime = new Date(lastVisited).getTime();
+      const hoursSince = (Date.now() - lastTime) / (1000 * 60 * 60);
+      setForMeBadge(hoursSince > 24);
+    } catch {
+      setForMeBadge(false);
+    }
+  }, [isSignedIn, bookmarkCounts]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -91,6 +116,9 @@ export default function Header() {
                 }`}
               >
                 For Me
+                {forMeBadge && !isActive('/for-me') && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-purple-500 rounded-full" />
+                )}
                 {isActive('/for-me') && (
                   <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-purple-500 rounded-full" />
                 )}
@@ -212,12 +240,15 @@ export default function Header() {
           {isSignedIn && (
             <Link
               href="/for-me"
-              className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${
+              className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${
                 isActive('/for-me') ? 'text-purple-500' : isExpiredTrial ? 'text-zinc-600' : 'text-zinc-500'
               }`}
             >
               <MobileTabIcon tab="ForMe" />
               <span className="text-xs font-medium">For Me</span>
+              {forMeBadge && !isActive('/for-me') && (
+                <span className="absolute top-2 right-1/2 translate-x-3 w-2 h-2 bg-purple-500 rounded-full" />
+              )}
             </Link>
           )}
 

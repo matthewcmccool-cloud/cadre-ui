@@ -1,16 +1,61 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserStatus } from '@/hooks/useUserStatus';
-import { useFollows } from '@/hooks/useFollows';
+import { useBookmarks } from '@/hooks/useBookmarks';
 import { formatNumber } from '@/lib/format';
-import ManageFollowsPanel from '@/components/ManageFollowsPanel';
-import { CompanyChipSkeleton } from '@/components/Skeletons';
 import Favicon from '@/components/Favicon';
-import FollowButton from '@/components/FollowButton';
-import type { FollowedDataResult as FollowedData, FollowedCompanyItem as FollowedCompany } from '@/lib/data';
+import BookmarkButton from '@/components/BookmarkButton';
+import ManageFollowsPanel from '@/components/ManageFollowsPanel';
+
+// ── Types ──
+
+interface HydratedJob {
+  id: string;
+  title: string;
+  company: string;
+  companyUrl: string;
+  location: string;
+  functionName: string;
+  datePosted: string;
+  jobUrl: string;
+  salary: string;
+}
+
+interface HydratedCompany {
+  id: string;
+  name: string;
+  slug: string;
+  url?: string;
+  stage?: string;
+  industry?: string;
+  investors: string[];
+  jobCount: number;
+  recentJobs: { id: string; title: string; location: string; function?: string; postedDate?: string }[];
+}
+
+interface HydratedInvestor {
+  id: string;
+  name: string;
+  slug: string;
+  url?: string;
+  companyCount: number;
+  jobCount: number;
+}
+
+interface ForMeData {
+  counts: { job: number; company: number; investor: number };
+  newFromCompanies: HydratedJob[];
+  savedJobs: HydratedJob[];
+  followedCompanies: HydratedCompany[];
+  followedInvestors: HydratedInvestor[];
+  totalRoles: number;
+  newThisWeek: number;
+}
+
+// ── Helpers ──
 
 const getDomain = (url: string | null | undefined) => {
   if (!url) return null;
@@ -27,7 +72,7 @@ function formatRelativeDate(dateStr: string | undefined): string {
   const now = new Date();
   const diffMs = now.getTime() - d.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return 'today';
+  if (diffDays === 0) return 'Today';
   if (diffDays === 1) return '1d ago';
   if (diffDays < 7) return `${diffDays}d ago`;
   if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
@@ -44,15 +89,15 @@ function BookmarkFilledIcon({ className }: { className?: string }) {
   );
 }
 
-function BriefcaseIcon({ className }: { className?: string }) {
+function LockIcon({ className }: { className?: string }) {
   return (
-    <svg className={className || 'w-5 h-5'} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0" />
+    <svg className={className || 'w-8 h-8'} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
     </svg>
   );
 }
 
-// ── State 1: Empty State (no trial, no follows) ──
+// ── Empty State ──
 
 function EmptyState() {
   return (
@@ -64,29 +109,21 @@ function EmptyState() {
         Your personalized dashboard
       </h2>
       <p className="text-sm text-zinc-400 max-w-md mb-8 leading-relaxed">
-        Follow companies and investors to track their open roles,
-        hiring activity, and portfolio moves — all in one place.
+        Save jobs, follow companies, and track investors to build your
+        personalized hiring intelligence hub.
       </p>
       <Link
         href="/discover"
         className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-purple-500 hover:bg-purple-400 text-white text-sm font-medium transition-colors"
       >
-        Start exploring
+        Browse Discover
         <span aria-hidden="true">&rarr;</span>
       </Link>
     </div>
   );
 }
 
-// ── State 3: Expired Overlay ──
-
-function LockIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className || 'w-8 h-8'} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-    </svg>
-  );
-}
+// ── Expired Overlay ──
 
 function ExpiredOverlay() {
   return (
@@ -113,82 +150,171 @@ function ExpiredOverlay() {
   );
 }
 
-// ── Company Pill (matching Discover style) ──
+// ── Section: Empty Block ──
 
-function CompanyPill({ company }: { company: FollowedCompany }) {
-  const domain = getDomain(company.url);
+function SectionEmpty({ message, cta, href }: { message: string; cta: string; href: string }) {
   return (
-    <div className="inline-flex items-center gap-2 px-3 py-2 bg-[#1a1a1b] hover:bg-[#252526] rounded-lg text-sm text-[#e8e8e8] transition-colors group">
-      <Link href={`/companies/${company.slug}`} className="inline-flex items-center gap-2">
-        {domain ? (
-          <Favicon domain={domain} size={32} className="w-4 h-4 rounded-sm opacity-70 group-hover:opacity-100 transition-opacity" />
-        ) : (
-          <div className="w-4 h-4 rounded-sm bg-[#252526] flex items-center justify-center text-[8px] font-bold text-[#555]">
-            {company.name.charAt(0)}
-          </div>
-        )}
-        <span className="whitespace-nowrap">{company.name}</span>
-        {company.jobCount > 0 && (
-          <span className="text-[10px] text-[#555] font-medium">
-            {company.jobCount} {company.jobCount === 1 ? 'job' : 'jobs'}
-          </span>
-        )}
+    <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-8 text-center">
+      <p className="text-sm text-zinc-500 mb-2">{message}</p>
+      <Link href={href} className="text-sm text-purple-400 hover:text-purple-300 transition-colors">
+        {cta} &rarr;
       </Link>
-      <FollowButton companyId={company.id} companyName={company.name} compact />
     </div>
   );
 }
 
-// ── Investor Pill ──
+// ── Job Card (compact for For Me page) ──
 
-interface InvestorInfo {
-  name: string;
-  companyCount: number;
-}
-
-function InvestorPill({ investor }: { investor: InvestorInfo }) {
-  const slug = investor.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+function JobCard({ job }: { job: HydratedJob }) {
+  const domain = getDomain(job.companyUrl);
   return (
-    <Link
-      href={`/investors/${slug}`}
-      className="inline-flex items-center gap-2 px-3 py-2 bg-[#1a1a1b] hover:bg-[#252526] rounded-lg text-sm text-[#e8e8e8] transition-colors group"
-    >
-      <div className="w-4 h-4 rounded-sm bg-[#252526] flex items-center justify-center text-[8px] font-bold text-[#555]">
-        {investor.name.charAt(0)}
+    <div className="flex-shrink-0 w-64 sm:w-72 bg-zinc-900 border border-zinc-800 rounded-lg p-3 hover:bg-zinc-800/80 transition-colors group">
+      <Link href={`/jobs/${job.id}`} className="block">
+        <div className="flex items-center gap-2 mb-2">
+          {domain ? (
+            <Favicon domain={domain} size={32} className="w-8 h-8 rounded" />
+          ) : (
+            <div className="w-8 h-8 rounded bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-500">
+              {job.company.charAt(0)}
+            </div>
+          )}
+          <span className="text-xs text-zinc-500 truncate">{job.company}</span>
+        </div>
+        <p className="text-sm font-medium text-zinc-200 truncate group-hover:text-zinc-100 transition-colors">
+          {job.title}
+        </p>
+        <div className="flex items-center gap-2 mt-1.5">
+          {job.location && (
+            <span className="text-xs text-zinc-500 truncate">{job.location}</span>
+          )}
+          {job.functionName && (
+            <>
+              {job.location && <span className="text-zinc-700">&middot;</span>}
+              <span className="text-xs text-zinc-500">{job.functionName}</span>
+            </>
+          )}
+        </div>
+        {job.datePosted && (
+          <span className="text-[10px] text-zinc-600 mt-1 block">{formatRelativeDate(job.datePosted)}</span>
+        )}
+      </Link>
+      <div className="mt-2 flex justify-end">
+        <BookmarkButton itemId={job.id} itemType="job" itemName={job.title} compact />
       </div>
-      <span className="whitespace-nowrap">{investor.name}</span>
-      {investor.companyCount > 0 && (
-        <span className="text-[10px] text-[#555] font-medium">
-          {investor.companyCount} {investor.companyCount === 1 ? 'co' : 'cos'}
-        </span>
-      )}
-    </Link>
+    </div>
   );
 }
 
-// ── Saved Job Row ──
+// ── Company Card ──
 
-function SavedJobRow({ job, companyName }: { job: FollowedCompany['recentJobs'][0]; companyName: string }) {
+function CompanyCard({ company }: { company: HydratedCompany }) {
+  const domain = getDomain(company.url);
+  const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const newThisWeek = company.recentJobs.filter(
+    (j) => j.postedDate && new Date(j.postedDate).getTime() >= oneWeekAgo
+  ).length;
+
   return (
-    <Link
-      href={`/jobs/${job.id}`}
-      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-800/50 transition-colors group"
-    >
-      <BriefcaseIcon className="w-4 h-4 text-zinc-600 flex-shrink-0" />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm text-zinc-200 truncate group-hover:text-zinc-100 transition-colors">
-          {job.title}
-        </p>
-        <p className="text-xs text-zinc-500 mt-0.5">
-          {companyName}
-          {job.location && ` \u00B7 ${job.location}`}
-          {job.function && ` \u00B7 ${job.function}`}
-        </p>
+    <div className="flex-shrink-0 w-64 sm:w-72 bg-zinc-900 border border-zinc-800 rounded-lg p-3 hover:bg-zinc-800/80 transition-colors group">
+      <Link href={`/companies/${company.slug}`} className="block">
+        <div className="flex items-center gap-2 mb-2">
+          {domain ? (
+            <Favicon domain={domain} size={40} className="w-10 h-10 rounded-lg" />
+          ) : (
+            <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-sm font-bold text-zinc-500">
+              {company.name.charAt(0)}
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-zinc-200 truncate">{company.name}</p>
+            <div className="flex items-center gap-1.5">
+              {company.stage && (
+                <span className="text-[10px] text-zinc-500">{company.stage}</span>
+              )}
+              {company.stage && company.industry && (
+                <span className="text-zinc-700">&middot;</span>
+              )}
+              {company.industry && (
+                <span className="text-[10px] text-zinc-500 truncate">{company.industry}</span>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-xs text-zinc-400">{company.jobCount} open roles</span>
+          {newThisWeek > 0 && (
+            <span className="text-xs text-green-400">{newThisWeek} new this week</span>
+          )}
+        </div>
+      </Link>
+      <div className="mt-2 flex justify-end">
+        <BookmarkButton itemId={company.id} itemType="company" itemName={company.name} compact />
       </div>
-      {job.postedDate && (
-        <span className="text-xs text-zinc-600 flex-shrink-0">{formatRelativeDate(job.postedDate)}</span>
+    </div>
+  );
+}
+
+// ── Investor Card ──
+
+function InvestorCard({ investor }: { investor: HydratedInvestor }) {
+  const domain = getDomain(investor.url);
+  return (
+    <div className="flex-shrink-0 w-64 sm:w-72 bg-zinc-900 border border-zinc-800 rounded-lg p-3 hover:bg-zinc-800/80 transition-colors group">
+      <Link href={`/investors/${investor.slug}`} className="block">
+        <div className="flex items-center gap-2 mb-2">
+          {domain ? (
+            <Favicon domain={domain} size={40} className="w-10 h-10 rounded-lg" />
+          ) : (
+            <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-sm font-bold text-zinc-500">
+              {investor.name.charAt(0)}
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-zinc-200 truncate">{investor.name}</p>
+          </div>
+        </div>
+        <div className="flex flex-col gap-0.5 mt-1">
+          <span className="text-xs text-zinc-400">{investor.companyCount} portfolio companies</span>
+          <span className="text-xs text-zinc-500">{formatNumber(investor.jobCount)} open roles</span>
+        </div>
+      </Link>
+      <div className="mt-2 flex justify-end">
+        <BookmarkButton itemId={investor.id} itemType="investor" itemName={investor.name} compact />
+      </div>
+    </div>
+  );
+}
+
+// ── Section Header ──
+
+function SectionHeader({ title, count, seeAllHref }: { title: string; count?: number; seeAllHref?: string }) {
+  return (
+    <div className="flex items-center justify-between mb-3">
+      <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+        {title}
+        {count !== undefined && count > 0 && (
+          <span className="ml-1.5 text-zinc-600">({count})</span>
+        )}
+      </h2>
+      {seeAllHref && (
+        <Link
+          href={seeAllHref}
+          className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+        >
+          See all &rarr;
+        </Link>
       )}
-    </Link>
+    </div>
+  );
+}
+
+// ── Card Scroll Row ──
+
+function CardScrollRow({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
+      {children}
+    </div>
   );
 }
 
@@ -204,16 +330,23 @@ interface ForMePageContentProps {
 
 export default function ForMePageContent({ stats }: ForMePageContentProps) {
   const { isSignedIn } = useAuth();
-  const { userStatus, isProAccess } = useUserStatus();
-  const { followCount, isLoaded: followsLoaded } = useFollows();
-  const [data, setData] = useState<FollowedData | null>(null);
+  const { userStatus } = useUserStatus();
+  const { counts: bookmarkCounts, isLoaded: bookmarksLoaded } = useBookmarks();
+  const [data, setData] = useState<ForMeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [managePanelOpen, setManagePanelOpen] = useState(false);
 
   const isExpired = userStatus === 'expired';
-  const showEmptyState = followsLoaded && followCount === 0 && !isProAccess;
+  const totalBookmarks = bookmarkCounts.job + bookmarkCounts.company + bookmarkCounts.investor;
 
-  // Fetch followed company data when signed in
+  // Update last visited timestamp for nav badge
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cadre_last_visited_for_me', new Date().toISOString());
+    }
+  }, []);
+
+  // Fetch data when signed in
   useEffect(() => {
     if (!isSignedIn) {
       setLoading(false);
@@ -222,48 +355,26 @@ export default function ForMePageContent({ stats }: ForMePageContentProps) {
     setLoading(true);
     fetch('/api/for-me')
       .then((res) => res.json())
-      .then((d: FollowedData) => setData(d))
-      .catch((err) => console.error('Failed to fetch followed data:', err))
+      .then((d) => {
+        setData({
+          counts: d.counts || { job: 0, company: 0, investor: 0 },
+          newFromCompanies: d.newFromCompanies || [],
+          savedJobs: d.savedJobs || [],
+          followedCompanies: d.followedCompanies || d.companies || [],
+          followedInvestors: d.followedInvestors || [],
+          totalRoles: d.totalRoles || 0,
+          newThisWeek: d.newThisWeek || 0,
+        });
+      })
+      .catch((err) => console.error('Failed to fetch For Me data:', err))
       .finally(() => setLoading(false));
   }, [isSignedIn]);
 
-  // Derive investors from followed data
-  const investorList = useMemo((): InvestorInfo[] => {
-    if (!data) return [];
-    const map = new Map<string, number>();
-    for (const company of data.companies) {
-      for (const inv of company.investors) {
-        map.set(inv, (map.get(inv) || 0) + 1);
-      }
-    }
-    return Array.from(map.entries())
-      .sort((a, b) => b[1] - a[1])
-      .map(([name, companyCount]) => ({ name, companyCount }));
-  }, [data]);
+  // Determine empty state
+  const showEmptyState = bookmarksLoaded && totalBookmarks === 0 && !data?.followedCompanies?.length;
 
-  // Collect recent jobs across all followed companies
-  const recentJobs = useMemo(() => {
-    if (!data) return [];
-    const jobs: { job: FollowedCompany['recentJobs'][0]; companyName: string }[] = [];
-    for (const company of data.companies) {
-      for (const job of company.recentJobs) {
-        jobs.push({ job, companyName: company.name });
-      }
-    }
-    return jobs
-      .sort((a, b) => {
-        const da = a.job.postedDate ? new Date(a.job.postedDate).getTime() : 0;
-        const db = b.job.postedDate ? new Date(b.job.postedDate).getTime() : 0;
-        return db - da;
-      })
-      .slice(0, 20);
-  }, [data]);
-
-  // Total open roles
-  const totalRoles = data?.totalRoles || 0;
-
-  // ── State 1: Not signed in or no follows (empty state) ──
-  if (!isSignedIn || showEmptyState) {
+  // ── Not signed in or empty ──
+  if (!isSignedIn || (!loading && showEmptyState)) {
     return (
       <main className="min-h-screen bg-zinc-950">
         <div className="max-w-6xl mx-auto px-4 py-6">
@@ -273,54 +384,58 @@ export default function ForMePageContent({ stats }: ForMePageContentProps) {
     );
   }
 
-  // ── Loading state ──
-  if (loading || !followsLoaded) {
+  // ── Loading ──
+  if (loading || !bookmarksLoaded) {
     return (
       <main className="min-h-screen bg-zinc-950">
         <div className="max-w-6xl mx-auto px-4 py-6">
-          <div className="mb-6">
-            <div className="h-5 bg-zinc-800 rounded animate-pulse w-64 mb-4" />
+          <div className="h-8 bg-zinc-800 rounded animate-pulse w-48 mb-2" />
+          <div className="h-4 bg-zinc-800/50 rounded animate-pulse w-64 mb-8" />
+          <div className="mb-8">
+            <div className="h-4 bg-zinc-800 rounded animate-pulse w-48 mb-3" />
+            <div className="flex gap-3">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="w-72 h-32 bg-zinc-800 rounded-lg animate-pulse flex-shrink-0" />
+              ))}
+            </div>
           </div>
           <div className="mb-8">
             <div className="h-4 bg-zinc-800 rounded animate-pulse w-40 mb-3" />
-            <CompanyChipSkeleton count={8} />
-          </div>
-          <div className="mb-8">
-            <div className="h-4 bg-zinc-800 rounded animate-pulse w-40 mb-3" />
-            <CompanyChipSkeleton count={4} />
+            <div className="flex gap-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="w-72 h-32 bg-zinc-800 rounded-lg animate-pulse flex-shrink-0" />
+              ))}
+            </div>
           </div>
         </div>
       </main>
     );
   }
 
-  // ── State 2 & 3: Dashboard (active or expired) ──
+  const counts = data?.counts || bookmarkCounts;
+
   return (
     <main className="min-h-screen bg-zinc-950">
       <div className="max-w-6xl mx-auto px-4 py-6">
-        {/* Summary Stats Bar */}
-        <div className="flex items-center justify-between px-4 py-3 mb-6 bg-zinc-800/50 border-b border-zinc-700 rounded-lg">
-          <p className="text-sm text-zinc-400">
-            Following{' '}
-            <span className="font-semibold text-zinc-100">{data?.totalFollowed || followCount}</span>{' '}
-            companies
-            {investorList.length > 0 && (
-              <>
-                {' '}&middot;{' '}
-                <span className="font-semibold text-zinc-100">{investorList.length}</span>{' '}
-                investors
-              </>
+        {/* ── Page Header + Stat Bar ── */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold text-zinc-100 mb-1">For Me</h1>
+          <p className="text-sm text-zinc-500">
+            {counts.job > 0 && (
+              <>{counts.job} saved {counts.job === 1 ? 'job' : 'jobs'}</>
             )}
-            {' '}&middot;{' '}
-            <span className="font-semibold text-zinc-100">{formatNumber(totalRoles)}</span>{' '}
-            open roles
+            {counts.job > 0 && counts.company > 0 && <> &middot; </>}
+            {counts.company > 0 && (
+              <>{counts.company} {counts.company === 1 ? 'company' : 'companies'}</>
+            )}
+            {(counts.job > 0 || counts.company > 0) && counts.investor > 0 && <> &middot; </>}
+            {counts.investor > 0 && (
+              <>{counts.investor} {counts.investor === 1 ? 'investor' : 'investors'}</>
+            )}
+            {counts.job === 0 && counts.company === 0 && counts.investor === 0 && (
+              <>No saved items yet</>
+            )}
           </p>
-          <button
-            onClick={() => setManagePanelOpen(true)}
-            className="text-xs text-purple-400 hover:text-purple-300 transition-colors hidden sm:block"
-          >
-            Manage
-          </button>
         </div>
 
         {/* Content wrapper — relative for expired overlay */}
@@ -328,90 +443,102 @@ export default function ForMePageContent({ stats }: ForMePageContentProps) {
           {isExpired && <ExpiredOverlay />}
 
           <div className={isExpired ? 'blur-sm pointer-events-none select-none' : ''}>
-            {/* ── Section 1: Followed Companies ── */}
-            {data && data.companies.length > 0 && (
-              <section className="mb-8">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                    Followed Companies
-                  </h2>
-                  <Link
-                    href="/discover"
-                    className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
-                  >
-                    Discover more &rarr;
-                  </Link>
-                </div>
 
-                <div className="flex flex-wrap gap-2">
-                  {[...data.companies]
-                    .sort((a, b) => a.name.localeCompare(b.name))
-                    .map((company) => (
-                      <CompanyPill key={company.id} company={company} />
+            {/* ── Section 1: New From Your Companies ── */}
+            <section className="mb-10">
+              <SectionHeader
+                title="New From Your Companies"
+                seeAllHref="/discover"
+              />
+              {data && data.newFromCompanies.length > 0 ? (
+                <>
+                  <div className="mb-2">
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 text-xs font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                      {data.newFromCompanies.length} new
+                    </span>
+                  </div>
+                  <CardScrollRow>
+                    {data.newFromCompanies.slice(0, 6).map((job) => (
+                      <JobCard key={job.id} job={job} />
                     ))}
-                </div>
-              </section>
-            )}
-
-            {/* ── Section 2: Followed Investors ── */}
-            {investorList.length > 0 && (
-              <section className="mb-8">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                    Followed Investors
-                  </h2>
-                  <Link
-                    href="/investors"
-                    className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
-                  >
-                    Discover more &rarr;
-                  </Link>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {investorList.map((investor) => (
-                    <InvestorPill key={investor.name} investor={investor} />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* ── Section 3: Recent Jobs from Followed Companies ── */}
-            {recentJobs.length > 0 && (
-              <section className="mb-8">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                    Recent Jobs
-                  </h2>
-                  <Link
-                    href="/jobs"
-                    className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
-                  >
-                    View all jobs &rarr;
-                  </Link>
-                </div>
-
-                <div className="rounded-lg border border-zinc-800 bg-zinc-900 divide-y divide-zinc-800/50">
-                  {recentJobs.map(({ job, companyName }) => (
-                    <SavedJobRow key={job.id} job={job} companyName={companyName} />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* ── Section 4: Activity (placeholder) ── */}
-            <section className="mb-8">
-              <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">
-                Activity
-              </h2>
-              <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-8 text-center">
-                <p className="text-sm text-zinc-500">
-                  Hiring activity and signals coming soon.
-                </p>
-                <p className="text-xs text-zinc-600 mt-1">
-                  We&apos;re building intelligence features to surface trends across your followed companies.
-                </p>
-              </div>
+                  </CardScrollRow>
+                </>
+              ) : (
+                <SectionEmpty
+                  message="Follow companies to see their latest roles here."
+                  cta="Browse Discover"
+                  href="/discover"
+                />
+              )}
             </section>
+
+            {/* ── Section 2: Saved Jobs ── */}
+            <section className="mb-10">
+              <SectionHeader
+                title="Saved Jobs"
+                count={counts.job}
+                seeAllHref="/discover"
+              />
+              {data && data.savedJobs.length > 0 ? (
+                <CardScrollRow>
+                  {data.savedJobs.slice(0, 6).map((job) => (
+                    <JobCard key={job.id} job={job} />
+                  ))}
+                </CardScrollRow>
+              ) : (
+                <SectionEmpty
+                  message="Save jobs you're interested in from Discover."
+                  cta="Browse jobs"
+                  href="/discover"
+                />
+              )}
+            </section>
+
+            {/* ── Section 3: Followed Companies ── */}
+            <section className="mb-10">
+              <SectionHeader
+                title="Followed Companies"
+                count={counts.company}
+                seeAllHref="/discover?view=companies"
+              />
+              {data && data.followedCompanies.length > 0 ? (
+                <CardScrollRow>
+                  {data.followedCompanies.slice(0, 6).map((company) => (
+                    <CompanyCard key={company.id} company={company} />
+                  ))}
+                </CardScrollRow>
+              ) : (
+                <SectionEmpty
+                  message="Follow companies to track their hiring activity."
+                  cta="Browse companies"
+                  href="/discover?view=companies"
+                />
+              )}
+            </section>
+
+            {/* ── Section 4: Followed Investors ── */}
+            <section className="mb-10">
+              <SectionHeader
+                title="Followed Investors"
+                count={counts.investor}
+                seeAllHref="/discover?view=investors"
+              />
+              {data && data.followedInvestors.length > 0 ? (
+                <CardScrollRow>
+                  {data.followedInvestors.slice(0, 6).map((investor) => (
+                    <InvestorCard key={investor.id} investor={investor} />
+                  ))}
+                </CardScrollRow>
+              ) : (
+                <SectionEmpty
+                  message="Follow investors to monitor hiring across their portfolios."
+                  cta="Browse investors"
+                  href="/discover?view=investors"
+                />
+              )}
+            </section>
+
           </div>
         </div>
       </div>

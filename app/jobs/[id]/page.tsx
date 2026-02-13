@@ -5,6 +5,7 @@ import { cache } from 'react';
 import type { Metadata } from 'next';
 import CompanyLogo from '@/components/CompanyLogo';
 import ApplyButton from '@/components/ApplyButton';
+import JobBookmarkButton from '@/components/JobBookmarkButton';
 
 
 export const revalidate = 3600;
@@ -209,6 +210,11 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
                 {job.company}
               </Link>
             </div>
+          </div>
+
+          {/* Save button */}
+          <div className="mt-3">
+            <JobBookmarkButton jobId={job.id} jobTitle={job.title} />
           </div>
 
           {/* Info pills */}
