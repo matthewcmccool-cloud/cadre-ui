@@ -105,42 +105,23 @@ export default function Header() {
               )}
             </Link>
 
-            {/* For Me — logged-in only */}
-            {isSignedIn && (
-              <Link
-                href="/for-me"
-                className={`relative px-3 py-1.5 text-sm font-medium transition-colors ${
-                  isActive('/for-me')
-                    ? 'text-zinc-100'
-                    : 'text-zinc-400 hover:text-zinc-100'
-                }`}
-              >
-                For Me
-                {forMeBadge && !isActive('/for-me') && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-purple-500 rounded-full" />
-                )}
-                {isActive('/for-me') && (
-                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-purple-500 rounded-full" />
-                )}
-              </Link>
-            )}
-
-            {/* Pricing — logged-out only */}
-            {!isSignedIn && (
-              <Link
-                href="/pricing"
-                className={`relative px-3 py-1.5 text-sm font-medium transition-colors ${
-                  isActive('/pricing')
-                    ? 'text-zinc-100'
-                    : 'text-zinc-400 hover:text-zinc-100'
-                }`}
-              >
-                Pricing
-                {isActive('/pricing') && (
-                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-purple-500 rounded-full" />
-                )}
-              </Link>
-            )}
+            {/* For Me — visible to all users, auth middleware handles redirect */}
+            <Link
+              href="/for-me"
+              className={`relative px-3 py-1.5 text-sm font-medium transition-colors ${
+                isActive('/for-me')
+                  ? 'text-zinc-100'
+                  : 'text-zinc-400 hover:text-zinc-100'
+              }`}
+            >
+              For Me
+              {forMeBadge && !isActive('/for-me') && (
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-purple-500 rounded-full" />
+              )}
+              {isActive('/for-me') && (
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-purple-500 rounded-full" />
+              )}
+            </Link>
           </nav>
 
           {/* Right: Auth */}
@@ -236,34 +217,19 @@ export default function Header() {
             <span className="text-xs font-medium">Fundraises</span>
           </Link>
 
-          {/* For Me — logged-in only */}
-          {isSignedIn && (
-            <Link
-              href="/for-me"
-              className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${
-                isActive('/for-me') ? 'text-purple-500' : isExpiredTrial ? 'text-zinc-600' : 'text-zinc-500'
-              }`}
-            >
-              <MobileTabIcon tab="ForMe" />
-              <span className="text-xs font-medium">For Me</span>
-              {forMeBadge && !isActive('/for-me') && (
-                <span className="absolute top-2 right-1/2 translate-x-3 w-2 h-2 bg-purple-500 rounded-full" />
-              )}
-            </Link>
-          )}
-
-          {/* Pricing — logged-out only */}
-          {!isSignedIn && (
-            <Link
-              href="/pricing"
-              className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${
-                isActive('/pricing') ? 'text-purple-500' : 'text-zinc-500'
-              }`}
-            >
-              <MobileTabIcon tab="Pricing" />
-              <span className="text-xs font-medium">Pricing</span>
-            </Link>
-          )}
+          {/* For Me — visible to all users, auth middleware handles redirect */}
+          <Link
+            href="/for-me"
+            className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${
+              isActive('/for-me') ? 'text-purple-500' : isExpiredTrial ? 'text-zinc-600' : 'text-zinc-500'
+            }`}
+          >
+            <MobileTabIcon tab="ForMe" />
+            <span className="text-xs font-medium">For Me</span>
+            {forMeBadge && !isActive('/for-me') && (
+              <span className="absolute top-2 right-1/2 translate-x-3 w-2 h-2 bg-purple-500 rounded-full" />
+            )}
+          </Link>
         </div>
       </nav>
 
@@ -291,12 +257,6 @@ function MobileTabIcon({ tab }: { tab: string }) {
       return (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
-        </svg>
-      );
-    case 'Pricing':
-      return (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       );
     default:
