@@ -129,7 +129,7 @@ export default function ManageFollowsPanel({ isOpen, onClose }: ManageFollowsPan
           await follow(company.id);
           toast({
             type: 'success',
-            message: `Following ${company.name}. You'll see their activity in Intelligence.`,
+            message: `Following ${company.name}. You'll see their activity in For Me.`,
           });
         } catch {
           toast({ type: 'error', message: 'Something went wrong. Try again.' });

@@ -52,8 +52,8 @@ export {
   // Search
   searchAll,
 
-  // Feed
-  getFeedDataForCompanyIds,
+  // For Me (followed company data)
+  getFollowedData,
 
   // Onboarding
   getOnboardingData,
@@ -79,7 +79,7 @@ export type {
   OnboardingCompany,
   OnboardingInvestor,
   OnboardingData,
-  FeedCompanyItem,
-  FeedDataResult,
+  FollowedCompanyItem,
+  FollowedDataResult,
   SearchResult,
 } from './airtable';

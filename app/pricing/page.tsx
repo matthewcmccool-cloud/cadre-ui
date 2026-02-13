@@ -1,27 +1,25 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { trackStartTrial } from '@/lib/analytics';
 
 const PRO_FEATURES = [
-  'Daily and real-time alerts for followed companies',
-  'Full knowledge graph context (investor backing, portfolio trends in every alert)',
-  'Cross-company comparison dashboard',
-  'Hiring surge and stall detection',
-  'Full historical hiring trends (90-day, 6mo, 12mo)',
-  'Hiring activity filters on Discover',
-  'CSV export',
-  'Priority data sync for your followed companies',
+  'Follow up to 25 companies',
+  'Personalized For Me dashboard',
+  'Job posting alerts',
+  'Full access to Discover & Fundraises',
 ];
 
-const FREE_FEATURES = [
-  'Browse all jobs, companies, and investors',
-  'Follow unlimited companies',
-  'Personalized activity feed',
-  'Weekly digest email',
-  'Fundraise feed',
+const INSTITUTIONAL_FEATURES = [
+  'Everything in Pro',
+  'Unlimited company follows',
+  'Hiring trend analysis & comparison',
+  'Downloadable reports',
+  'Portfolio hiring analytics',
+  'API access',
 ];
 
 export default function PricingPage() {
@@ -30,8 +28,7 @@ export default function PricingPage() {
   const { isPro, status } = useSubscription();
   const [loading, setLoading] = useState(false);
 
-  const price = billing === 'monthly' ? '$99' : '$79';
-  const period = '/mo';
+  const price = billing === 'monthly' ? '$15' : '$12';
 
   const handleCTA = async () => {
     if (!isSignedIn) {
@@ -40,7 +37,6 @@ export default function PricingPage() {
     }
 
     if (isPro) {
-      // Manage billing via Stripe portal
       setLoading(true);
       try {
         const res = await fetch('/api/billing/portal');
@@ -56,7 +52,6 @@ export default function PricingPage() {
       return;
     }
 
-    // Start checkout
     setLoading(true);
     try {
       const res = await fetch('/api/checkout', {
@@ -77,95 +72,125 @@ export default function PricingPage() {
   };
 
   const ctaLabel = isPro
-    ? 'Manage billing →'
+    ? 'Manage billing \u2192'
     : status === 'canceled'
-      ? 'Resubscribe →'
-      : 'Start 14-day free trial →';
+      ? 'Resubscribe \u2192'
+      : 'Start 14-day free trial \u2192';
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex items-start justify-center pt-20 pb-24 px-4">
-      <div className="w-full max-w-lg">
-        {/* Title */}
-        <h1 className="text-3xl font-semibold text-white">Cadre Pro</h1>
+    <div className="min-h-screen bg-zinc-950 flex flex-col items-center pt-20 pb-24 px-4">
+      {/* Title */}
+      <div className="text-center mb-10">
+        <h1 className="text-3xl font-semibold text-white">Pricing</h1>
         <p className="text-sm text-zinc-400 mt-2">
-          Real-time hiring intelligence for the companies you care about.
+          Choose the plan that fits your hiring intelligence needs.
         </p>
+      </div>
 
-        {/* Billing toggle */}
-        <div className="mt-6 flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-lg p-1 w-fit">
-          <button
-            onClick={() => setBilling('monthly')}
-            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-              billing === 'monthly'
-                ? 'bg-zinc-800 text-zinc-100'
-                : 'text-zinc-500 hover:text-zinc-300'
-            }`}
-          >
-            Monthly {billing === 'monthly' && '$99'}
-          </button>
-          <button
-            onClick={() => setBilling('annual')}
-            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-              billing === 'annual'
-                ? 'bg-zinc-800 text-zinc-100'
-                : 'text-zinc-500 hover:text-zinc-300'
-            }`}
-          >
-            Annual {billing === 'annual' && '$79/mo'}
-          </button>
-        </div>
+      {/* Cards */}
+      <div className="w-full max-w-3xl grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* ── Card 1: Pro ── */}
+        <div className="bg-zinc-900 border border-purple-500/40 rounded-xl p-6 flex flex-col">
+          <h2 className="text-xl font-bold text-zinc-100">Pro</h2>
 
-        {/* Price display */}
-        <div className="mt-6">
-          <span className="text-4xl font-bold text-white">{price}</span>
-          <span className="text-sm text-zinc-500">{period}</span>
+          {/* Price */}
+          <div className="mt-4">
+            <span className="text-4xl font-bold text-white">{price}</span>
+            <span className="text-sm text-zinc-500">/month</span>
+          </div>
+
+          {/* Billing toggle */}
+          <div className="mt-3 flex items-center gap-1 bg-zinc-800 rounded-lg p-1 w-fit">
+            <button
+              onClick={() => setBilling('monthly')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                billing === 'monthly'
+                  ? 'bg-zinc-700 text-zinc-100'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBilling('annual')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                billing === 'annual'
+                  ? 'bg-zinc-700 text-zinc-100'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              Annual
+            </button>
+          </div>
           {billing === 'annual' && (
-            <span className="ml-2 text-xs text-emerald-400">Save 20%</span>
+            <p className="mt-2 text-xs text-emerald-400">$12/month &middot; Save 20%</p>
           )}
-        </div>
 
-        {/* CTA */}
-        <button
-          onClick={handleCTA}
-          disabled={loading}
-          className="mt-6 w-full py-3 text-sm font-medium text-white bg-purple-600 hover:bg-purple-500 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? 'Loading...' : ctaLabel}
-        </button>
+          {/* CTA */}
+          <button
+            onClick={handleCTA}
+            disabled={loading}
+            className="mt-5 w-full py-2.5 text-sm font-medium text-white bg-purple-500 hover:bg-purple-400 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Loading...' : ctaLabel}
+          </button>
 
-        {/* What you get */}
-        <div className="mt-10">
-          <h2 className="text-xs text-zinc-500 uppercase tracking-wide font-medium mb-3">
-            What you get
-          </h2>
-          <ul className="space-y-2.5">
+          {/* Features */}
+          <ul className="mt-6 space-y-2.5 flex-1">
             {PRO_FEATURES.map((feature) => (
               <li key={feature} className="flex items-start gap-2.5 text-sm text-zinc-300">
-                <span className="text-emerald-400 mt-0.5 flex-shrink-0">✓</span>
+                <span className="text-emerald-400 mt-0.5 flex-shrink-0">&#10003;</span>
                 {feature}
               </li>
             ))}
           </ul>
         </div>
 
-        {/* Always free */}
-        <div className="mt-10">
-          <h2 className="text-xs text-zinc-500 uppercase tracking-wide font-medium mb-3">
-            Always free
-          </h2>
-          <ul className="space-y-2.5">
-            {FREE_FEATURES.map((feature) => (
+        {/* ── Card 2: Institutional ── */}
+        <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 flex flex-col">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-zinc-100">Institutional</h2>
+            <span className="text-xs bg-zinc-700 text-zinc-400 rounded-full px-2 py-0.5">
+              Coming soon
+            </span>
+          </div>
+
+          {/* Price */}
+          <div className="mt-4">
+            <span className="text-4xl font-bold text-zinc-500">$99</span>
+            <span className="text-sm text-zinc-600">/month</span>
+          </div>
+
+          {/* Spacer to align with Pro toggle area */}
+          <div className="mt-3 h-[34px]" />
+
+          {/* CTA */}
+          <Link
+            href="mailto:matt@cadre.careers"
+            className="mt-5 w-full py-2.5 text-sm font-medium text-zinc-400 border border-zinc-600 hover:border-zinc-500 hover:text-zinc-300 rounded-lg transition-colors text-center block"
+          >
+            Join waitlist &rarr;
+          </Link>
+
+          {/* Features */}
+          <ul className="mt-6 space-y-2.5 flex-1">
+            {INSTITUTIONAL_FEATURES.map((feature) => (
               <li key={feature} className="flex items-start gap-2.5 text-sm text-zinc-400">
-                <span className="text-zinc-500 mt-0.5 flex-shrink-0">✓</span>
+                <span className="text-zinc-600 mt-0.5 flex-shrink-0">&#10003;</span>
                 {feature}
               </li>
             ))}
           </ul>
         </div>
+      </div>
 
-        {/* Footer */}
-        <p className="mt-12 text-xs text-zinc-500">
-          Questions? Contact matt@cadre.careers
+      {/* Footer */}
+      <div className="mt-12 text-center">
+        <p className="text-sm text-zinc-500">
+          All plans include: full Discover access, Fundraises data, weekly email digest
+        </p>
+        <p className="text-sm text-zinc-600 mt-2">
+          Questions? matt@cadre.careers
         </p>
       </div>
     </div>

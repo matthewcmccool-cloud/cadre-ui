@@ -8,9 +8,17 @@ export default function Footer() {
           Cadre &middot; Hiring Activity Intelligence
         </p>
 
-        <div className="mt-4 flex items-center justify-center gap-1 text-sm text-zinc-500">
+        <div className="mt-4 flex items-center justify-center gap-1 text-sm text-zinc-500 flex-wrap">
           <Link href="/discover" className="hover:text-zinc-300 transition-colors px-2">
             Discover
+          </Link>
+          <span>&middot;</span>
+          <Link href="/jobs" className="hover:text-zinc-300 transition-colors px-2">
+            Browse Jobs
+          </Link>
+          <span>&middot;</span>
+          <Link href="/investors" className="hover:text-zinc-300 transition-colors px-2">
+            Browse Investors
           </Link>
           <span>&middot;</span>
           <Link href="/fundraises" className="hover:text-zinc-300 transition-colors px-2">

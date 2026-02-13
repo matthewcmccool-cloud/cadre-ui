@@ -164,7 +164,7 @@ export default function InvestorPageContent({ investor, jobs }: InvestorPageCont
                   >
                     <span>{company.name}</span>
                     {companyJobCount > 0 && (
-                      <span className="text-xs text-zinc-500">{companyJobCount} roles</span>
+                      <span className="text-xs text-zinc-500">{formatNumber(companyJobCount)} roles</span>
                     )}
                   </Link>
                 );

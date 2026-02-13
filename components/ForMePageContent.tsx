@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useUserStatus } from '@/hooks/useUserStatus';
 import { useFollows } from '@/hooks/useFollows';
+import { formatNumber } from '@/lib/format';
 import ManageFollowsPanel from '@/components/ManageFollowsPanel';
 import { CompanyChipSkeleton } from '@/components/Skeletons';
 import Favicon from '@/components/Favicon';
 import FollowButton from '@/components/FollowButton';
-import type { FeedDataResult as FeedData, FeedCompanyItem as FeedCompany } from '@/lib/data';
+import type { FollowedDataResult as FollowedData, FollowedCompanyItem as FollowedCompany } from '@/lib/data';
 
 const getDomain = (url: string | null | undefined) => {
   if (!url) return null;
@@ -59,18 +60,18 @@ function EmptyState() {
       <div className="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-6">
         <BookmarkFilledIcon className="w-8 h-8 text-purple-400" />
       </div>
-      <h2 className="text-xl font-semibold text-zinc-100 mb-2">
-        Your hiring intelligence hub
+      <h2 className="text-2xl font-semibold text-zinc-100 mb-2">
+        Your personalized dashboard
       </h2>
       <p className="text-sm text-zinc-400 max-w-md mb-8 leading-relaxed">
-        Follow companies and investors from Discover to track their open roles,
+        Follow companies and investors to track their open roles,
         hiring activity, and portfolio moves — all in one place.
       </p>
       <Link
         href="/discover"
-        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium transition-colors"
+        className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-purple-500 hover:bg-purple-400 text-white text-sm font-medium transition-colors"
       >
-        Discover companies
+        Start exploring
         <span aria-hidden="true">&rarr;</span>
       </Link>
     </div>
@@ -79,10 +80,21 @@ function EmptyState() {
 
 // ── State 3: Expired Overlay ──
 
+function LockIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className || 'w-8 h-8'} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+    </svg>
+  );
+}
+
 function ExpiredOverlay() {
   return (
-    <div className="absolute inset-0 z-10 flex items-center justify-center bg-zinc-950/70 backdrop-blur-sm rounded-xl">
+    <div className="absolute inset-0 z-10 flex items-center justify-center backdrop-blur-md bg-zinc-900/60 rounded-xl">
       <div className="text-center px-6">
+        <div className="flex justify-center mb-4">
+          <LockIcon className="w-8 h-8 text-zinc-500" />
+        </div>
         <p className="text-lg font-semibold text-zinc-100 mb-2">
           Your trial has ended
         </p>
@@ -91,9 +103,10 @@ function ExpiredOverlay() {
         </p>
         <Link
           href="/pricing"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium transition-colors"
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-purple-500 hover:bg-purple-400 text-white text-sm font-medium transition-colors"
         >
-          Reactivate &mdash; $99/month
+          Reactivate Pro &mdash; $15/month
+          <span aria-hidden="true">&rarr;</span>
         </Link>
       </div>
     </div>
@@ -102,7 +115,7 @@ function ExpiredOverlay() {
 
 // ── Company Pill (matching Discover style) ──
 
-function CompanyPill({ company }: { company: FeedCompany }) {
+function CompanyPill({ company }: { company: FollowedCompany }) {
   const domain = getDomain(company.url);
   return (
     <div className="inline-flex items-center gap-2 px-3 py-2 bg-[#1a1a1b] hover:bg-[#252526] rounded-lg text-sm text-[#e8e8e8] transition-colors group">
@@ -155,7 +168,7 @@ function InvestorPill({ investor }: { investor: InvestorInfo }) {
 
 // ── Saved Job Row ──
 
-function SavedJobRow({ job, companyName }: { job: FeedCompany['recentJobs'][0]; companyName: string }) {
+function SavedJobRow({ job, companyName }: { job: FollowedCompany['recentJobs'][0]; companyName: string }) {
   return (
     <Link
       href={`/jobs/${job.id}`}
@@ -181,7 +194,7 @@ function SavedJobRow({ job, companyName }: { job: FeedCompany['recentJobs'][0]; 
 
 // ── Main Component ──
 
-interface IntelligencePageContentProps {
+interface ForMePageContentProps {
   stats: {
     companyCount: number;
     investorCount: number;
@@ -189,33 +202,32 @@ interface IntelligencePageContentProps {
   };
 }
 
-export default function IntelligencePageContent({ stats }: IntelligencePageContentProps) {
+export default function ForMePageContent({ stats }: ForMePageContentProps) {
   const { isSignedIn } = useAuth();
-  const { status, isPro, isTrialing } = useSubscription();
+  const { userStatus, isProAccess } = useUserStatus();
   const { followCount, isLoaded: followsLoaded } = useFollows();
-  const [data, setData] = useState<FeedData | null>(null);
+  const [data, setData] = useState<FollowedData | null>(null);
   const [loading, setLoading] = useState(true);
   const [managePanelOpen, setManagePanelOpen] = useState(false);
 
-  const isExpired = status === 'canceled';
-  const hasAccess = isPro || isTrialing;
-  const showEmptyState = followsLoaded && followCount === 0 && !hasAccess;
+  const isExpired = userStatus === 'expired';
+  const showEmptyState = followsLoaded && followCount === 0 && !isProAccess;
 
-  // Fetch feed data when signed in
+  // Fetch followed company data when signed in
   useEffect(() => {
     if (!isSignedIn) {
       setLoading(false);
       return;
     }
     setLoading(true);
-    fetch('/api/feed')
+    fetch('/api/for-me')
       .then((res) => res.json())
-      .then((d: FeedData) => setData(d))
-      .catch((err) => console.error('Failed to fetch feed:', err))
+      .then((d: FollowedData) => setData(d))
+      .catch((err) => console.error('Failed to fetch followed data:', err))
       .finally(() => setLoading(false));
   }, [isSignedIn]);
 
-  // Derive investors from feed data
+  // Derive investors from followed data
   const investorList = useMemo((): InvestorInfo[] => {
     if (!data) return [];
     const map = new Map<string, number>();
@@ -232,7 +244,7 @@ export default function IntelligencePageContent({ stats }: IntelligencePageConte
   // Collect recent jobs across all followed companies
   const recentJobs = useMemo(() => {
     if (!data) return [];
-    const jobs: { job: FeedCompany['recentJobs'][0]; companyName: string }[] = [];
+    const jobs: { job: FollowedCompany['recentJobs'][0]; companyName: string }[] = [];
     for (const company of data.companies) {
       for (const job of company.recentJobs) {
         jobs.push({ job, companyName: company.name });
@@ -287,7 +299,7 @@ export default function IntelligencePageContent({ stats }: IntelligencePageConte
     <main className="min-h-screen bg-zinc-950">
       <div className="max-w-6xl mx-auto px-4 py-6">
         {/* Summary Stats Bar */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between px-4 py-3 mb-6 bg-zinc-800/50 border-b border-zinc-700 rounded-lg">
           <p className="text-sm text-zinc-400">
             Following{' '}
             <span className="font-semibold text-zinc-100">{data?.totalFollowed || followCount}</span>{' '}
@@ -300,8 +312,8 @@ export default function IntelligencePageContent({ stats }: IntelligencePageConte
               </>
             )}
             {' '}&middot;{' '}
-            <span className="font-semibold text-zinc-100">{totalRoles.toLocaleString()}</span>{' '}
-            open roles across followed companies
+            <span className="font-semibold text-zinc-100">{formatNumber(totalRoles)}</span>{' '}
+            open roles
           </p>
           <button
             onClick={() => setManagePanelOpen(true)}
@@ -317,37 +329,29 @@ export default function IntelligencePageContent({ stats }: IntelligencePageConte
 
           <div className={isExpired ? 'blur-sm pointer-events-none select-none' : ''}>
             {/* ── Section 1: Followed Companies ── */}
-            <section className="mb-8">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                  Followed Companies
-                </h2>
-                <Link
-                  href="/discover?view=companies"
-                  className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
-                >
-                  Discover more &rarr;
-                </Link>
-              </div>
-
-              {data && data.companies.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {data.companies.map((company) => (
-                    <CompanyPill key={company.id} company={company} />
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6 text-center">
-                  <p className="text-sm text-zinc-500">No followed companies yet.</p>
+            {data && data.companies.length > 0 && (
+              <section className="mb-8">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+                    Followed Companies
+                  </h2>
                   <Link
-                    href="/discover?view=companies"
-                    className="mt-2 inline-block text-sm text-purple-400 hover:text-purple-300 transition-colors"
+                    href="/discover"
+                    className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
                   >
-                    Browse companies &rarr;
+                    Discover more &rarr;
                   </Link>
                 </div>
-              )}
-            </section>
+
+                <div className="flex flex-wrap gap-2">
+                  {[...data.companies]
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((company) => (
+                      <CompanyPill key={company.id} company={company} />
+                    ))}
+                </div>
+              </section>
+            )}
 
             {/* ── Section 2: Followed Investors ── */}
             {investorList.length > 0 && (
@@ -357,7 +361,7 @@ export default function IntelligencePageContent({ stats }: IntelligencePageConte
                     Followed Investors
                   </h2>
                   <Link
-                    href="/discover?view=investors"
+                    href="/investors"
                     className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
                   >
                     Discover more &rarr;
@@ -372,38 +376,32 @@ export default function IntelligencePageContent({ stats }: IntelligencePageConte
             )}
 
             {/* ── Section 3: Recent Jobs from Followed Companies ── */}
-            <section className="mb-8">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                  Recent Jobs
-                </h2>
-                {recentJobs.length > 0 && (
+            {recentJobs.length > 0 && (
+              <section className="mb-8">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+                    Recent Jobs
+                  </h2>
                   <Link
-                    href="/discover"
+                    href="/jobs"
                     className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
                   >
                     View all jobs &rarr;
                   </Link>
-                )}
-              </div>
+                </div>
 
-              {recentJobs.length > 0 ? (
                 <div className="rounded-lg border border-zinc-800 bg-zinc-900 divide-y divide-zinc-800/50">
                   {recentJobs.map(({ job, companyName }) => (
                     <SavedJobRow key={job.id} job={job} companyName={companyName} />
                   ))}
                 </div>
-              ) : (
-                <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6 text-center">
-                  <p className="text-sm text-zinc-500">No recent jobs from followed companies.</p>
-                </div>
-              )}
-            </section>
+              </section>
+            )}
 
-            {/* ── Section 4: Activity Feed (placeholder) ── */}
+            {/* ── Section 4: Activity (placeholder) ── */}
             <section className="mb-8">
               <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">
-                Activity Feed
+                Activity
               </h2>
               <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-8 text-center">
                 <p className="text-sm text-zinc-500">

@@ -19,16 +19,22 @@ export async function GET() {
     return NextResponse.json({ status: 'free', isPro: false, isTrialing: false, trialDaysRemaining: null });
   }
 
-  const status = data.plan || 'free';
-  const isPro = status === 'active' || status === 'trialing';
-  const isTrialing = status === 'trialing';
-
+  let status: string = data.plan || 'free';
   let trialDaysRemaining: number | null = null;
-  if (isTrialing && data.trial_ends_at) {
+
+  // Detect expired self-service trial
+  if (status === 'trialing' && data.trial_ends_at) {
     const now = Date.now();
     const trialEnd = new Date(data.trial_ends_at).getTime();
     trialDaysRemaining = Math.max(0, Math.ceil((trialEnd - now) / (1000 * 60 * 60 * 24)));
+    if (trialEnd <= now) {
+      status = 'canceled';
+      trialDaysRemaining = 0;
+    }
   }
+
+  const isPro = status === 'active' || status === 'trialing';
+  const isTrialing = status === 'trialing';
 
   return NextResponse.json(
     { status, isPro, isTrialing, trialDaysRemaining },

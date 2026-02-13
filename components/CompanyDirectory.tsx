@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useMemo } from 'react';
 import { CompanyDirectoryItem } from '@/lib/data';
+import { formatNumber } from '@/lib/format';
 import Favicon from '@/components/Favicon';
 import FilterDropdown, { type FilterOption } from './FilterDropdown';
 import FollowButton from '@/components/FollowButton';
@@ -85,7 +86,7 @@ export default function CompanyDirectory({ companies }: CompanyDirectoryProps) {
       {/* Descriptor */}
       <div className="mb-4">
         <p className="text-sm text-[#888]">
-          <span className="text-[#ccc] font-medium">{companies.length.toLocaleString()} exceptional technology companies</span>
+          <span className="text-[#ccc] font-medium">{formatNumber(companies.length)} exceptional technology companies</span>
           {' '}&mdash; click any to see open roles.
         </p>
       </div>
@@ -174,8 +175,8 @@ export default function CompanyDirectory({ companies }: CompanyDirectoryProps) {
       {/* Result count */}
       <p className="text-xs text-[#555] mb-4">
         {filtered.length === companies.length
-          ? `${companies.length.toLocaleString()} companies`
-          : `${filtered.length.toLocaleString()} of ${companies.length.toLocaleString()} companies`}
+          ? `${formatNumber(companies.length)} companies`
+          : `${formatNumber(filtered.length)} of ${formatNumber(companies.length)} companies`}
       </p>
 
       {/* Company grid */}
@@ -213,7 +214,7 @@ export default function CompanyDirectory({ companies }: CompanyDirectoryProps) {
             onClick={() => setExpanded(!expanded)}
             className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors border border-[#5e6ad2]/40 bg-[#5e6ad2]/20 text-[#8b93e6] hover:bg-[#5e6ad2]/30"
           >
-            {expanded ? 'Show less' : `View all ${filtered.length} \u2192`}
+            {expanded ? 'Show less' : `View all ${formatNumber(filtered.length)} \u2192`}
           </button>
         )}
       </div>

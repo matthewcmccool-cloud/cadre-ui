@@ -64,6 +64,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setPendingFollowCompanyId(pending);
           localStorage.removeItem('cadre_pending_follow');
         }
+        // Flag for welcome toast (consumed by TrialWelcomeToast after onboarding)
+        localStorage.setItem('cadre_show_trial_welcome', 'true');
       } catch { /* ignore */ }
       setOnboardingOpen(true);
       // Clean the URL param

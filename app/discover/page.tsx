@@ -1,11 +1,6 @@
 import type { Metadata } from 'next';
-import { getJobs, getFilterOptions, getRecentCompanies, getAllCompaniesForDirectory, getAllInvestorsForDirectory, getStats } from '@/lib/data';
-import JobTable from '@/components/JobTable';
-import Pagination from '@/components/Pagination';
-import SearchFilters from '@/components/SearchFilters';
+import { getAllCompaniesForDirectory } from '@/lib/data';
 import CompanyDirectory from '@/components/CompanyDirectory';
-import InvestorDirectory from '@/components/InvestorDirectory';
-import ViewSwitcher from '@/components/ViewSwitcher';
 
 export const metadata: Metadata = {
   title: 'Discover 1,300+ VC-Backed Companies & Their Open Roles',
@@ -21,112 +16,13 @@ export const metadata: Metadata = {
 // ISR: regenerate every 60 minutes
 export const revalidate = 3600;
 
-interface PageProps {
-  searchParams: {
-    view?: string;
-    department?: string;
-    industry?: string;
-    country?: string;
-    workMode?: string;
-    investor?: string;
-    posted?: string;
-    search?: string;
-    page?: string;
-    sort?: string;
-    functionName?: string;
-    remote?: string;
-    location?: string;
-    company?: string;
-  };
-}
-
-export default async function DiscoverPage({ searchParams }: PageProps) {
-  // Default to jobs view
-  const view = searchParams.view === 'companies'
-    ? 'companies'
-    : searchParams.view === 'investors'
-      ? 'investors'
-      : 'jobs';
-
-  // Fetch filter options and stats in parallel (needed for counts across views)
-  const [filterOptions, stats] = await Promise.all([
-    getFilterOptions(),
-    getStats(),
-  ]);
-
-  // Fetch view-specific data in parallel
-  const [jobsResult, recentCompanies, companiesData, investorsData] = await Promise.all([
-    view === 'jobs'
-      ? getJobs({
-          industry: searchParams.industry,
-          investor: searchParams.investor,
-          search: searchParams.search,
-          page: parseInt(searchParams.page || '1', 10),
-          functionName: searchParams.functionName,
-          remoteOnly: searchParams.remote === 'true',
-          location: searchParams.location,
-          company: searchParams.company,
-        })
-      : Promise.resolve(null),
-    view === 'jobs'
-      ? getRecentCompanies(8).catch(() => [])
-      : Promise.resolve([]),
-    view === 'companies'
-      ? getAllCompaniesForDirectory()
-      : Promise.resolve([]),
-    view === 'investors'
-      ? getAllInvestorsForDirectory()
-      : Promise.resolve([]),
-  ]);
+export default async function DiscoverPage() {
+  const companies = await getAllCompaniesForDirectory();
 
   return (
     <main className="min-h-screen bg-zinc-950">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-6">
-        {/* View Switcher */}
-        <div className="mb-6">
-          <ViewSwitcher
-            counts={{
-              jobs: stats.jobCount,
-              companies: filterOptions.companies.length,
-              investors: filterOptions.investors?.length,
-            }}
-          />
-        </div>
-
-        {/* ── Jobs View ── */}
-        {view === 'jobs' && jobsResult && (
-          <>
-            <SearchFilters
-              companies={filterOptions.companies}
-              investors={filterOptions.investors}
-              industries={filterOptions.industries}
-              jobs={jobsResult.jobs.map(j => ({
-                location: j.location,
-                remoteFirst: j.remoteFirst,
-                investors: j.investors,
-              }))}
-              totalCount={jobsResult.totalCount}
-            />
-
-            <JobTable jobs={jobsResult.jobs} />
-
-            <Pagination
-              currentPage={jobsResult.page}
-              totalPages={jobsResult.totalPages}
-              searchParams={searchParams}
-            />
-          </>
-        )}
-
-        {/* ── Companies View ── */}
-        {view === 'companies' && (
-          <CompanyDirectory companies={companiesData} />
-        )}
-
-        {/* ── Investors View ── */}
-        {view === 'investors' && (
-          <InvestorDirectory investors={investorsData} />
-        )}
+        <CompanyDirectory companies={companies} />
       </div>
     </main>
   );

@@ -53,13 +53,15 @@ export async function POST(req: Request) {
     if (primaryEmail) {
       const supabase = createSupabaseAdmin();
 
-      // Create user record
+      // Create user record with 14-day Pro trial
+      const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
       const { error } = await supabase
         .from('users')
         .insert({
           clerk_id: id,
           email: primaryEmail.email_address,
-          plan: 'free',
+          plan: 'trialing',
+          trial_ends_at: trialEndsAt,
         });
 
       if (error) {
@@ -72,15 +74,18 @@ export async function POST(req: Request) {
         .from('alert_preferences')
         .upsert({ user_id: id }, { onConflict: 'user_id' });
 
-      // Create Loops contact and send welcome email
+      // Create Loops contact and send welcome + trial emails
       const firstName = evt.data.first_name || undefined;
       await createContact(
         primaryEmail.email_address,
-        { firstName, source: 'signup', plan: 'free', clerkId: id },
+        { firstName, source: 'signup', plan: 'trialing', clerkId: id },
         ['user_no_newsletter'],
       );
       await triggerEvent(primaryEmail.email_address, 'welcome', {
         firstName: firstName || '',
+      });
+      await triggerEvent(primaryEmail.email_address, 'trial_started', {
+        trialEndsAt: trialEndsAt,
       });
     }
   }

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useFollows } from '@/hooks/useFollows';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useUserStatus } from '@/hooks/useUserStatus';
 import { useToast } from '@/hooks/useToast';
 
 // Inline SVG icons
@@ -46,12 +46,12 @@ export default function FollowPortfolioButton({
 }: FollowPortfolioButtonProps) {
   const { isSignedIn, openSignIn } = useAuth();
   const { isFollowing, followPortfolio } = useFollows();
-  const { status } = useSubscription();
+  const { userStatus } = useUserStatus();
   const { toast } = useToast();
   const [hovering, setHovering] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const isExpired = status === 'canceled';
+  const isExpired = userStatus === 'expired';
   const followedCount = portfolioCompanyIds.filter((id) => isFollowing(id)).length;
   const allFollowed = companyCount > 0 && followedCount === companyCount;
 
@@ -63,7 +63,7 @@ export default function FollowPortfolioButton({
       toast({
         type: 'error',
         message: 'Reactivate Pro to follow portfolios',
-        link: { text: '$99/month \u2192', href: '/pricing' },
+        link: { text: '$15/month \u2192', href: '/pricing' },
       });
       return;
     }
@@ -86,7 +86,7 @@ export default function FollowPortfolioButton({
       toast({
         type: 'success',
         message: `Following ${result.newFollows} companies in ${result.investorName}'s portfolio`,
-        link: { text: 'View in Intelligence \u2192', href: '/intelligence' },
+        link: { text: 'View in For Me \u2192', href: '/for-me' },
       });
     } catch {
       toast({ type: 'error', message: 'Something went wrong. Please try again.' });

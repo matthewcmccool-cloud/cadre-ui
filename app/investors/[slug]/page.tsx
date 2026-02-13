@@ -81,7 +81,7 @@ export default async function InvestorPage({ params }: InvestorPageProps) {
         <nav className="flex items-center gap-1.5 text-sm text-zinc-600 mt-6">
           <Link href="/discover" className="text-zinc-500 hover:text-zinc-300 transition-colors">Discover</Link>
           <span>/</span>
-          <Link href="/discover?view=investors" className="text-zinc-500 hover:text-zinc-300 transition-colors">Investors</Link>
+          <Link href="/investors" className="text-zinc-500 hover:text-zinc-300 transition-colors">Investors</Link>
           <span>/</span>
           <span className="text-zinc-400">{investor.name}</span>
         </nav>

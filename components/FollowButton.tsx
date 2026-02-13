@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useFollows } from '@/hooks/useFollows';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useUserStatus } from '@/hooks/useUserStatus';
 import { useToast } from '@/hooks/useToast';
 
 // Inline SVG icons (no lucide-react dependency)
@@ -43,12 +43,12 @@ interface FollowButtonProps {
 export default function FollowButton({ companyId, companyName, variant = 'follow', compact = false }: FollowButtonProps) {
   const { isSignedIn, openSignIn } = useAuth();
   const { isFollowing, follow, unfollow } = useFollows();
-  const { status } = useSubscription();
+  const { userStatus } = useUserStatus();
   const { toast } = useToast();
   const [hovering, setHovering] = useState(false);
 
   const following = isFollowing(companyId);
-  const isExpired = status === 'canceled';
+  const isExpired = userStatus === 'expired';
   const label = variant === 'save' ? 'Save' : 'Follow';
   const followingLabel = variant === 'save' ? 'Saved' : 'Following';
 
@@ -61,7 +61,7 @@ export default function FollowButton({ companyId, companyName, variant = 'follow
       toast({
         type: 'error',
         message: `Reactivate Pro to ${label.toLowerCase()} companies`,
-        link: { text: '$99/month \u2192', href: '/pricing' },
+        link: { text: '$15/month \u2192', href: '/pricing' },
       });
       return;
     }
@@ -87,7 +87,7 @@ export default function FollowButton({ companyId, companyName, variant = 'follow
         toast({
           type: 'success',
           message: `Following ${companyName}`,
-          link: { text: 'View in Intelligence \u2192', href: '/intelligence' },
+          link: { text: 'View in For Me \u2192', href: '/for-me' },
         });
       }
     } catch {

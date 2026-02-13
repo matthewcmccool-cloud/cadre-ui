@@ -1,5 +1,7 @@
 'use client';
 
+import { formatNumber } from '@/lib/format';
+
 interface ActiveFilter {
   param: string;    // URL param name
   value: string;    // raw value
@@ -43,7 +45,7 @@ export default function ActiveFilters({ filters, totalCount, onRemove, onClearAl
         Clear all
       </button>
       <span className="ml-auto text-[10px] text-[#555]">
-        {totalCount.toLocaleString()} roles match
+        {formatNumber(totalCount)} roles match
       </span>
     </div>
   );

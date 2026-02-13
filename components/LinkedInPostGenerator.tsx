@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { formatNumber } from '@/lib/format';
 
 interface CompanySummary {
   name: string;
@@ -155,11 +156,11 @@ export default function LinkedInPostGenerator({ investors }: { investors: string
           {/* Stats bar */}
           <div className="flex items-center gap-4 text-xs text-[#888]">
             <span>
-              <span className="text-[#e8e8e8] font-medium">{result.totalCompanies}</span> companies
+              <span className="text-[#e8e8e8] font-medium">{formatNumber(result.totalCompanies)}</span> companies
             </span>
             <span className="text-[#333]">·</span>
             <span>
-              <span className="text-[#e8e8e8] font-medium">{result.totalRoles.toLocaleString()}</span> open roles
+              <span className="text-[#e8e8e8] font-medium">{formatNumber(result.totalRoles)}</span> open roles
             </span>
             <span className="text-[#333]">·</span>
             <span>{result.investor}</span>

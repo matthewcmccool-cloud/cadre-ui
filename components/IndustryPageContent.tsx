@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 import { Job } from '@/lib/data';
+import { formatNumber } from '@/lib/format';
 import Favicon from '@/components/Favicon';
 
 const POPULAR_TAGS = [
@@ -92,10 +93,10 @@ export default function IndustryPageContent({ industry, jobs }: IndustryPageCont
         <h1 className="text-2xl font-semibold tracking-tight">{industry.name}</h1>
         <div className="flex flex-wrap gap-2 mt-3">
           <span className="px-2.5 py-1 bg-[#252526] rounded text-xs text-[#888]">
-            {filteredJobs.length} open positions
+            {formatNumber(filteredJobs.length)} open positions
           </span>
           <span className="px-2.5 py-1 bg-[#252526] rounded text-xs text-[#888]">
-            {industry.companies.length} companies
+            {formatNumber(industry.companies.length)} companies
           </span>
         </div>
       </div>

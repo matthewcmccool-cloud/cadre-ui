@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Cadre Pro — Hiring Activity Intelligence | $99/month',
-  description: 'Real-time hiring intelligence for the companies you care about. Daily alerts, hiring trends, surge detection, CSV export, and more.',
+  title: 'Pricing — Cadre Pro from $15/month',
+  description: 'Cadre Pro: follow companies, personalized dashboard, job alerts. Institutional tier coming soon with portfolio analytics and API access.',
   alternates: { canonical: 'https://cadre-ui-psi.vercel.app/pricing' },
   openGraph: {
-    title: 'Cadre Pro — Hiring Activity Intelligence | $99/month',
-    description: 'Real-time hiring intelligence for the companies you care about.',
+    title: 'Pricing — Cadre Pro from $15/month',
+    description: 'Cadre Pro: follow companies, personalized dashboard, job alerts. Institutional tier coming soon.',
     url: 'https://cadre-ui-psi.vercel.app/pricing',
   },
 };

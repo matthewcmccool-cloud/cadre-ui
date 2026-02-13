@@ -481,7 +481,7 @@ export async function getJobs(filters?: {
   }
 }
 
-// ── Feed scoring helpers ───────────────────────────────────────────
+// ── Scoring helpers ───────────────────────────────────────────
 
 /** Freshness score (0–100) based on firstSeenAt, not ATS published date */
 function computeFreshness(job: Job, now: number): number {
@@ -1413,11 +1413,11 @@ export async function getOnboardingData(): Promise<OnboardingData> {
   return { popularCompanies, topInvestors, allCompanies };
 }
 
-// ── Feed Data ──
+// ── Followed Company Data ──
 // Returns enriched company data for a user's followed company IDs,
-// plus summary stats for the feed page.
+// plus summary stats for the For Me page.
 
-export interface FeedCompanyItem {
+export interface FollowedCompanyItem {
   id: string;
   name: string;
   slug: string;
@@ -1429,15 +1429,15 @@ export interface FeedCompanyItem {
   recentJobs: { id: string; title: string; location: string; function?: string; postedDate?: string }[];
 }
 
-export interface FeedDataResult {
-  companies: FeedCompanyItem[];
+export interface FollowedDataResult {
+  companies: FollowedCompanyItem[];
   totalFollowed: number;
   totalRoles: number;
   newThisWeek: number;
   topFunctions: { name: string; count: number; pct: number }[];
 }
 
-export async function getFeedDataForCompanyIds(companyIds: string[]): Promise<FeedDataResult> {
+export async function getFollowedData(companyIds: string[]): Promise<FollowedDataResult> {
   if (companyIds.length === 0) {
     return { companies: [], totalFollowed: 0, totalRoles: 0, newThisWeek: 0, topFunctions: [] };
   }
@@ -1498,7 +1498,7 @@ export async function getFeedDataForCompanyIds(companyIds: string[]): Promise<Fe
   const functionCounts = new Map<string, number>();
   let totalRoles = 0;
 
-  const companies: FeedCompanyItem[] = followed
+  const companies: FollowedCompanyItem[] = followed
     .map(r => {
       const name = r.fields['Company'] as string || '';
       const vcIds = (r.fields['VCs'] || []) as string[];

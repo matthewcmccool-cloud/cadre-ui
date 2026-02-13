@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useMemo } from 'react';
 import { InvestorDirectoryItem } from '@/lib/data';
+import { formatNumber } from '@/lib/format';
 import Favicon from '@/components/Favicon';
 import FilterDropdown, { type FilterOption } from './FilterDropdown';
 import FollowButton from '@/components/FollowButton';
@@ -84,7 +85,7 @@ export default function InvestorDirectory({ investors }: InvestorDirectoryProps)
       {/* Descriptor */}
       <div className="mb-4">
         <p className="text-sm text-[#888]">
-          <span className="text-[#ccc] font-medium">{investors.length} VC firms</span>
+          <span className="text-[#ccc] font-medium">{formatNumber(investors.length)} VC firms</span>
           {' '}&mdash; click any to see portfolio companies and open roles.
         </p>
       </div>
@@ -181,8 +182,8 @@ export default function InvestorDirectory({ investors }: InvestorDirectoryProps)
       {/* Result count */}
       <p className="text-xs text-[#555] mb-4">
         {filtered.length === investors.length
-          ? `${investors.length} investors`
-          : `${filtered.length} of ${investors.length} investors`}
+          ? `${formatNumber(investors.length)} investors`
+          : `${formatNumber(filtered.length)} of ${formatNumber(investors.length)} investors`}
       </p>
 
       {/* Investor grid */}
@@ -220,7 +221,7 @@ export default function InvestorDirectory({ investors }: InvestorDirectoryProps)
             onClick={() => setExpanded(!expanded)}
             className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors border border-[#5e6ad2]/40 bg-[#5e6ad2]/20 text-[#8b93e6] hover:bg-[#5e6ad2]/30"
           >
-            {expanded ? 'Show less' : `View all ${filtered.length} \u2192`}
+            {expanded ? 'Show less' : `View all ${formatNumber(filtered.length)} \u2192`}
           </button>
         )}
       </div>
