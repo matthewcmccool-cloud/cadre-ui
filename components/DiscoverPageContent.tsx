@@ -136,11 +136,11 @@ function DiscoverInner({ companies, investors, jobs, jobsTotalCount, stats }: Di
   const searchParams = useSearchParams();
 
   // ── Active view from URL ──────────────────────────────────────────
-  const activeView = (searchParams.get('view') as ViewKey) || 'companies';
+  const activeView = (searchParams.get('view') as ViewKey) || 'jobs';
 
   const setView = useCallback((view: ViewKey) => {
     const params = new URLSearchParams();
-    if (view !== 'companies') {
+    if (view !== 'jobs') {
       params.set('view', view);
     }
     const qs = params.toString();
@@ -176,20 +176,20 @@ function DiscoverInner({ companies, investors, jobs, jobsTotalCount, stats }: Di
   // ── Heading text ──────────────────────────────────────────────────
   const heading = useMemo(() => {
     switch (activeView) {
-      case 'companies':
-        return {
-          bold: `${formatNumber(companyCount)} exceptional technology companies`,
-          rest: ' \u2014 click any to see open roles.',
-        };
       case 'jobs':
         return {
-          bold: `${jobCount} open roles across ${formatNumber(companyCount)} companies`,
-          rest: ' \u2014 sorted by most recent.',
+          title: `${jobCount} Jobs`,
+          tagline: 'Track roles at the best venture-backed companies. Save the ones that matter.',
+        };
+      case 'companies':
+        return {
+          title: `${formatNumber(companyCount)} Companies`,
+          tagline: 'Follow companies to track their hiring activity on your For Me dashboard.',
         };
       case 'investors':
         return {
-          bold: `${formatNumber(investorCount)} investors`,
-          rest: ' backing the best technology companies.',
+          title: `${formatNumber(investorCount)} Investors`,
+          tagline: "See who\u2019s backing the best companies \u2014 and what their portfolios are hiring for.",
         };
     }
   }, [activeView, companyCount, investorCount, jobCount]);
@@ -382,8 +382,8 @@ function DiscoverInner({ companies, investors, jobs, jobsTotalCount, stats }: Di
   // ══════════════════════════════════════════════════════════════════
 
   const views: { key: ViewKey; label: string; count: string }[] = [
-    { key: 'companies', label: 'Companies', count: formatNumber(companyCount) },
     { key: 'jobs', label: 'Jobs', count: String(jobCount) },
+    { key: 'companies', label: 'Companies', count: formatNumber(companyCount) },
     { key: 'investors', label: 'Investors', count: formatNumber(investorCount) },
   ];
 
@@ -416,10 +416,8 @@ function DiscoverInner({ companies, investors, jobs, jobsTotalCount, stats }: Di
 
       {/* ── Heading ───────────────────────────────────────────────── */}
       <div className="mb-4">
-        <p className="text-sm text-[#888]">
-          <span className="text-[#ccc] font-medium">{heading.bold}</span>
-          {heading.rest}
-        </p>
+        <h1 className="text-2xl font-bold text-zinc-100">{heading.title}</h1>
+        <p className="text-sm text-purple-400 mt-1">{heading.tagline}</p>
       </div>
 
       {/* ── Search Bar ────────────────────────────────────────────── */}
@@ -512,25 +510,6 @@ function DiscoverInner({ companies, investors, jobs, jobsTotalCount, stats }: Di
           onClearAll={() => { setInvestorTypeFilter([]); setInvestorStageFocusFilter([]); setInvestorIndustryFilter([]); }}
         />
       )}
-
-      {/* ── Result count ──────────────────────────────────────────── */}
-      <p className="text-xs text-[#555] mb-4">
-        {activeView === 'companies' && (
-          filteredCompanies.length === companies.length
-            ? `${formatNumber(companies.length)} companies`
-            : `${formatNumber(filteredCompanies.length)} of ${formatNumber(companies.length)} companies`
-        )}
-        {activeView === 'jobs' && (
-          filteredJobs.length === jobs.length
-            ? `${formatNumber(jobs.length)} roles`
-            : `${formatNumber(filteredJobs.length)} of ${formatNumber(jobs.length)} roles`
-        )}
-        {activeView === 'investors' && (
-          filteredInvestors.length === investors.length
-            ? `${formatNumber(investors.length)} investors`
-            : `${formatNumber(filteredInvestors.length)} of ${formatNumber(investors.length)} investors`
-        )}
-      </p>
 
       {/* ══════════════════════════════════════════════════════════════
        *  COMPANIES VIEW
