@@ -13,15 +13,28 @@ export const metadata: Metadata = {
   },
 };
 
-// ISR: regenerate every 60 minutes
-export const revalidate = 3600;
+// Use dynamic rendering to avoid Airtable rate limits during build-time SSG.
+// Data is still cached at the fetch level via Next.js data cache.
+export const dynamic = 'force-dynamic';
 
 export default async function DiscoverPage() {
   const [companies, investors, jobsData, stats] = await Promise.all([
-    getAllCompaniesForDirectory(),
-    getAllInvestorsForDirectory(),
-    getRecentJobsForDiscover(),
-    getStats(),
+    getAllCompaniesForDirectory().catch((err) => {
+      console.error('Failed to fetch companies for Discover:', err);
+      return [];
+    }),
+    getAllInvestorsForDirectory().catch((err) => {
+      console.error('Failed to fetch investors for Discover:', err);
+      return [];
+    }),
+    getRecentJobsForDiscover().catch((err) => {
+      console.error('Failed to fetch jobs for Discover:', err);
+      return { jobs: [], totalCount: 0 };
+    }),
+    getStats().catch((err) => {
+      console.error('Failed to fetch stats for Discover:', err);
+      return { jobCount: 0, companyCount: 0, investorCount: 0 };
+    }),
   ]);
 
   return (
