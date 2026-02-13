@@ -705,8 +705,7 @@ function DiscoverInner({ companies, investors, jobs, jobsTotalCount, stats }: Di
                     </div>
 
                     {/* Bookmark */}
-                    <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <BookmarkButton itemId={job.id} itemType="job" itemName={job.title} compact />
+              <div className="flex-shrink-0">                      <BookmarkButton itemId={job.id} itemType="job" itemName={job.title} compact />
                     </div>
 
                     {/* Chevron */}
