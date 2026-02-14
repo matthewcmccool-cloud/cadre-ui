@@ -8,7 +8,7 @@ import ApplyButton from '@/components/ApplyButton';
 import JobBookmarkButton from '@/components/JobBookmarkButton';
 
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
 
 interface JobDetailPageProps {
   params: { id: string };
