@@ -4,7 +4,7 @@ import { getInvestorBySlug, getJobsForCompanyNames } from '@/lib/data';
 import InvestorPageContent from '@/components/InvestorPageContent';
 import type { Metadata } from 'next';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
 
 interface InvestorPageProps {
   params: { slug: string };
