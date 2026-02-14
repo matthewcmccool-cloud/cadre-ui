@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getJobs, getFilterOptions } from '@/lib/data';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/content/hiring-pulse
