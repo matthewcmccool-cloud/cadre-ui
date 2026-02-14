@@ -4,11 +4,11 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Cadre — Hiring Activity Intelligence',
     short_name: 'Cadre',
-    description: 'Track hiring activity across 1,300+ VC-backed companies organized by investor portfolio.',
+    description: 'Hiring activity intelligence for AI agents.',
     start_url: '/',
     display: 'standalone',
-    background_color: '#0e0e0f',
-    theme_color: '#5e6ad2',
+    background_color: '#000000',
+    theme_color: '#000000',
     icons: [
       {
         src: '/icon.svg',
