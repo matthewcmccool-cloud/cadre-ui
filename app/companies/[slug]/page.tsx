@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import CompanyPageContent from '@/components/CompanyPageContent';
 import type { Metadata } from 'next';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
 
 interface CompanyPageProps {
   params: { slug: string };
