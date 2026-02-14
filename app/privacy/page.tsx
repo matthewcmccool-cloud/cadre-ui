@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy | Cadre',
@@ -12,14 +13,10 @@ export default function PrivacyPage() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 
-        /* Hide app chrome from root layout */
-        body > div > div > header,
-        body > div > div > footer,
-        body > div > div > div > header,
-        body > div > div > div > footer,
-        body > div > div > div > div > header,
-        body > div > div > div > div > footer,
-        nav { display: none !important; }
+        /* Hide app chrome from root layout — Header renders <header>, Footer renders <footer> */
+        body > header, body > footer,
+        header.sticky, footer.py-16,
+        nav.fixed, nav.sticky { display: none !important; }
 
         .pp * { box-sizing: border-box; margin: 0; padding: 0; }
         .pp {
@@ -113,7 +110,7 @@ export default function PrivacyPage() {
 
       <div className="pp">
         <div className="pp-inner">
-          <a href="/" className="pp-back">&larr; Back to Cadre</a>
+          <Link href="/" className="pp-back">&larr; Back to Cadre</Link>
 
           <h1 className="pp-title">Privacy Policy</h1>
           <p className="pp-date">Effective February 13, 2026</p>
