@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Cadre',
-  description: 'A curated and enriched graph of the companies that matter most. Real-time hiring, funding, and investor intelligence for AI agents, venture capital, and capital markets.',
+  description: 'Hiring activity intelligence for AI agents.',
   alternates: { canonical: 'https://cadre.careers' },
 };
 
@@ -48,9 +48,8 @@ export default function Home() {
 
       <div className="lp">
         <div className="lp-logo">CADRE <span>&middot;</span></div>
-        <p>A curated and enriched graph of the companies that matter most. Real-time hiring, funding, and investor intelligence for AI agents, venture capital, and capital markets.</p>
+        <p>Hiring activity intelligence for AI agents.</p>
         <div className="lp-links">
-          <Link href="/docs">Docs</Link>
           <a href="mailto:matt@cadre.careers">Contact</a>
         </div>
         <div className="lp-meta">&copy; 2026 Cadre Talent Intelligence &middot; <Link href="/privacy">Privacy</Link></div>
