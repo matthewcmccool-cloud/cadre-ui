@@ -7,10 +7,12 @@ type PageId = typeof pages[number];
 
 export default function DocsPage() {
   const [activePage, setActivePage] = useState<PageId>('intro');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
   function navTo(id: PageId) {
     setActivePage(id);
+    setMobileMenuOpen(false);
     if (contentRef.current) contentRef.current.scrollTop = 0;
   }
 
@@ -310,15 +312,113 @@ export default function DocsPage() {
           transition: color 0.1s;
         }
         .next-link:hover { color: var(--text-bright); text-decoration: none; }
+        /* ── Mobile Nav ── */
+        .mob-header {
+          display: none;
+          position: fixed;
+          top: 0; left: 0; right: 0;
+          z-index: 100;
+          height: 48px;
+          background: var(--bg);
+          border-bottom: 1px solid var(--border);
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 18px;
+        }
+        .mob-brand {
+          font-size: 12px;
+          font-weight: 700;
+          color: var(--text-bright);
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+        }
+        .mob-brand .mob-dot { color: var(--text-dim); }
+        .mob-toggle {
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 6px;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          width: 22px;
+        }
+        .mob-toggle span {
+          display: block;
+          height: 1.5px;
+          background: var(--text-dim);
+          transition: all 0.2s;
+          width: 100%;
+        }
+        .mob-toggle.open span:nth-child(1) {
+          transform: rotate(45deg) translate(3.5px, 3.5px);
+        }
+        .mob-toggle.open span:nth-child(2) {
+          opacity: 0;
+        }
+        .mob-toggle.open span:nth-child(3) {
+          transform: rotate(-45deg) translate(3.5px, -3.5px);
+        }
+        .mob-menu {
+          display: none;
+          position: fixed;
+          top: 48px;
+          left: 0; right: 0; bottom: 0;
+          z-index: 99;
+          background: var(--bg);
+          overflow-y: auto;
+          padding: 20px 18px 40px;
+        }
+        .mob-menu.open { display: block; }
+        .mob-menu .nav-label {
+          padding: 0;
+          margin-top: 20px;
+        }
+        .mob-menu .nav-label:first-child { margin-top: 0; }
+        .mob-menu .nav-item {
+          padding: 10px 0;
+          font-size: 13px;
+          border-bottom: 1px solid var(--border-light);
+        }
+        .mob-menu .nav-item:last-child { border-bottom: none; }
         /* ── Responsive ── */
         @media (max-width: 700px) {
-          .docs-app { grid-template-columns: 1fr; }
+          .docs-app { grid-template-columns: 1fr; padding-top: 48px; }
           .sidebar { display: none; }
+          .mob-header { display: flex; }
           body { overflow: auto !important; }
           .pg { padding: 28px 18px 60px; }
           .pr { grid-template-columns: 120px 1fr; }
         }
       `}</style>
+
+      {/* ─── Mobile Header ─── */}
+      <div className="mob-header">
+        <span className="mob-brand">CADRE<span className="mob-dot"> &middot;</span></span>
+        <button
+          className={`mob-toggle ${mobileMenuOpen ? 'open' : ''}`}
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label="Toggle navigation"
+        >
+          <span /><span /><span />
+        </button>
+      </div>
+      <div className={`mob-menu ${mobileMenuOpen ? 'open' : ''}`}>
+        <div className="nav-label">Overview</div>
+        <div className={`nav-item ${activePage === 'intro' ? 'active' : ''}`} onClick={() => navTo('intro')}>Introduction</div>
+        <div className={`nav-item ${activePage === 'getting-started' ? 'active' : ''}`} onClick={() => navTo('getting-started')}>Getting Started</div>
+        <div className="nav-label">Endpoints</div>
+        <div className={`nav-item ${activePage === 'jobs' ? 'active' : ''}`} onClick={() => navTo('jobs')}>Jobs</div>
+        <div className={`nav-item ${activePage === 'companies' ? 'active' : ''}`} onClick={() => navTo('companies')}>Companies</div>
+        <div className={`nav-item ${activePage === 'investors' ? 'active' : ''}`} onClick={() => navTo('investors')}>Investors</div>
+        <div className={`nav-item ${activePage === 'signals' ? 'active' : ''}`} onClick={() => navTo('signals')}>Signals</div>
+        <div className={`nav-item ${activePage === 'batch' ? 'active' : ''}`} onClick={() => navTo('batch')}>Batch</div>
+        <div className="nav-label">Guides</div>
+        <div className={`nav-item ${activePage === 'examples' ? 'active' : ''}`} onClick={() => navTo('examples')}>Example Queries</div>
+        <div className={`nav-item ${activePage === 'integrations' ? 'active' : ''}`} onClick={() => navTo('integrations')}>Integrations</div>
+        <div className="nav-label" style={{ marginTop: 24 }}></div>
+        <div className={`nav-item ${activePage === 'access' ? 'active' : ''}`} onClick={() => navTo('access')}>Request Access</div>
+      </div>
 
       <div className="docs-app">
         <nav className="sidebar">
